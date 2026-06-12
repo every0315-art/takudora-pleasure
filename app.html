@@ -222,9 +222,14 @@
     .sec-title { font-size:15px; font-weight:700; color:var(--white); margin-bottom:14px; }
 
     /* ── TOP LAYOUT ── */
+    /*
+      行1: [イベント] [天気・横長] [乗り場]
+      行2: [交通]    [羽田]       [道路]
+      行3: [売上]    [コミュニティ] [ニュース]
+    */
     .top-layout {
       display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr;
+      grid-template-columns: 1fr 1.6fr 1fr;
       grid-template-rows: auto auto auto;
       gap: 14px;
       max-width: 960px;
@@ -243,7 +248,6 @@
       border-color: rgba(201,168,76,.35);
       transform: translateY(-2px);
     }
-    .tile-tall { grid-row: span 1; }
 
     .tile-label {
       font-size: 10px;
@@ -265,72 +269,74 @@
       margin-top: 6px;
     }
 
-    /* 天気タイル — 中央を占有 */
+    /* 天気タイル — 上部中央・横長 */
     .tile-weather {
       grid-column: 2;
-      grid-row: 1 / 3;
+      grid-row: 1;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
-      text-align: center;
+      justify-content: space-between;
+      gap: 16px;
       background: linear-gradient(160deg, #112240 0%, #1a3560 100%);
       border-color: rgba(201,168,76,.25);
-      padding: 28px 20px;
+      padding: 20px 24px;
       cursor: default;
     }
     .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
 
-    .weather-location { font-size: 12px; color: var(--gray); letter-spacing: .1em; margin-bottom: 12px; }
-    .weather-icon-wrap { margin-bottom: 8px; }
-    .weather-temp { font-size: 64px; font-weight: 900; color: var(--white); line-height: 1; }
-    .weather-temp span { font-size: 28px; font-weight: 400; color: var(--gray); }
-    .weather-desc { font-size: 16px; color: var(--text); margin-top: 6px; }
+    .weather-main { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .weather-location { font-size: 11px; color: var(--gray); letter-spacing: .1em; }
+    .weather-icon-wrap { line-height:1; }
+    .weather-temp { font-size: 52px; font-weight: 900; color: var(--white); line-height: 1; }
+    .weather-temp span { font-size: 22px; font-weight: 400; color: var(--gray); }
+    .weather-desc { font-size: 14px; color: var(--text); }
     .weather-demand {
       display: flex; align-items: center; gap: 5px;
-      font-size: 12px; color: var(--gray);
-      margin: 12px 0 16px;
+      font-size: 11px; color: var(--gray);
       background: rgba(255,255,255,.04);
-      padding: 6px 14px; border-radius: 20px;
+      padding: 5px 12px; border-radius: 20px;
+      white-space: nowrap;
     }
     .weather-forecast {
-      display: flex; gap: 16px;
-      border-top: 1px solid var(--border);
-      padding-top: 14px;
-      margin-top: 4px;
+      display: flex; flex-direction:column; gap: 6px;
     }
-    .fc-item { display:flex; flex-direction:column; align-items:center; gap:3px; }
-    .fc-time { font-size: 11px; color: var(--gray); }
-    .fc-icon { font-size: 18px; }
-    .fc-tmp { font-size: 13px; font-weight: 700; color: var(--white); }
+    .fc-item { display:flex; align-items:center; gap:8px; }
+    .fc-time { font-size: 11px; color: var(--gray); width:28px; }
+    .fc-icon { font-size: 16px; width:20px; text-align:center; }
+    .fc-tmp { font-size: 13px; font-weight: 700; color: var(--white); width:28px; }
     .fc-rain { font-size: 10px; font-weight: 700; }
 
     /* ニュースミニ */
     .news-mini { display:flex; flex-direction:column; gap:4px; }
     .news-mini-title { font-size:12px; color:var(--text); line-height:1.4; }
 
-    /* タイル位置調整 */
-    .tile-stand   { grid-column:1; grid-row:1; }
-    .tile-train   { grid-column:3; grid-row:1; }
-    .tile-news    { grid-column:1; grid-row:2; }
-    .tile-weather { grid-column:2; grid-row:1 / 3; }
-    .tile-traffic { grid-column:3; grid-row:2; }
+    /* タイル位置
+       行1: イベント / 天気 / 乗り場
+       行2: 交通    / 羽田 / 道路
+       行3: 売上    / コミュニティ / ニュース
+    */
+    .tile-event      { grid-column:1; grid-row:1; }
+    .tile-weather    { grid-column:2; grid-row:1; }
+    .tile-stand      { grid-column:3; grid-row:1; }
+    .tile-train      { grid-column:1; grid-row:2; }
+    .tile-haneda     { grid-column:2; grid-row:2; }
+    .tile-traffic    { grid-column:3; grid-row:2; }
     .tile-sales      { grid-column:1; grid-row:3; }
-    .tile-haneda     { grid-column:2; grid-row:3; }
-    .tile-event      { grid-column:3; grid-row:3; }
-    .tile-community  { grid-column:1 / 4; grid-row:4; }
+    .tile-community  { grid-column:2; grid-row:3; }
+    .tile-news       { grid-column:3; grid-row:3; }
 
     @media(max-width:700px) {
       .top-layout { grid-template-columns: 1fr 1fr; }
-      .tile-weather   { grid-column:1 / 3; grid-row:1; }
-      .tile-stand     { grid-column:1; grid-row:2; }
-      .tile-train     { grid-column:2; grid-row:2; }
-      .tile-news      { grid-column:1; grid-row:3; }
-      .tile-traffic   { grid-column:2; grid-row:3; }
-      .tile-sales     { grid-column:1; grid-row:4; }
-      .tile-haneda    { grid-column:2; grid-row:4; }
-      .tile-event     { grid-column:1; grid-row:5; }
-      .tile-community { grid-column:1 / 3; grid-row:6; }
+      .tile-weather    { grid-column:1 / 3; grid-row:1; }
+      .tile-event      { grid-column:1; grid-row:2; }
+      .tile-stand      { grid-column:2; grid-row:2; }
+      .tile-train      { grid-column:1; grid-row:3; }
+      .tile-haneda     { grid-column:2; grid-row:3; }
+      .tile-traffic    { grid-column:1; grid-row:4; }
+      .tile-sales      { grid-column:2; grid-row:4; }
+      .tile-community  { grid-column:1 / 3; grid-row:5; }
+      .tile-news       { grid-column:1 / 3; grid-row:6; }
     }
 
     /* ── UPLOAD AREA ── */
@@ -407,100 +413,88 @@
   <div class="tab-pane active" id="tab-top">
     <div class="top-layout">
 
-      <!-- 上段：乗り場 / 羽田 / 電車 -->
-      <div class="tile tile-stand" data-tab="stand">
-        <div class="tile-label">乗り場</div>
-        <div class="tile-main s-green">新宿西口<br><span style="font-size:13px;">待ち約5分</span></div>
-        <div class="tile-sub">渋谷 22分 / 東京 45分</div>
-      </div>
-
-      <div class="tile tile-haneda" data-tab="haneda">
-        <div class="tile-label">羽田空港</div>
-        <div class="tile-main gold">32台<br><span style="font-size:13px;">プール待機</span></div>
-        <div class="tile-sub">待ち約18分 · 次便 14:30</div>
-      </div>
-
-      <div class="tile tile-train" data-tab="train">
-        <div class="tile-label">電車・交通</div>
-        <div class="tile-main s-red">中央線<br><span style="font-size:13px;">15分遅延</span></div>
-        <div class="tile-sub">山手線・銀座線 平常</div>
-      </div>
-
-      <!-- 中段左：ニュース -->
-      <div class="tile tile-news tile-tall" data-tab="news">
-        <div class="tile-label">業界ニュース</div>
-        <div style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
-          <div class="news-mini"><span class="badge badge-red" style="font-size:9px;">速報</span><div class="news-mini-title">遠隔点呼の適用範囲拡大へ——夜間規制緩和が閣議決定</div></div>
-          <div class="news-mini"><span class="badge badge-gold" style="font-size:9px;">業界</span><div class="news-mini-title">都内タクシー運賃、来春から約8%値上げへ</div></div>
-          <div class="news-mini"><span class="badge badge-green" style="font-size:9px;">助成</span><div class="news-mini-title">EV補助金、1台あたり上限80万円に拡充</div></div>
-        </div>
-      </div>
-
-      <!-- 中央：天気 -->
-      <div class="tile tile-weather">
-        <div class="weather-location">東京 · 現在</div>
-        <div class="weather-icon-wrap">
-          <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-            <!-- 太陽 -->
-            <circle cx="36" cy="36" r="14" fill="#f0b429" opacity=".95"/>
-            <g stroke="#f0b429" stroke-width="3" stroke-linecap="round">
-              <line x1="36" y1="6" x2="36" y2="14"/>
-              <line x1="36" y1="58" x2="36" y2="66"/>
-              <line x1="6" y1="36" x2="14" y2="36"/>
-              <line x1="58" y1="36" x2="66" y2="36"/>
-              <line x1="14.5" y1="14.5" x2="20" y2="20"/>
-              <line x1="52" y1="52" x2="57.5" y2="57.5"/>
-              <line x1="57.5" y1="14.5" x2="52" y2="20"/>
-              <line x1="20" y1="52" x2="14.5" y2="57.5"/>
-            </g>
-          </svg>
-        </div>
-        <div class="weather-temp">28<span>℃</span></div>
-        <div class="weather-desc">晴れ</div>
-        <div class="weather-demand">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
-          タクシー需要：<strong style="color:var(--yellow);">やや低め</strong>
-        </div>
-        <div class="weather-forecast">
-          <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div></div>
-          <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div></div>
-          <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
-          <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
-        </div>
-      </div>
-
-      <!-- 中段右：道路情報 -->
-      <div class="tile tile-traffic tile-tall" data-tab="traffic">
-        <div class="tile-label">道路情報</div>
-        <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
-          <div class="alert alert-red" style="padding:8px 12px; font-size:12px; margin:0;">首都高C2 板橋〜江北 事故渋滞15km</div>
-          <div class="alert alert-yellow" style="padding:8px 12px; font-size:12px; margin:0;">環7 世田谷 車線規制〜22:00</div>
-          <div style="font-size:12px; color:var(--gray); margin-top:4px;">
-            <div class="status-row" style="padding:6px 0;"><span>首都高C1</span><span class="s-green">順調</span></div>
-            <div class="status-row" style="padding:6px 0;"><span>湾岸東行き</span><span class="s-yellow">混雑+12分</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 下段：売上 / イベント / コミュニティ -->
-      <div class="tile tile-sales" data-tab="sales">
-        <div class="tile-label">売上管理</div>
-        <div class="tile-main gold">¥48,200<br><span style="font-size:11px;">本日</span></div>
-        <div class="tile-sub">今月 ¥891,400 · 前月比 +12%</div>
-      </div>
-
-      <div class="tile tile-haneda" data-tab="haneda">
-        <div class="tile-label">羽田空港</div>
-        <div class="tile-main gold">32台<br><span style="font-size:13px;">プール待機</span></div>
-        <div class="tile-sub">待ち約18分 · 次便 14:30</div>
-      </div>
-
+      <!-- 行1左：イベント -->
       <div class="tile tile-event" data-tab="event">
         <div class="tile-label">イベント</div>
         <div class="tile-main s-white" style="font-size:14px; font-weight:700; line-height:1.4;">B'z 国立競技場<br><span style="font-size:12px; color:var(--gray);">今夜 21:30終演</span></div>
         <div class="tile-sub"><span class="badge badge-red" style="font-size:9px;">需要 最大級</span> 外苑 / 信濃町</div>
       </div>
 
+      <!-- 行1中央：天気（横長） -->
+      <div class="tile tile-weather">
+        <div class="weather-main">
+          <div class="weather-location">東京 · 現在</div>
+          <div class="weather-icon-wrap">
+            <svg width="52" height="52" viewBox="0 0 72 72" fill="none">
+              <circle cx="36" cy="36" r="14" fill="#f0b429" opacity=".95"/>
+              <g stroke="#f0b429" stroke-width="3" stroke-linecap="round">
+                <line x1="36" y1="6" x2="36" y2="14"/>
+                <line x1="36" y1="58" x2="36" y2="66"/>
+                <line x1="6" y1="36" x2="14" y2="36"/>
+                <line x1="58" y1="36" x2="66" y2="36"/>
+                <line x1="14.5" y1="14.5" x2="20" y2="20"/>
+                <line x1="52" y1="52" x2="57.5" y2="57.5"/>
+                <line x1="57.5" y1="14.5" x2="52" y2="20"/>
+                <line x1="20" y1="52" x2="14.5" y2="57.5"/>
+              </g>
+            </svg>
+          </div>
+          <div class="weather-temp">28<span>℃</span></div>
+          <div class="weather-desc">晴れ</div>
+          <div class="weather-demand">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
+            需要：<strong style="color:var(--yellow);">やや低め</strong>
+          </div>
+        </div>
+        <div class="weather-forecast">
+          <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+          <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+          <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
+          <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+        </div>
+      </div>
+
+      <!-- 行1右：乗り場 -->
+      <div class="tile tile-stand" data-tab="stand">
+        <div class="tile-label">乗り場</div>
+        <div class="tile-main s-green">新宿西口<br><span style="font-size:13px;">待ち約5分</span></div>
+        <div class="tile-sub">渋谷 22分 / 東京 45分</div>
+      </div>
+
+      <!-- 行2左：電車・交通 -->
+      <div class="tile tile-train" data-tab="train">
+        <div class="tile-label">電車・交通</div>
+        <div class="tile-main s-red">中央線<br><span style="font-size:13px;">15分遅延</span></div>
+        <div class="tile-sub">山手線・銀座線 平常</div>
+      </div>
+
+      <!-- 行2中央：羽田空港 -->
+      <div class="tile tile-haneda" data-tab="haneda">
+        <div class="tile-label">羽田空港</div>
+        <div class="tile-main gold">32台<br><span style="font-size:13px;">プール待機</span></div>
+        <div class="tile-sub">待ち約18分 · 次便 14:30</div>
+      </div>
+
+      <!-- 行2右：道路情報 -->
+      <div class="tile tile-traffic" data-tab="traffic">
+        <div class="tile-label">道路情報</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+          <div class="alert alert-red" style="padding:6px 10px; font-size:11px; margin:0;">首都高C2 板橋〜江北 事故渋滞</div>
+          <div class="alert alert-yellow" style="padding:6px 10px; font-size:11px; margin:0;">環7 世田谷 車線規制〜22:00</div>
+          <div style="font-size:11px; color:var(--gray); margin-top:2px;">
+            <div class="status-row" style="padding:4px 0;"><span>首都高C1</span><span class="s-green">順調</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行3左：売上 -->
+      <div class="tile tile-sales" data-tab="sales">
+        <div class="tile-label">売上管理</div>
+        <div class="tile-main gold">¥48,200<br><span style="font-size:11px;">本日</span></div>
+        <div class="tile-sub">今月 ¥891,400 · 前月比 +12%</div>
+      </div>
+
+      <!-- 行3中央：コミュニティ -->
       <div class="tile tile-community" data-tab="community">
         <div class="tile-label">コミュニティ</div>
         <div style="display:flex; gap:24px; margin-top:6px; flex-wrap:wrap;">
@@ -509,6 +503,16 @@
           <div style="font-size:12px; color:var(--text);">「新宿西口さばけてきた」<span style="color:var(--gray); font-size:11px; margin-left:6px;">23分前</span></div>
         </div>
         <div class="tile-sub" style="margin-top:8px;">新着 5件 · タップして投稿</div>
+      </div>
+
+      <!-- 行3右：ニュース -->
+      <div class="tile tile-news" data-tab="news">
+        <div class="tile-label">業界ニュース</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
+          <div class="news-mini"><span class="badge badge-red" style="font-size:9px;">速報</span><div class="news-mini-title">遠隔点呼の適用範囲拡大へ——夜間規制緩和が閣議決定</div></div>
+          <div class="news-mini"><span class="badge badge-gold" style="font-size:9px;">業界</span><div class="news-mini-title">都内タクシー運賃、来春から約8%値上げへ</div></div>
+          <div class="news-mini"><span class="badge badge-green" style="font-size:9px;">助成</span><div class="news-mini-title">EV補助金、1台あたり上限80万円に拡充</div></div>
+        </div>
       </div>
 
     </div>
