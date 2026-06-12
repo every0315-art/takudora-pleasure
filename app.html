@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>タクドラPLEASURE</title>
+  <style>
+    :root {
+      --navy: #0a1628;
+      --navy-mid: #112240;
+      --navy-light: #1a3560;
+      --gold: #c9a84c;
+      --gold-light: #e8c96e;
+      --white: #ffffff;
+      --gray: #8892a4;
+      --gray-light: #1e2d45;
+      --text: #dce3ef;
+      --green: #3fcf8e;
+      --red: #f06060;
+      --yellow: #f0b429;
+      --border: rgba(255,255,255,0.07);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      position: fixed; top:0; left:0; right:0; z-index:200;
+      background: rgba(10,22,40,0.97);
+      border-bottom: 1px solid rgba(201,168,76,0.18);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+    }
+    .logo { font-size:17px; font-weight:800; color:var(--white); letter-spacing:.03em; }
+    .logo span { color:var(--gold); }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    .live-badge {
+      display:flex; align-items:center; gap:6px;
+      font-size:11px; color:var(--green); font-weight:600; letter-spacing:.1em;
+    }
+    .live-dot {
+      width:7px; height:7px; border-radius:50%; background:var(--green);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:.5; transform:scale(.85); }
+    }
+    .user-area { font-size:13px; color:var(--gray); }
+    .user-area strong { color:var(--text); }
+
+    /* ── TAB NAV ── */
+    .tab-nav {
+      position: fixed; top:56px; left:0; right:0; z-index:100;
+      background: var(--navy-mid);
+      border-bottom: 1px solid var(--border);
+      display: flex; overflow-x:auto;
+    }
+    .tab-nav::-webkit-scrollbar { display:none; }
+    .tab-btn {
+      flex-shrink:0;
+      padding: 0 20px; height:44px;
+      font-size:13px; font-weight:500; color:var(--gray);
+      background:none; border:none; cursor:pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+      white-space:nowrap;
+    }
+    .tab-btn:hover { color:var(--text); }
+    .tab-btn.active { color:var(--gold); border-bottom-color:var(--gold); font-weight:700; }
+
+    /* ── CONTENT ── */
+    .content { padding-top: 100px; min-height:100vh; }
+    .tab-pane { display:none; padding:24px; max-width:960px; margin:0 auto; }
+    .tab-pane.active { display:block; }
+
+    /* ── CARDS ── */
+    .card {
+      background:var(--navy-mid);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:20px 24px;
+      margin-bottom:16px;
+    }
+    .card-title {
+      font-size:13px; font-weight:700; color:var(--gold);
+      letter-spacing:.08em; text-transform:uppercase;
+      margin-bottom:16px;
+    }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    @media(max-width:640px) {
+      .grid2,.grid3 { grid-template-columns:1fr; }
+    }
+
+    /* ── KPI ── */
+    .kpi { text-align:center; padding:16px 8px; }
+    .kpi-value { font-size:32px; font-weight:900; color:var(--white); line-height:1; }
+    .kpi-value.gold { color:var(--gold); }
+    .kpi-value.green { color:var(--green); }
+    .kpi-label { font-size:12px; color:var(--gray); margin-top:6px; }
+    .kpi-sub { font-size:11px; color:var(--gray); margin-top:4px; }
+
+    /* ── TABLE ── */
+    .tbl { width:100%; border-collapse:collapse; font-size:14px; }
+    .tbl th { font-size:11px; color:var(--gray); font-weight:600; text-align:left; padding:8px 0 6px; border-bottom:1px solid var(--border); }
+    .tbl td { padding:10px 0; border-bottom:1px solid var(--border); color:var(--text); }
+    .tbl td:last-child { text-align:right; }
+    .tbl tr:last-child td { border-bottom:none; }
+
+    /* ── STATUS ── */
+    .status-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; }
+    .status-row:last-child { border-bottom:none; }
+    .status-label { color:var(--gray); font-size:13px; }
+    .status-val { font-weight:600; }
+    .s-green { color:var(--green); }
+    .s-red { color:var(--red); }
+    .s-yellow { color:var(--yellow); }
+    .s-white { color:var(--white); }
+
+    /* ── BADGE ── */
+    .badge {
+      display:inline-block; font-size:10px; font-weight:700;
+      padding:2px 10px; border-radius:20px;
+    }
+    .badge-green { background:rgba(63,207,142,.15); color:var(--green); border:1px solid rgba(63,207,142,.3); }
+    .badge-red { background:rgba(240,96,96,.15); color:var(--red); border:1px solid rgba(240,96,96,.3); }
+    .badge-yellow { background:rgba(240,180,41,.15); color:var(--yellow); border:1px solid rgba(240,180,41,.3); }
+    .badge-gold { background:rgba(201,168,76,.15); color:var(--gold); border:1px solid rgba(201,168,76,.3); }
+
+    /* ── ALERT ── */
+    .alert {
+      border-radius:6px; padding:12px 16px; margin-bottom:12px;
+      font-size:13px; display:flex; align-items:flex-start; gap:10px;
+    }
+    .alert-red { background:rgba(240,96,96,.1); border:1px solid rgba(240,96,96,.25); color:var(--red); }
+    .alert-yellow { background:rgba(240,180,41,.1); border:1px solid rgba(240,180,41,.25); color:var(--yellow); }
+    .alert-green { background:rgba(63,207,142,.1); border:1px solid rgba(63,207,142,.25); color:var(--green); }
+    .alert-gold { background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.25); color:var(--gold); }
+    .alert-icon { font-size:16px; flex-shrink:0; }
+
+    /* ── NEWS ── */
+    .news-item { padding:14px 0; border-bottom:1px solid var(--border); }
+    .news-item:last-child { border-bottom:none; }
+    .news-meta { font-size:11px; color:var(--gray); margin-bottom:6px; display:flex; gap:10px; align-items:center; }
+    .news-title { font-size:14px; color:var(--text); font-weight:500; line-height:1.5; }
+    .news-title:hover { color:var(--gold); cursor:pointer; }
+
+    /* ── COMMUNITY ── */
+    .post { padding:14px 0; border-bottom:1px solid var(--border); }
+    .post:last-child { border-bottom:none; }
+    .post-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .post-avatar { width:32px; height:32px; border-radius:50%; background:var(--navy-light); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--gold); flex-shrink:0; }
+    .post-name { font-size:13px; font-weight:600; color:var(--white); }
+    .post-time { font-size:11px; color:var(--gray); }
+    .post-body { font-size:14px; color:var(--text); line-height:1.6; }
+    .post-area { font-size:11px; color:var(--gold); margin-top:6px; }
+    .post-like { font-size:12px; color:var(--gray); margin-top:8px; cursor:pointer; }
+    .post-like:hover { color:var(--text); }
+
+    /* ── INPUT ── */
+    .input-area { margin-top:16px; }
+    .post-input {
+      width:100%; background:var(--navy); border:1px solid var(--border);
+      border-radius:6px; padding:12px 16px; color:var(--text); font-size:14px;
+      resize:none; font-family:inherit;
+    }
+    .post-input:focus { outline:none; border-color:rgba(201,168,76,.4); }
+    .post-input::placeholder { color:var(--gray); }
+    .post-btn {
+      margin-top:8px; float:right;
+      background:var(--gold); color:var(--navy); border:none;
+      padding:8px 24px; border-radius:4px; font-size:13px; font-weight:700;
+      cursor:pointer; transition:background .2s;
+    }
+    .post-btn:hover { background:var(--gold-light); }
+
+    /* ── MAP MOCK ── */
+    .map-mock {
+      background:var(--navy-light);
+      border-radius:8px; height:200px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--gray); font-size:13px;
+      border:1px solid var(--border);
+      position:relative; overflow:hidden;
+    }
+    .map-mock::before {
+      content:'';
+      position:absolute; inset:0;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,.03) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,.03) 40px);
+    }
+    .map-label { position:relative; z-index:1; text-align:center; }
+
+    /* ── BAR CHART ── */
+    .bar-chart { display:flex; align-items:flex-end; gap:8px; height:100px; padding-top:8px; }
+    .bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; }
+    .bar {
+      width:100%; border-radius:3px 3px 0 0;
+      background:linear-gradient(to top, var(--gold), rgba(201,168,76,.5));
+      transition:height .5s ease;
+    }
+    .bar-label { font-size:10px; color:var(--gray); }
+    .bar-val { font-size:10px; color:var(--gold); font-weight:600; }
+
+    /* ── SECTION TITLE ── */
+    .sec-title { font-size:15px; font-weight:700; color:var(--white); margin-bottom:14px; }
+
+    /* ── TOP LAYOUT ── */
+    .top-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 14px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .tile {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: border-color .2s, transform .15s;
+    }
+    .tile:hover {
+      border-color: rgba(201,168,76,.35);
+      transform: translateY(-2px);
+    }
+    .tile-tall { grid-row: span 1; }
+
+    .tile-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    .tile-main {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--white);
+    }
+    .tile-sub {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 6px;
+    }
+
+    /* 天気タイル — 中央を占有 */
+    .tile-weather {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(160deg, #112240 0%, #1a3560 100%);
+      border-color: rgba(201,168,76,.25);
+      padding: 28px 20px;
+      cursor: default;
+    }
+    .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
+
+    .weather-location { font-size: 12px; color: var(--gray); letter-spacing: .1em; margin-bottom: 12px; }
+    .weather-icon-wrap { margin-bottom: 8px; }
+    .weather-temp { font-size: 64px; font-weight: 900; color: var(--white); line-height: 1; }
+    .weather-temp span { font-size: 28px; font-weight: 400; color: var(--gray); }
+    .weather-desc { font-size: 16px; color: var(--text); margin-top: 6px; }
+    .weather-demand {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--gray);
+      margin: 12px 0 16px;
+      background: rgba(255,255,255,.04);
+      padding: 6px 14px; border-radius: 20px;
+    }
+    .weather-forecast {
+      display: flex; gap: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 4px;
+    }
+    .fc-item { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .fc-time { font-size: 11px; color: var(--gray); }
+    .fc-icon { font-size: 18px; }
+    .fc-tmp { font-size: 13px; font-weight: 700; color: var(--white); }
+    .fc-rain { font-size: 10px; font-weight: 700; }
+
+    /* ニュースミニ */
+    .news-mini { display:flex; flex-direction:column; gap:4px; }
+    .news-mini-title { font-size:12px; color:var(--text); line-height:1.4; }
+
+    /* タイル位置調整 */
+    .tile-stand   { grid-column:1; grid-row:1; }
+    .tile-train   { grid-column:3; grid-row:1; }
+    .tile-news    { grid-column:1; grid-row:2; }
+    .tile-weather { grid-column:2; grid-row:1 / 3; }
+    .tile-traffic { grid-column:3; grid-row:2; }
+    .tile-sales      { grid-column:1; grid-row:3; }
+    .tile-haneda     { grid-column:2; grid-row:3; }
+    .tile-event      { grid-column:3; grid-row:3; }
+    .tile-community  { grid-column:1 / 4; grid-row:4; }
+
+    @media(max-width:700px) {
+      .top-layout { grid-template-columns: 1fr 1fr; }
+      .tile-weather   { grid-column:1 / 3; grid-row:1; }
+      .tile-stand     { grid-column:1; grid-row:2; }
+      .tile-train     { grid-column:2; grid-row:2; }
+      .tile-news      { grid-column:1; grid-row:3; }
+      .tile-traffic   { grid-column:2; grid-row:3; }
+      .tile-sales     { grid-column:1; grid-row:4; }
+      .tile-haneda    { grid-column:2; grid-row:4; }
+      .tile-event     { grid-column:1; grid-row:5; }
+      .tile-community { grid-column:1 / 3; grid-row:6; }
+    }
+
+    /* ── UPLOAD AREA ── */
+    .upload-area {
+      border:1.5px dashed rgba(201,168,76,.3);
+      border-radius:8px; padding:32px;
+      text-align:center; cursor:pointer;
+      transition:border-color .2s;
+    }
+    .upload-area:hover { border-color:var(--gold); }
+    .upload-icon { font-size:32px; margin-bottom:8px; }
+    .upload-text { font-size:14px; color:var(--gray); }
+    .upload-text strong { color:var(--gold); }
+
+    /* ── EVENT CARD ── */
+    .event-item { display:flex; gap:16px; padding:12px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+    .event-item:last-child { border-bottom:none; }
+    .event-date { text-align:center; min-width:44px; }
+    .event-month { font-size:10px; color:var(--gray); }
+    .event-day { font-size:22px; font-weight:900; color:var(--gold); line-height:1; }
+    .event-info { flex:1; }
+    .event-name { font-size:14px; font-weight:600; color:var(--white); }
+    .event-meta { font-size:12px; color:var(--gray); margin-top:3px; }
+    .event-demand { font-size:12px; margin-top:4px; }
+
+    /* ── PROGRESS ── */
+    .progress-wrap { margin-top:8px; }
+    .progress-label { display:flex; justify-content:space-between; font-size:12px; color:var(--gray); margin-bottom:4px; }
+    .progress-bar-bg { background:var(--navy); border-radius:4px; height:6px; overflow:hidden; }
+    .progress-bar-fill { height:100%; border-radius:4px; background:linear-gradient(to right, var(--gold), var(--gold-light)); }
+
+    /* ── STAND CARD ── */
+    .stand-card { padding:14px 0; border-bottom:1px solid var(--border); }
+    .stand-card:last-child { border-bottom:none; }
+    .stand-name { font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px; }
+    .stand-meta { font-size:12px; color:var(--gray); }
+    .stand-wait { font-size:20px; font-weight:900; }
+
+    /* ── TRAIN ── */
+    .train-item { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+    .train-item:last-child { border-bottom:none; }
+    .train-name { font-size:14px; color:var(--text); }
+    .train-line { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">タクドラ<span>PLEASURE</span></div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="user-area">山田 <strong>太郎</strong> さん</div>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="top">TOP</button>
+  <button class="tab-btn" data-tab="sales">売上管理</button>
+  <button class="tab-btn" data-tab="haneda">羽田空港</button>
+  <button class="tab-btn" data-tab="news">業界ニュース</button>
+  <button class="tab-btn" data-tab="traffic">道路情報</button>
+  <button class="tab-btn" data-tab="stand">乗り場</button>
+  <button class="tab-btn" data-tab="train">電車・交通</button>
+  <button class="tab-btn" data-tab="event">イベント</button>
+  <button class="tab-btn" data-tab="community">コミュニティ</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TOP -->
+  <div class="tab-pane active" id="tab-top">
+    <div class="top-layout">
+
+      <!-- 上段：乗り場 / 羽田 / 電車 -->
+      <div class="tile tile-stand" data-tab="stand">
+        <div class="tile-label">乗り場</div>
+        <div class="tile-main s-green">新宿西口<br><span style="font-size:13px;">待ち約5分</span></div>
+        <div class="tile-sub">渋谷 22分 / 東京 45分</div>
+      </div>
+
+      <div class="tile tile-haneda" data-tab="haneda">
+        <div class="tile-label">羽田空港</div>
+        <div class="tile-main gold">32台<br><span style="font-size:13px;">プール待機</span></div>
+        <div class="tile-sub">待ち約18分 · 次便 14:30</div>
+      </div>
+
+      <div class="tile tile-train" data-tab="train">
+        <div class="tile-label">電車・交通</div>
+        <div class="tile-main s-red">中央線<br><span style="font-size:13px;">15分遅延</span></div>
+        <div class="tile-sub">山手線・銀座線 平常</div>
+      </div>
+
+      <!-- 中段左：ニュース -->
+      <div class="tile tile-news tile-tall" data-tab="news">
+        <div class="tile-label">業界ニュース</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
+          <div class="news-mini"><span class="badge badge-red" style="font-size:9px;">速報</span><div class="news-mini-title">遠隔点呼の適用範囲拡大へ——夜間規制緩和が閣議決定</div></div>
+          <div class="news-mini"><span class="badge badge-gold" style="font-size:9px;">業界</span><div class="news-mini-title">都内タクシー運賃、来春から約8%値上げへ</div></div>
+          <div class="news-mini"><span class="badge badge-green" style="font-size:9px;">助成</span><div class="news-mini-title">EV補助金、1台あたり上限80万円に拡充</div></div>
+        </div>
+      </div>
+
+      <!-- 中央：天気 -->
+      <div class="tile tile-weather">
+        <div class="weather-location">東京 · 現在</div>
+        <div class="weather-icon-wrap">
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+            <!-- 太陽 -->
+            <circle cx="36" cy="36" r="14" fill="#f0b429" opacity=".95"/>
+            <g stroke="#f0b429" stroke-width="3" stroke-linecap="round">
+              <line x1="36" y1="6" x2="36" y2="14"/>
+              <line x1="36" y1="58" x2="36" y2="66"/>
+              <line x1="6" y1="36" x2="14" y2="36"/>
+              <line x1="58" y1="36" x2="66" y2="36"/>
+              <line x1="14.5" y1="14.5" x2="20" y2="20"/>
+              <line x1="52" y1="52" x2="57.5" y2="57.5"/>
+              <line x1="57.5" y1="14.5" x2="52" y2="20"/>
+              <line x1="20" y1="52" x2="14.5" y2="57.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="weather-temp">28<span>℃</span></div>
+        <div class="weather-desc">晴れ</div>
+        <div class="weather-demand">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
+          タクシー需要：<strong style="color:var(--yellow);">やや低め</strong>
+        </div>
+        <div class="weather-forecast">
+          <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div></div>
+          <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div></div>
+          <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
+          <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+        </div>
+      </div>
+
+      <!-- 中段右：道路情報 -->
+      <div class="tile tile-traffic tile-tall" data-tab="traffic">
+        <div class="tile-label">道路情報</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+          <div class="alert alert-red" style="padding:8px 12px; font-size:12px; margin:0;">首都高C2 板橋〜江北 事故渋滞15km</div>
+          <div class="alert alert-yellow" style="padding:8px 12px; font-size:12px; margin:0;">環7 世田谷 車線規制〜22:00</div>
+          <div style="font-size:12px; color:var(--gray); margin-top:4px;">
+            <div class="status-row" style="padding:6px 0;"><span>首都高C1</span><span class="s-green">順調</span></div>
+            <div class="status-row" style="padding:6px 0;"><span>湾岸東行き</span><span class="s-yellow">混雑+12分</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下段：売上 / イベント / コミュニティ -->
+      <div class="tile tile-sales" data-tab="sales">
+        <div class="tile-label">売上管理</div>
+        <div class="tile-main gold">¥48,200<br><span style="font-size:11px;">本日</span></div>
+        <div class="tile-sub">今月 ¥891,400 · 前月比 +12%</div>
+      </div>
+
+      <div class="tile tile-haneda" data-tab="haneda">
+        <div class="tile-label">羽田空港</div>
+        <div class="tile-main gold">32台<br><span style="font-size:13px;">プール待機</span></div>
+        <div class="tile-sub">待ち約18分 · 次便 14:30</div>
+      </div>
+
+      <div class="tile tile-event" data-tab="event">
+        <div class="tile-label">イベント</div>
+        <div class="tile-main s-white" style="font-size:14px; font-weight:700; line-height:1.4;">B'z 国立競技場<br><span style="font-size:12px; color:var(--gray);">今夜 21:30終演</span></div>
+        <div class="tile-sub"><span class="badge badge-red" style="font-size:9px;">需要 最大級</span> 外苑 / 信濃町</div>
+      </div>
+
+      <div class="tile tile-community" data-tab="community">
+        <div class="tile-label">コミュニティ</div>
+        <div style="display:flex; gap:24px; margin-top:6px; flex-wrap:wrap;">
+          <div style="font-size:12px; color:var(--text);">「六本木で3万超えのロング出た」<span style="color:var(--gray); font-size:11px; margin-left:6px;">3分前</span></div>
+          <div style="font-size:12px; color:var(--text);">「中央線止まって荻窪が熱い」<span style="color:var(--gray); font-size:11px; margin-left:6px;">11分前</span></div>
+          <div style="font-size:12px; color:var(--text);">「新宿西口さばけてきた」<span style="color:var(--gray); font-size:11px; margin-left:6px;">23分前</span></div>
+        </div>
+        <div class="tile-sub" style="margin-top:8px;">新着 5件 · タップして投稿</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ① 売上管理 -->
+  <div class="tab-pane" id="tab-sales">
+
+    <div class="grid3" style="margin-bottom:16px;">
+      <div class="card" style="margin:0;">
+        <div class="kpi">
+          <div class="kpi-value gold">¥48,200</div>
+          <div class="kpi-label">本日の売上</div>
+          <div class="kpi-sub">目標 ¥50,000</div>
+        </div>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="kpi">
+          <div class="kpi-value">¥891,400</div>
+          <div class="kpi-label">今月の売上</div>
+          <div class="kpi-sub">前月比 <span class="s-green">+12%</span></div>
+        </div>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="kpi">
+          <div class="kpi-value green">¥312,000</div>
+          <div class="kpi-label">今月の利益概算</div>
+          <div class="kpi-sub">経費控除後</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card" style="margin:0;">
+        <div class="card-title">週間売上</div>
+        <div class="bar-chart">
+          <div class="bar-wrap">
+            <div class="bar-val">6.2万</div>
+            <div class="bar" style="height:82%"></div>
+            <div class="bar-label">月</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-val">5.8万</div>
+            <div class="bar" style="height:76%"></div>
+            <div class="bar-label">火</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-val">4.9万</div>
+            <div class="bar" style="height:64%"></div>
+            <div class="bar-label">水</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-val">7.1万</div>
+            <div class="bar" style="height:95%"></div>
+            <div class="bar-label">木</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-val">8.3万</div>
+            <div class="bar" style="height:100%; background:linear-gradient(to top,var(--gold-light),var(--gold));"></div>
+            <div class="bar-label">金</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-val">7.6万</div>
+            <div class="bar" style="height:90%"></div>
+            <div class="bar-label">土</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-val">4.8万</div>
+            <div class="bar" style="height:63%; opacity:.5;"></div>
+            <div class="bar-label">日</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0;">
+        <div class="card-title">今月の経費</div>
+        <table class="tbl">
+          <tr><th>項目</th><th>金額</th></tr>
+          <tr><td>燃料費（LPG）</td><td>¥42,300</td></tr>
+          <tr><td>車両保険</td><td>¥18,500</td></tr>
+          <tr><td>携帯・通信費</td><td>¥6,800</td></tr>
+          <tr><td>その他経費</td><td>¥9,200</td></tr>
+          <tr><td style="color:var(--white); font-weight:700;">合計</td><td style="color:var(--gold); font-weight:700;">¥76,800</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">日報の入力（写真OCR）</div>
+      <div class="upload-area">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text"><strong>日報の写真をタップして撮影</strong><br>売上・走行距離・乗車回数を自動で読み取ります</div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="sec-title">最近の日報</div>
+        <table class="tbl">
+          <tr><th>日付</th><th>売上</th><th>乗車</th><th>走行km</th></tr>
+          <tr><td>6/11（火）</td><td>¥48,200</td><td>31回</td><td>218km</td></tr>
+          <tr><td>6/10（月）</td><td>¥52,400</td><td>34回</td><td>241km</td></tr>
+          <tr><td>6/9（日）</td><td>¥38,100</td><td>25回</td><td>189km</td></tr>
+          <tr><td>6/8（土）</td><td>¥71,600</td><td>44回</td><td>287km</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">税金・社会保険シミュレーション（年間）</div>
+      <div class="grid2" style="gap:12px;">
+        <div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>年収見込み</span><span style="color:var(--white); font-weight:700;">¥6,840,000</span></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>所得税（概算）</span><span style="color:var(--gold);">¥412,000</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:30%"></div></div>
+          </div>
+          <div class="progress-wrap" style="margin-top:10px;">
+            <div class="progress-label"><span>住民税（概算）</span><span style="color:var(--gold);">¥384,000</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:28%"></div></div>
+          </div>
+          <div class="progress-wrap" style="margin-top:10px;">
+            <div class="progress-label"><span>国民健康保険</span><span style="color:var(--gold);">¥486,000</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:35%"></div></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px; color:var(--gray); line-height:1.9; margin-top:4px;">
+            <div>年収見込み<br><strong style="font-size:18px; color:var(--white);">¥6,840,000</strong></div>
+            <div style="margin-top:10px;">税・保険合計（概算）<br><strong style="font-size:18px; color:var(--red);">¥1,282,000</strong></div>
+            <div style="margin-top:10px;">手取り概算<br><strong style="font-size:18px; color:var(--green);">¥5,558,000</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ② 羽田空港 -->
+  <div class="tab-pane" id="tab-haneda">
+
+    <div class="alert alert-green">
+      <div class="alert-icon">✈</div>
+      <div>国際線の到着ラッシュまであと <strong>約40分</strong>。プール入りのタイミングです。</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card" style="margin:0;">
+        <div class="card-title">タクシープール状況</div>
+        <div class="kpi">
+          <div class="kpi-value gold">32</div>
+          <div class="kpi-label">現在の待機台数</div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="status-row"><span class="status-label">推定待ち時間</span><span class="status-val s-green">約18分</span></div>
+          <div class="status-row"><span class="status-label">入構待ち</span><span class="status-val s-white">なし</span></div>
+          <div class="status-row"><span class="status-label">プール収容</span><span class="status-val s-white">32 / 200台</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0;">
+        <div class="card-title">ターミナル別 到着便</div>
+        <table class="tbl">
+          <tr><th>時刻</th><th>便名</th><th>出発地</th><th>状態</th></tr>
+          <tr><td>13:45</td><td>NH801</td><td>香港</td><td><span class="badge badge-green">着陸済</span></td></tr>
+          <tr><td>14:10</td><td>JL031</td><td>ロンドン</td><td><span class="badge badge-yellow">遅延20分</span></td></tr>
+          <tr><td>14:30</td><td>KE705</td><td>ソウル</td><td><span class="badge badge-gold">定刻</span></td></tr>
+          <tr><td>14:55</td><td>CA921</td><td>北京</td><td><span class="badge badge-gold">定刻</span></td></tr>
+          <tr><td>15:20</td><td>NH107</td><td>ニューヨーク</td><td><span class="badge badge-gold">定刻</span></td></tr>
+          <tr><td>15:40</td><td>SQ637</td><td>シンガポール</td><td><span class="badge badge-gold">定刻</span></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">入構ルール</div>
+      <div style="font-size:14px; color:var(--text); line-height:1.9;">
+        <div class="status-row"><span class="status-label">受付場所</span><span class="status-val s-white">T2国際線 タクシープール受付棟</span></div>
+        <div class="status-row"><span class="status-label">営業許可証</span><span class="status-val s-white">提示必須（東京都二種免許）</span></div>
+        <div class="status-row"><span class="status-label">定員超過</span><span class="status-val s-red">受付締切あり（随時確認）</span></div>
+        <div class="status-row"><span class="status-label">待機中の禁止事項</span><span class="status-val s-white">エンジン切る・携帯注意</span></div>
+        <div class="status-row"><span class="status-label">次回更新</span><span class="status-val s-yellow">5分後</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">今週の傾向</div>
+      <div class="bar-chart">
+        <div class="bar-wrap"><div class="bar-val">18分</div><div class="bar" style="height:60%"></div><div class="bar-label">月</div></div>
+        <div class="bar-wrap"><div class="bar-val">24分</div><div class="bar" style="height:80%"></div><div class="bar-label">火</div></div>
+        <div class="bar-wrap"><div class="bar-val">15分</div><div class="bar" style="height:50%"></div><div class="bar-label">水</div></div>
+        <div class="bar-wrap"><div class="bar-val">31分</div><div class="bar" style="height:100%"></div><div class="bar-label">木</div></div>
+        <div class="bar-wrap"><div class="bar-val">28分</div><div class="bar" style="height:92%"></div><div class="bar-label">金</div></div>
+        <div class="bar-wrap"><div class="bar-val">12分</div><div class="bar" style="height:40%; opacity:.5;"></div><div class="bar-label">土</div></div>
+        <div class="bar-wrap"><div class="bar-val">9分</div><div class="bar" style="height:30%; opacity:.5;"></div><div class="bar-label">日</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ③ ニュース -->
+  <div class="tab-pane" id="tab-news">
+
+    <div class="card">
+      <div class="card-title">新着ニュース</div>
+      <div class="news-item">
+        <div class="news-meta"><span class="badge badge-red">速報</span><span>2026/06/12</span><span>国土交通省</span></div>
+        <div class="news-title">遠隔点呼の適用範囲拡大へ——夜間運行管理の規制緩和が閣議決定</div>
+      </div>
+      <div class="news-item">
+        <div class="news-meta"><span class="badge badge-gold">業界</span><span>2026/06/11</span><span>タクシー新聞</span></div>
+        <div class="news-title">東京都内タクシー運賃、来春から約8%値上げの方向で調整</div>
+      </div>
+      <div class="news-item">
+        <div class="news-meta"><span class="badge badge-green">助成</span><span>2026/06/11</span><span>東京都</span></div>
+        <div class="news-title">EV・PHVタクシー導入補助金、1台あたり上限80万円に拡充</div>
+      </div>
+      <div class="news-item">
+        <div class="news-meta"><span class="badge badge-gold">業界</span><span>2026/06/10</span><span>GO株式会社</span></div>
+        <div class="news-title">GOアプリ、AI配車機能をアップデート——需要予測精度が従来比1.4倍に</div>
+      </div>
+      <div class="news-item">
+        <div class="news-meta"><span class="badge badge-yellow">注意</span><span>2026/06/10</span><span>警視庁</span></div>
+        <div class="news-title">新宿区内での違法駐停車取締り強化——6月15日〜30日の期間実施</div>
+      </div>
+      <div class="news-item">
+        <div class="news-meta"><span class="badge badge-gold">業界</span><span>2026/06/09</span><span>国際自動車</span></div>
+        <div class="news-title">インバウンド需要が過去最高水準——外国人旅客のタクシー利用が前年比2.1倍</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ④ 道路情報 -->
+  <div class="tab-pane" id="tab-traffic">
+
+    <div class="alert alert-red">
+      <div class="alert-icon">!</div>
+      <div><strong>首都高速C2 板橋〜江北JCT</strong> — 事故のため渋滞15km。迂回推奨。</div>
+    </div>
+    <div class="alert alert-yellow">
+      <div class="alert-icon">!</div>
+      <div><strong>環状7号線 世田谷区内</strong> — 道路工事による車線規制（〜22:00）</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">道路状況マップ</div>
+      <div class="map-mock">
+        <div class="map-label">
+          地図表示エリア<br>
+          <span style="font-size:11px;">（実装時：Google Maps / 首都高API連携）</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">首都高速 主要区間</div>
+      <table class="tbl">
+        <tr><th>区間</th><th>状況</th><th>所要時間</th></tr>
+        <tr><td>C1 全線</td><td><span class="badge badge-green">順調</span></td><td>通常通り</td></tr>
+        <tr><td>C2 西側</td><td><span class="badge badge-green">順調</span></td><td>通常通り</td></tr>
+        <tr><td>C2 東側（板橋〜江北）</td><td><span class="badge badge-red">渋滞</span></td><td>+35分</td></tr>
+        <tr><td>湾岸線 東行き</td><td><span class="badge badge-yellow">混雑</span></td><td>+12分</td></tr>
+        <tr><td>3号渋谷線</td><td><span class="badge badge-green">順調</span></td><td>通常通り</td></tr>
+        <tr><td>4号新宿線</td><td><span class="badge badge-yellow">混雑</span></td><td>+8分</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">今後3時間の予報</div>
+      <div class="status-row"><span class="status-label">14:00</span><span class="status-val s-green">混雑解消傾向</span></div>
+      <div class="status-row"><span class="status-label">15:00〜17:00</span><span class="status-val s-yellow">帰宅ラッシュ始まり</span></div>
+      <div class="status-row"><span class="status-label">17:00〜19:00</span><span class="status-val s-red">各所で渋滞予測</span></div>
+      <div class="status-row"><span class="status-label">19:00〜</span><span class="status-val s-yellow">徐々に緩和</span></div>
+    </div>
+
+  </div>
+
+  <!-- ⑤ 乗り場 -->
+  <div class="tab-pane" id="tab-stand">
+
+    <div class="alert alert-gold">
+      <div class="alert-icon">★</div>
+      <div>新宿駅東口 — コミュニティ投稿：「列がさばけてきた、今が狙い目」 (3分前)</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">主要乗り場の状況</div>
+
+      <div class="stand-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="stand-name">新宿駅 西口</div>
+            <div class="stand-meta">新宿区西新宿 · 24時間</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stand-wait s-green">待ち 約5分</div>
+            <span class="badge badge-green" style="margin-top:4px;">空いている</span>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：東口一方通行に注意。深夜は誘導員あり。</div>
+      </div>
+
+      <div class="stand-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="stand-name">渋谷駅 ハチ公前</div>
+            <div class="stand-meta">渋谷区道玄坂 · 24時間</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stand-wait s-yellow">待ち 約22分</div>
+            <span class="badge badge-yellow" style="margin-top:4px;">やや混雑</span>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：センター街方向から進入。並び直し不可。</div>
+      </div>
+
+      <div class="stand-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="stand-name">東京駅 丸の内南口</div>
+            <div class="stand-meta">千代田区丸の内 · 24時間</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stand-wait s-red">待ち 約45分</div>
+            <span class="badge badge-red" style="margin-top:4px;">混雑</span>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：タクシー専用レーン。駅員に従うこと。</div>
+      </div>
+
+      <div class="stand-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="stand-name">六本木ヒルズ</div>
+            <div class="stand-meta">港区六本木 · 24時間</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stand-wait s-green">待ち 約8分</div>
+            <span class="badge badge-green" style="margin-top:4px;">空いている</span>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：ヒルズ地下P3から。夜間はロング率高め。</div>
+      </div>
+
+      <div class="stand-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="stand-name">銀座 4丁目</div>
+            <div class="stand-meta">中央区銀座 · 23:00まで</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stand-wait s-green">待ち 約12分</div>
+            <span class="badge badge-green" style="margin-top:4px;">空いている</span>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：晴海通り沿い。夜間は外国人観光客が多い。</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ⑥ 電車・交通 -->
+  <div class="tab-pane" id="tab-train">
+
+    <div class="alert alert-red">
+      <div class="alert-icon">!</div>
+      <div><strong>中央線快速</strong> — 高円寺駅付近での人身事故により、約15分遅延。タクシー代替需要が発生中。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">主要路線 運行状況</div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#f15a22;display:inline-block;"></div>中央線快速</div>
+        <span class="badge badge-red">約15分遅延</span>
+      </div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#009bbf;display:inline-block;"></div>京浜東北線</div>
+        <span class="badge badge-green">平常運転</span>
+      </div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#80c241;display:inline-block;"></div>山手線</div>
+        <span class="badge badge-green">平常運転</span>
+      </div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#d7003a;display:inline-block;"></div>東急東横線</div>
+        <span class="badge badge-green">平常運転</span>
+      </div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#0079c2;display:inline-block;"></div>東京メトロ銀座線</div>
+        <span class="badge badge-green">平常運転</span>
+      </div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#e85298;display:inline-block;"></div>都営大江戸線</div>
+        <span class="badge badge-yellow">一部遅れ</span>
+      </div>
+      <div class="train-item">
+        <div class="train-name"><div class="train-line" style="background:#00a0e9;display:inline-block;"></div>京浜急行本線</div>
+        <span class="badge badge-green">平常運転</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">終電・需要予測</div>
+      <table class="tbl">
+        <tr><th>路線</th><th>主要駅 終電</th><th>需要予測</th></tr>
+        <tr><td>山手線</td><td>新宿 00:53</td><td><span class="badge badge-red">需要高</span></td></tr>
+        <tr><td>中央線</td><td>新宿 00:39</td><td><span class="badge badge-red">需要高</span></td></tr>
+        <tr><td>東横線</td><td>渋谷 00:27</td><td><span class="badge badge-yellow">やや高</span></td></tr>
+        <tr><td>銀座線</td><td>渋谷 00:17</td><td><span class="badge badge-yellow">やや高</span></td></tr>
+      </table>
+      <div style="font-size:12px; color:var(--gray); margin-top:12px;">終電後30分間は各ターミナル駅周辺でタクシー需要が急増します。</div>
+    </div>
+
+  </div>
+
+  <!-- ⑦ イベント -->
+  <div class="tab-pane" id="tab-event">
+
+    <div class="alert alert-gold">
+      <div class="alert-icon">★</div>
+      <div>本日21:00 国立競技場 終演予定。終了後30分は周辺（外苑前・信濃町）でロング需要が高まります。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">今週のイベント</div>
+
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">12</div></div>
+        <div class="event-info">
+          <div class="event-name">B'z LIVE-GYM 2026 — 国立競技場</div>
+          <div class="event-meta">18:00開場 / 19:00開演 / 21:30終演予定 · 新宿区霞ヶ丘</div>
+          <div class="event-demand"><span class="badge badge-red">需要 最大級</span> 終演後 外苑前・信濃町・千駄ヶ谷 要注目</div>
+        </div>
+      </div>
+
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">13</div></div>
+        <div class="event-info">
+          <div class="event-name">東京ドーム 読売 vs 阪神 デーゲーム</div>
+          <div class="event-meta">13:00開始 / 16:00頃終了予定 · 文京区後楽</div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span> 後楽園・水道橋・飯田橋</div>
+        </div>
+      </div>
+
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">14</div></div>
+        <div class="event-info">
+          <div class="event-name">国際展示場 ビジネスEXPO 2026</div>
+          <div class="event-meta">10:00〜18:00 · 江東区有明</div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span> 国際展示場・有明 夕方にピーク</div>
+        </div>
+      </div>
+
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">15</div></div>
+        <div class="event-info">
+          <div class="event-name">Zepp Tokyo ライブ（2公演）</div>
+          <div class="event-meta">16:00 / 19:30開演 · 江東区青海</div>
+          <div class="event-demand"><span class="badge badge-gold">需要 あり</span> 青海・台場周辺 21:30以降</div>
+        </div>
+      </div>
+
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">15</div></div>
+        <div class="event-info">
+          <div class="event-name">浅草三社祭（最終日）</div>
+          <div class="event-meta">終日開催 · 台東区浅草</div>
+          <div class="event-demand"><span class="badge badge-red">需要 高</span> 浅草・上野 日中〜夜まで継続</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ⑧ コミュニティ -->
+  <div class="tab-pane" id="tab-community">
+
+    <div class="card">
+      <div class="card-title">みんなの投稿</div>
+
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avatar">K</div>
+          <div>
+            <div class="post-name">Kドライバー</div>
+            <div class="post-time">3分前</div>
+          </div>
+          <span class="badge badge-green" style="margin-left:auto;">確認済み</span>
+        </div>
+        <div class="post-body">新宿西口、今さばけてきた。列が動いてる。狙い目かも。</div>
+        <div class="post-area">新宿区 · 新宿西口</div>
+        <div class="post-like">役に立った 18</div>
+      </div>
+
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avatar">T</div>
+          <div>
+            <div class="post-name">Tさん</div>
+            <div class="post-time">11分前</div>
+          </div>
+        </div>
+        <div class="post-body">六本木ヒルズで3万超えのロング出た。港区経由で帰りに狙う価値あり。</div>
+        <div class="post-area">港区 · 六本木</div>
+        <div class="post-like">役に立った 42</div>
+      </div>
+
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avatar">M</div>
+          <div>
+            <div class="post-name">Mドライバー</div>
+            <div class="post-time">23分前</div>
+          </div>
+        </div>
+        <div class="post-body">中央線が止まってる影響で高円寺〜荻窪あたりのタクシー需要がすごい。今すぐ行ったほうがいいかも。</div>
+        <div class="post-area">杉並区 · 高円寺 / 荻窪</div>
+        <div class="post-like">役に立った 67</div>
+      </div>
+
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avatar">S</div>
+          <div>
+            <div class="post-name">Sさん</div>
+            <div class="post-time">38分前</div>
+          </div>
+        </div>
+        <div class="post-body">東京駅丸の内は混んでる。八重洲側のほうが回転早い気がする。</div>
+        <div class="post-area">千代田区 · 東京駅</div>
+        <div class="post-like">役に立った 29</div>
+      </div>
+
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avatar">Y</div>
+          <div>
+            <div class="post-name">Y先輩ドライバー</div>
+            <div class="post-time">1時間前</div>
+          </div>
+          <span class="badge badge-gold" style="margin-left:auto;">ベテラン</span>
+        </div>
+        <div class="post-body">B'zのライブは国立なので21時半以降は外苑前から千駄ヶ谷に流れてくる。毎年このパターン。新宿寄りに待機しておくのが吉。</div>
+        <div class="post-area">新宿区 · 外苑 / 信濃町</div>
+        <div class="post-like">役に立った 94</div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">投稿する</div>
+      <div class="input-area">
+        <textarea class="post-input" rows="3" placeholder="今いるエリアの状況を投稿。待ち時間・需要・道路状況など何でも。"></textarea>
+        <button class="post-btn">投稿する</button>
+        <div style="clear:both;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panes = document.querySelectorAll('.tab-pane');
+
+  function switchTab(tabId) {
+    tabs.forEach(t => t.classList.remove('active'));
+    panes.forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+    if (btn) btn.classList.add('active');
+    const pane = document.getElementById('tab-' + tabId);
+    if (pane) pane.classList.add('active');
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // タイルクリックでタブ移動
+  document.querySelectorAll('.tile[data-tab]').forEach(tile => {
+    tile.addEventListener('click', () => switchTab(tile.dataset.tab));
+  });
+</script>
+</body>
+</html>
