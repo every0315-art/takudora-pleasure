@@ -327,16 +327,38 @@
     .tile-news       { grid-column:3; grid-row:3; }
 
     @media(max-width:700px) {
-      .top-layout { grid-template-columns: 1fr 1fr; }
-      .tile-weather    { grid-column:1 / 3; grid-row:1; }
-      .tile-event      { grid-column:1; grid-row:2; }
-      .tile-stand      { grid-column:2; grid-row:2; }
-      .tile-train      { grid-column:1; grid-row:3; }
-      .tile-haneda     { grid-column:2; grid-row:3; }
-      .tile-traffic    { grid-column:1; grid-row:4; }
-      .tile-sales      { grid-column:2; grid-row:4; }
-      .tile-community  { grid-column:1 / 3; grid-row:5; }
-      .tile-news       { grid-column:1 / 3; grid-row:6; }
+      .top-layout {
+        grid-template-columns: 1fr 1.4fr 1fr;
+        gap: 8px;
+      }
+      .tab-pane { padding: 12px 10px; }
+
+      .tile { padding: 10px 10px; border-radius: 8px; }
+      .tile-label { font-size: 9px; margin-bottom: 5px; }
+      .tile-main { font-size: 14px; }
+      .tile-sub { font-size: 10px; }
+
+      /* 天気タイル — スマホは縦並びに */
+      .tile-weather {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 8px;
+        gap: 6px;
+      }
+      .weather-temp { font-size: 36px; }
+      .weather-temp span { font-size: 16px; }
+      .weather-desc { font-size: 12px; }
+      .weather-demand { font-size: 10px; padding: 4px 8px; }
+      .weather-forecast { flex-direction: row; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+      .fc-item { flex-direction: column; align-items: center; gap: 2px; }
+      .fc-time { width: auto; font-size: 9px; }
+      .fc-icon { font-size: 13px; width: auto; }
+      .fc-tmp { font-size: 11px; width: auto; }
+      .fc-rain { font-size: 9px; }
+
+      .alert { padding: 5px 8px; font-size: 10px; }
+      .news-mini-title { font-size: 11px; }
     }
 
     /* ── UPLOAD AREA ── */
