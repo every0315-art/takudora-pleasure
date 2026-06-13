@@ -279,6 +279,21 @@
     }
     .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
 
+    /* タイル位置
+       行1: イベント / 天気 / 乗り場
+       行2: 交通    / 羽田 / 道路
+       行3: 売上    / コミュニティ / ニュース
+    */
+    .tile-event      { grid-column:1; grid-row:1; }
+    .tile-weather    { grid-column:2; grid-row:1; }
+    .tile-stand      { grid-column:3; grid-row:1; }
+    .tile-train      { grid-column:1; grid-row:2; }
+    .tile-haneda     { grid-column:2; grid-row:2; }
+    .tile-traffic    { grid-column:3; grid-row:2; }
+    .tile-sales      { grid-column:1; grid-row:3; }
+    .tile-community  { grid-column:2; grid-row:3; }
+    .tile-news       { grid-column:3; grid-row:3; }
+
     .weather-main { display:flex; flex-direction:column; align-items:center; gap:4px; }
     .weather-location { font-size: 11px; color: var(--gray); letter-spacing: .1em; }
     .weather-icon-wrap { line-height:1; }
