@@ -1118,6 +1118,35 @@
   document.querySelectorAll('.tile[data-tab]').forEach(tile => {
     tile.addEventListener('click', () => switchTab(tile.dataset.tab));
   });
+
+  // スワイプでタブ切り替え
+  const tabIds = Array.from(tabs).map(t => t.dataset.tab);
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  document.querySelector('.content').addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.querySelector('.content').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // 横方向が縦より大きく、50px以上動いたらスワイプ判定
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+
+    const activeBtn = document.querySelector('.tab-btn.active');
+    const currentIdx = tabIds.indexOf(activeBtn.dataset.tab);
+    if (dx < 0 && currentIdx < tabIds.length - 1) {
+      switchTab(tabIds[currentIdx + 1]); // 左スワイプ → 次のタブ
+    } else if (dx > 0 && currentIdx > 0) {
+      switchTab(tabIds[currentIdx - 1]); // 右スワイプ → 前のタブ
+    }
+
+    // アクティブなタブボタンをスクロールして見せる
+    const nextBtn = document.querySelector('.tab-btn.active');
+    nextBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, { passive: true });
 </script>
 </body>
 </html>
