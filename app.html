@@ -1119,10 +1119,10 @@
 
     const activeBtn = document.querySelector('.tab-btn.active');
     const currentIdx = tabIds.indexOf(activeBtn.dataset.tab);
-    if (dx < 0 && currentIdx < tabIds.length - 1) {
-      switchTab(tabIds[currentIdx + 1]); // 左スワイプ → 次のタブ
-    } else if (dx > 0 && currentIdx > 0) {
-      switchTab(tabIds[currentIdx - 1]); // 右スワイプ → 前のタブ
+    if (dx < 0) {
+      switchTab(tabIds[(currentIdx + 1) % tabIds.length]); // 左スワイプ → 次（最後から先頭へ）
+    } else {
+      switchTab(tabIds[(currentIdx - 1 + tabIds.length) % tabIds.length]); // 右スワイプ → 前（先頭から最後へ）
     }
 
     // アクティブなタブボタンをスクロールして見せる
