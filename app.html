@@ -1167,7 +1167,7 @@
       const fcItems = document.querySelectorAll('.fc-item');
       d.hours.forEach((h, i) => {
         if (!fcItems[i]) return;
-        fcItems[i].querySelector('.fc-time').textContent = h.time;
+        fcItems[i].querySelector('.fc-time').textContent = h.label || h.time;
         fcItems[i].querySelector('.fc-icon').textContent = getIcon(h.icon);
         fcItems[i].querySelector('.fc-tmp').textContent = h.temp + '°';
         const rainEl = fcItems[i].querySelector('.fc-rain');

@@ -24,13 +24,21 @@ export default async function handler(req, res) {
     else if (weatherId < 800) demand = 'やや高め'; // 曇り
     else demand = 'やや低め'; // 晴れ
 
-    // 3時間ごとの予報（4件）
-    const hours = forecast.list.slice(0, 4).map(item => ({
-      time: String(new Date(item.dt * 1000).getHours()).padStart(2,'0') + ':00',
-      icon: item.weather[0].icon,
-      temp: Math.round(item.main.temp),
-      isRain: item.weather[0].id < 700,
-    }));
+    // 今から3・6・9・12時間後の予報
+    const nowSec = Date.now() / 1000;
+    const hours = [3, 6, 9, 12].map(h => {
+      const target = nowSec + h * 3600;
+      const item = forecast.list.reduce((a, b) =>
+        Math.abs(b.dt - target) < Math.abs(a.dt - target) ? b : a
+      );
+      return {
+        label: `+${h}h`,
+        time: String(new Date(item.dt * 1000).getHours()).padStart(2,'0') + ':00',
+        icon: item.weather[0].icon,
+        temp: Math.round(item.main.temp),
+        isRain: item.weather[0].id < 700,
+      };
+    });
 
     res.setHeader('Cache-Control', 's-maxage=600'); // 10分キャッシュ
     res.json({ temp, desc, icon, rain, demand, hours });
