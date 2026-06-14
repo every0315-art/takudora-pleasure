@@ -1,4 +1,4 @@
-const CACHE = 'takudora-v3';
+const CACHE = 'takudora-v2';
 const ASSETS = ['/app', '/app.html', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
