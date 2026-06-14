@@ -1163,22 +1163,6 @@
         iconWrap.innerHTML = `<div style="font-size:64px;line-height:1;">${getIcon(d.icon)}</div>`;
       }
 
-      // 下部バー予報更新
-      const bar = document.getElementById('tile-forecast-bar');
-      if (bar) {
-        bar.innerHTML = d.hours.map(h => {
-          const iconMap = {'01d':'☀','01n':'🌙','02d':'⛅','02n':'⛅','03d':'☁','03n':'☁','04d':'☁','04n':'☁','09d':'🌧','09n':'🌧','10d':'🌦','10n':'🌧','11d':'⛈','11n':'⛈','13d':'❄','13n':'❄','50d':'🌫','50n':'🌫'};
-          const ic = iconMap[('0'+h.icon).slice(0,2)] || '☀';
-          const rainMark = h.isRain ? `<span style="color:var(--green);font-size:9px;">需要↑</span>` : '';
-          return `<div style="text-align:center;line-height:1.3;">
-            <div style="font-size:10px;color:var(--gray);">${h.time}</div>
-            <div style="font-size:14px;">${ic}</div>
-            <div style="font-size:11px;color:var(--white);font-weight:700;">${h.temp}°</div>
-            ${rainMark}
-          </div>`;
-        }).join('');
-      }
-
       // 予報更新
       const fcItems = document.querySelectorAll('.fc-item');
       d.hours.forEach((h, i) => {

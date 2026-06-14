@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
     // 3時間ごとの予報（4件）
     const hours = forecast.list.slice(0, 4).map(item => ({
-      time: new Date(item.dt * 1000).getHours() + '時',
+      time: String(new Date(item.dt * 1000).getHours()).padStart(2,'0') + ':00',
       icon: item.weather[0].icon,
       temp: Math.round(item.main.temp),
       isRain: item.weather[0].id < 700,
