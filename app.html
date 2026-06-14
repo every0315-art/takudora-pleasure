@@ -357,17 +357,19 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 42px 6px 52px;
-        gap: 3px;
-        min-height: 165px;
+        padding: 12px 8px;
+        gap: 6px;
       }
-      .weather-location { display: none; }
-      #weather-datetime { display: none; }
-      .weather-icon-wrap { display: none; }
-      .weather-temp { display: none; }
-      .weather-desc { font-size: 12px; color: var(--text); }
-      .weather-demand { display: none; }
-      .weather-forecast { display: none; }
+      .weather-temp { font-size: 36px; }
+      .weather-temp span { font-size: 16px; }
+      .weather-desc { font-size: 12px; }
+      .weather-demand { font-size: 10px; padding: 4px 8px; }
+      .weather-forecast { flex-direction: row; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+      .fc-item { flex-direction: column; align-items: center; gap: 2px; }
+      .fc-time { width: auto; font-size: 9px; }
+      .fc-icon { font-size: 13px; width: auto; }
+      .fc-tmp { font-size: 11px; width: auto; }
+      .fc-rain { font-size: 9px; }
 
       .alert { padding: 5px 8px; font-size: 10px; }
       .news-mini-title { font-size: 11px; }
@@ -464,7 +466,7 @@
         <!-- 上部バー：日付・時刻 -->
         <div style="position:absolute;top:0;left:0;right:0;height:36px;background:rgba(10,22,40,0.82);z-index:2;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;">
           <span id="tile-datetime" style="font-size:12px;color:var(--text);font-weight:600;letter-spacing:.03em;"></span>
-          <span id="tile-top-weather" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--white);font-weight:700;">…</span>
+          <span style="font-size:11px;color:var(--gold);">東京 · 雨雲レーダー</span>
         </div>
         <!-- 下部バー：予報 -->
         <div style="position:absolute;bottom:0;left:0;right:0;height:44px;background:rgba(10,22,40,0.82);z-index:2;border-radius:0 0 10px 10px;display:flex;align-items:center;justify-content:space-around;padding:0 8px;" id="tile-forecast-bar">
@@ -1167,8 +1169,6 @@
       // 天気タイル更新
       document.querySelector('.weather-temp').innerHTML = `${d.temp}<span>℃</span>`;
       document.querySelector('.weather-desc').textContent = d.desc;
-      const topWeather = document.getElementById('tile-top-weather');
-      if (topWeather) topWeather.innerHTML = `<span>${getIcon(d.icon)}</span><span>${d.temp}℃</span>`;
       document.querySelector('.weather-demand strong').textContent = d.demand;
 
       // SVGを天気アイコン文字に置き換え
