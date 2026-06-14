@@ -1116,6 +1116,45 @@
     tile.addEventListener('click', () => switchTab(tile.dataset.tab));
   });
 
+  // 天気データを取得してTOPタイルを更新
+  async function loadWeather() {
+    try {
+      const res = await fetch('/api/weather');
+      const d = await res.json();
+      if (d.error) return;
+
+      const iconMap = {
+        '01': '☀', '02': '⛅', '03': '☁', '04': '☁',
+        '09': '🌧', '10': '🌦', '11': '⛈', '13': '❄', '50': '🌫'
+      };
+      const getIcon = code => iconMap[code.slice(0,2)] || '☀';
+
+      // 天気タイル更新
+      document.querySelector('.weather-temp').innerHTML = `${d.temp}<span>℃</span>`;
+      document.querySelector('.weather-desc').textContent = d.desc;
+      document.querySelector('.weather-demand strong').textContent = d.demand;
+
+      // SVGを天気アイコン文字に置き換え
+      const iconWrap = document.querySelector('.weather-icon-wrap');
+      if (iconWrap) {
+        iconWrap.innerHTML = `<div style="font-size:64px;line-height:1;">${getIcon('0'+d.icon)}</div>`;
+      }
+
+      // 予報更新
+      const fcItems = document.querySelectorAll('.fc-item');
+      d.hours.forEach((h, i) => {
+        if (!fcItems[i]) return;
+        fcItems[i].querySelector('.fc-time').textContent = h.time;
+        fcItems[i].querySelector('.fc-icon').textContent = getIcon('0'+h.icon);
+        fcItems[i].querySelector('.fc-tmp').textContent = h.temp + '°';
+        const rainEl = fcItems[i].querySelector('.fc-rain');
+        if (rainEl) rainEl.textContent = h.isRain ? '需要↑' : '';
+      });
+    } catch(e) {}
+  }
+
+  loadWeather();
+
   // スワイプでタブ切り替え
   const tabIds = Array.from(tabs).map(t => t.dataset.tab);
   let touchStartX = 0;

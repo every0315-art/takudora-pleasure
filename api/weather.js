@@ -1,0 +1,40 @@
+export default async function handler(req, res) {
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+  const city = 'Tokyo';
+  const lang = 'ja';
+
+  try {
+    const [currentRes, forecastRes] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=${lang}`),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=${lang}&cnt=8`)
+    ]);
+
+    const current = await currentRes.json();
+    const forecast = await forecastRes.json();
+
+    const temp = Math.round(current.main.temp);
+    const desc = current.weather[0].description;
+    const icon = current.weather[0].icon;
+    const rain = current.rain ? current.rain['1h'] || 0 : 0;
+
+    // 雨かどうかでタクシー需要を判定
+    const weatherId = current.weather[0].id;
+    let demand = 'やや低め';
+    if (weatherId < 600) demand = '高い'; // 雨・雪
+    else if (weatherId < 800) demand = 'やや高め'; // 曇り
+    else demand = 'やや低め'; // 晴れ
+
+    // 3時間ごとの予報（4件）
+    const hours = forecast.list.slice(0, 4).map(item => ({
+      time: new Date(item.dt * 1000).getHours() + '時',
+      icon: item.weather[0].icon,
+      temp: Math.round(item.main.temp),
+      isRain: item.weather[0].id < 700,
+    }));
+
+    res.setHeader('Cache-Control', 's-maxage=600'); // 10分キャッシュ
+    res.json({ temp, desc, icon, rain, demand, hours });
+  } catch (e) {
+    res.status(500).json({ error: 'weather fetch failed' });
+  }
+}
