@@ -412,6 +412,7 @@
   <button class="tab-btn" data-tab="sales">売上管理</button>
   <button class="tab-btn" data-tab="haneda">羽田空港</button>
   <button class="tab-btn" data-tab="news">業界ニュース</button>
+  <button class="tab-btn" data-tab="weather">天気</button>
   <button class="tab-btn" data-tab="traffic">道路情報</button>
   <button class="tab-btn" data-tab="stand">乗り場</button>
   <button class="tab-btn" data-tab="train">電車・交通</button>
@@ -759,6 +760,39 @@
 
   </div>
 
+  <!-- 天気 -->
+  <div class="tab-pane" id="tab-weather">
+
+    <div class="card">
+      <div class="card-title">現在の天気（東京）</div>
+      <div id="weather-detail" style="display:flex; align-items:center; gap:24px; padding:8px 0;">
+        <div id="wd-icon" style="font-size:56px; line-height:1;">☀</div>
+        <div>
+          <div id="wd-temp" style="font-size:48px; font-weight:900; color:var(--white); line-height:1;">--<span style="font-size:20px; color:var(--gray);">℃</span></div>
+          <div id="wd-desc" style="font-size:15px; color:var(--text); margin-top:4px;">取得中...</div>
+          <div id="wd-demand" style="font-size:13px; color:var(--gray); margin-top:4px;">タクシー需要：<strong>--</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">雨雲レーダー（東京）</div>
+      <iframe
+        src="https://embed.windy.com/embed2.html?lat=35.681&lon=139.767&detailLat=35.681&detailLon=139.767&width=650&height=400&zoom=8&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
+        style="width:100%; height:380px; border:none; border-radius:6px;"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <div class="card">
+      <div class="card-title">3時間ごとの予報</div>
+      <div id="wd-forecast" style="display:flex; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:13px; color:var(--gray);">取得中...</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ④ 道路情報 -->
   <div class="tab-pane" id="tab-traffic">
 
@@ -769,15 +803,6 @@
     <div class="alert alert-yellow">
       <div class="alert-icon">!</div>
       <div><strong>環状7号線 世田谷区内</strong> — 道路工事による車線規制（〜22:00）</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">雨雲レーダー（東京）</div>
-      <iframe
-        src="https://embed.windy.com/embed2.html?lat=35.681&lon=139.767&detailLat=35.681&detailLon=139.767&width=650&height=360&zoom=8&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
-        style="width:100%; height:320px; border:none; border-radius:6px;"
-        allowfullscreen>
-      </iframe>
     </div>
 
     <div class="card">
@@ -1164,6 +1189,31 @@
   }
 
   loadWeather();
+
+  async function loadWeatherDetail() {
+    try {
+      const res = await fetch('/api/weather');
+      const d = await res.json();
+      if (d.error) return;
+      const iconMap = {'01':'☀','02':'⛅','03':'☁','04':'☁','09':'🌧','10':'🌦','11':'⛈','13':'❄','50':'🌫'};
+      const getIcon = code => iconMap[code.slice(0,2)] || '☀';
+      document.getElementById('wd-icon').textContent = getIcon('0'+d.icon);
+      document.getElementById('wd-temp').innerHTML = `${d.temp}<span style="font-size:20px;color:var(--gray);">℃</span>`;
+      document.getElementById('wd-desc').textContent = d.desc;
+      document.getElementById('wd-demand').innerHTML = `タクシー需要：<strong style="color:var(--yellow);">${d.demand}</strong>`;
+      const fc = document.getElementById('wd-forecast');
+      fc.innerHTML = d.hours.map(h => `
+        <div style="text-align:center;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:64px;">
+          <div style="font-size:11px;color:var(--gray);">${h.time}</div>
+          <div style="font-size:24px;margin:4px 0;">${getIcon('0'+h.icon)}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--white);">${h.temp}°</div>
+          ${h.isRain ? '<div style="font-size:10px;color:var(--green);font-weight:700;margin-top:2px;">需要↑</div>' : ''}
+        </div>`).join('');
+    } catch(e) {}
+  }
+
+  // 天気タブが開かれたときにデータを読み込む
+  document.querySelector('.tab-btn[data-tab="weather"]').addEventListener('click', loadWeatherDetail);
 
   // 日時を毎秒更新
   function updateDatetime() {
