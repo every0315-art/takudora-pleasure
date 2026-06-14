@@ -341,34 +341,53 @@
     .news-mini { display:flex; flex-direction:column; gap:4px; }
     .news-mini-title { font-size:12px; color:var(--text); line-height:1.4; }
 
-    /* スマホ：タイルを画面の72%幅にしてスワイプ感UP */
     @media(max-width:700px) {
-      .tab-pane { padding: 12px 10px; }
+      .tab-pane { padding: 10px 10px; }
+
+      /* 2列グリッド。天気だけ全幅1行目 */
       .top-layout {
-        grid-template-columns: 1fr 1.4fr 1fr;
-        gap: 8px;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
-      .tile { padding: 10px 10px; border-radius: 8px; }
+      .tile { padding: 12px 12px; border-radius: 8px; }
       .tile-label { font-size: 9px; margin-bottom: 5px; }
       .tile-main { font-size: 14px; }
       .tile-sub { font-size: 10px; }
 
+      /* 天気：全幅・固定高さ */
       .tile-weather {
-        flex-direction: column;
+        grid-column: 1 / 3;
+        grid-row: 1;
+        flex-direction: row;
         align-items: center;
-        justify-content: center;
-        padding: 12px 8px;
-        gap: 6px;
+        justify-content: space-between;
+        padding: 44px 16px 48px;
+        gap: 12px;
+        min-height: 240px;
       }
-      .weather-temp { font-size: 36px; }
-      .weather-temp span { font-size: 16px; }
-      .weather-desc { font-size: 12px; }
-      .weather-demand { font-size: 10px; padding: 4px 8px; }
-      .weather-forecast { flex-direction: row; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
-      .fc-item { flex-direction: column; align-items: center; gap: 2px; }
-      .fc-time { width: auto; font-size: 9px; }
-      .fc-icon { font-size: 13px; width: auto; }
-      .fc-tmp { font-size: 11px; width: auto; }
+
+      /* 他タイルの配置 */
+      .tile-event     { grid-column:1; grid-row:2; }
+      .tile-stand     { grid-column:2; grid-row:2; }
+      .tile-train     { grid-column:1; grid-row:3; }
+      .tile-haneda    { grid-column:2; grid-row:3; }
+      .tile-traffic   { grid-column:1; grid-row:4; }
+      .tile-sales     { grid-column:2; grid-row:4; }
+      .tile-community { grid-column:1 / 3; grid-row:5; }
+      .tile-news      { grid-column:1 / 3; grid-row:6; }
+
+      /* 天気コンテンツ */
+      .weather-main { align-items: flex-start; gap: 2px; }
+      .weather-icon-wrap { font-size: 40px !important; }
+      .weather-temp { font-size: 42px; }
+      .weather-temp span { font-size: 18px; }
+      .weather-desc { font-size: 13px; }
+      .weather-demand { font-size: 10px; padding: 4px 10px; }
+      .weather-forecast { flex-direction: column; gap: 4px; }
+      .fc-item { flex-direction: row; gap: 6px; align-items: center; }
+      .fc-time { width: 26px; font-size: 10px; }
+      .fc-icon { font-size: 14px; width: 20px; }
+      .fc-tmp { font-size: 11px; width: 26px; }
       .fc-rain { font-size: 9px; }
 
       .alert { padding: 5px 8px; font-size: 10px; }
