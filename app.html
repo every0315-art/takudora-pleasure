@@ -463,10 +463,15 @@
           src="https://embed.windy.com/embed2.html?lat=35.67&lon=139.75&width=650&height=400&zoom=11&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
           style="position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:10px;opacity:0.35;pointer-events:none;"
         ></iframe>
-        <!-- WINDYタイトル（上部）を隠す -->
-        <div style="position:absolute;top:0;left:0;right:0;height:36px;background:var(--navy-mid);z-index:2;border-radius:10px 10px 0 0;"></div>
-        <!-- 時間バー（下部）を隠す -->
-        <div style="position:absolute;bottom:0;left:0;right:0;height:44px;background:var(--navy-mid);z-index:2;border-radius:0 0 10px 10px;"></div>
+        <!-- 上部バー：日付・時刻 -->
+        <div style="position:absolute;top:0;left:0;right:0;height:36px;background:rgba(10,22,40,0.82);z-index:2;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;">
+          <span id="tile-datetime" style="font-size:12px;color:var(--text);font-weight:600;letter-spacing:.03em;"></span>
+          <span style="font-size:11px;color:var(--gold);">東京 · 雨雲レーダー</span>
+        </div>
+        <!-- 下部バー：予報 -->
+        <div style="position:absolute;bottom:0;left:0;right:0;height:44px;background:rgba(10,22,40,0.82);z-index:2;border-radius:0 0 10px 10px;display:flex;align-items:center;justify-content:space-around;padding:0 8px;" id="tile-forecast-bar">
+          <span style="font-size:11px;color:var(--gray);">予報読込中...</span>
+        </div>
         <div class="weather-main" style="position:relative;z-index:1;">
           <div class="weather-location">東京 · 現在</div>
           <div id="weather-datetime" style="font-size:12px; color:var(--gray); margin-bottom:4px;"></div>
@@ -1186,6 +1191,22 @@
         iconWrap.innerHTML = `<div style="font-size:64px;line-height:1;">${getIcon('0'+d.icon)}</div>`;
       }
 
+      // 下部バー予報更新
+      const bar = document.getElementById('tile-forecast-bar');
+      if (bar) {
+        bar.innerHTML = d.hours.map(h => {
+          const iconMap = {'01':'☀','02':'⛅','03':'☁','04':'☁','09':'🌧','10':'🌦','11':'⛈','13':'❄','50':'🌫'};
+          const ic = iconMap[('0'+h.icon).slice(0,2)] || '☀';
+          const rainMark = h.isRain ? `<span style="color:var(--green);font-size:9px;">需要↑</span>` : '';
+          return `<div style="text-align:center;line-height:1.3;">
+            <div style="font-size:10px;color:var(--gray);">${h.time}</div>
+            <div style="font-size:14px;">${ic}</div>
+            <div style="font-size:11px;color:var(--white);font-weight:700;">${h.temp}°</div>
+            ${rainMark}
+          </div>`;
+        }).join('');
+      }
+
       // 予報更新
       const fcItems = document.querySelectorAll('.fc-item');
       d.hours.forEach((h, i) => {
@@ -1237,6 +1258,21 @@
   }
   updateDatetime();
   setInterval(updateDatetime, 1000);
+
+  // tile上部の日時も同期
+  function updateTileDatetime() {
+    const el = document.getElementById('tile-datetime');
+    if (!el) return;
+    const now = new Date();
+    const week = ['日','月','火','水','木','金','土'];
+    const m = now.getMonth()+1, d = now.getDate(), w = week[now.getDay()];
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    el.textContent = `${m}/${d}（${w}） ${hh}:${mm}:${ss}`;
+  }
+  updateTileDatetime();
+  setInterval(updateTileDatetime, 1000);
 
   // スワイプでタブ切り替え
   const tabIds = Array.from(tabs).map(t => t.dataset.tab);
