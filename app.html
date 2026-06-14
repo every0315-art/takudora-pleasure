@@ -1150,7 +1150,7 @@
         '01': '☀', '02': '⛅', '03': '☁', '04': '☁',
         '09': '🌧', '10': '🌦', '11': '⛈', '13': '❄', '50': '🌫'
       };
-      const getIcon = code => iconMap[code] || '☀';
+      const getIcon = code => iconMap[(code||'').slice(0,2)] || '☀';
 
       // 天気タイル更新
       document.querySelector('.weather-temp').innerHTML = `${d.temp}<span>℃</span>`;
