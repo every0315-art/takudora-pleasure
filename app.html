@@ -278,7 +278,29 @@
       cursor: default;
     }
     .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
-    .tile-weather { position: relative; overflow: hidden; }
+    .tile-weather { position: relative; overflow: hidden; cursor: pointer; }
+
+    /* 雨雲レーダーモーダル */
+    .radar-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.85);
+      flex-direction: column;
+    }
+    .radar-modal.open { display: flex; }
+    .radar-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--navy-mid);
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+    }
+    .radar-modal-title { font-size: 15px; font-weight: 700; color: var(--white); }
+    .radar-modal-close {
+      background: none; border: none; color: var(--gray);
+      font-size: 24px; cursor: pointer; padding: 0 4px; line-height: 1;
+    }
+    .radar-modal-close:hover { color: var(--white); }
+    .radar-modal iframe { flex: 1; width: 100%; border: none; }
 
     /* タイル位置
        行1: イベント / 天気 / 乗り場
@@ -1101,6 +1123,19 @@
 
 </div>
 
+<!-- 雨雲レーダーモーダル -->
+<div class="radar-modal" id="radarModal">
+  <div class="radar-modal-header">
+    <div class="radar-modal-title">雨雲レーダー — 東京23区</div>
+    <button class="radar-modal-close" id="radarClose">✕</button>
+  </div>
+  <iframe
+    id="radarIframe"
+    src=""
+    allowfullscreen>
+  </iframe>
+</div>
+
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -1165,6 +1200,24 @@
   }
 
   loadWeather();
+
+  // 天気タイルタップ → 雨雲レーダーモーダル
+  const radarSrc = 'https://embed.windy.com/embed2.html?lat=35.67&lon=139.75&width=650&height=800&zoom=11&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1';
+  const radarModal = document.getElementById('radarModal');
+  const radarIframe = document.getElementById('radarIframe');
+  const radarClose = document.getElementById('radarClose');
+
+  document.querySelector('.tile-weather').addEventListener('click', () => {
+    radarIframe.src = radarSrc;
+    radarModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
+
+  radarClose.addEventListener('click', () => {
+    radarModal.classList.remove('open');
+    radarIframe.src = '';
+    document.body.style.overflow = '';
+  });
 
 
   // 日時を毎秒更新
