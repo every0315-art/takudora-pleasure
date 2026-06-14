@@ -437,6 +437,7 @@
       <div class="tile tile-weather">
         <div class="weather-main">
           <div class="weather-location">東京 · 現在</div>
+          <div id="weather-datetime" style="font-size:12px; color:var(--gray); margin-bottom:4px;"></div>
           <div class="weather-icon-wrap">
             <svg width="52" height="52" viewBox="0 0 72 72" fill="none">
               <circle cx="36" cy="36" r="14" fill="#f0b429" opacity=".95"/>
@@ -1154,6 +1155,24 @@
   }
 
   loadWeather();
+
+  // 日時を毎秒更新
+  function updateDatetime() {
+    const el = document.getElementById('weather-datetime');
+    if (!el) return;
+    const now = new Date();
+    const week = ['日','月','火','水','木','金','土'];
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const w = week[now.getDay()];
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    el.textContent = `${y}年${m}月${d}日（${w}）${hh}:${mm}:${ss}`;
+  }
+  updateDatetime();
+  setInterval(updateDatetime, 1000);
 
   // スワイプでタブ切り替え
   const tabIds = Array.from(tabs).map(t => t.dataset.tab);
