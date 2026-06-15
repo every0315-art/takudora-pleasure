@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>タクドラPLEASURE QR</title>
+<style>
+  body { margin:0; background:#111; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:sans-serif; color:#fff; }
+  h1 { font-size:18px; margin-bottom:24px; color:#f0b429; letter-spacing:.05em; }
+  #qr { background:#fff; padding:16px; border-radius:12px; }
+  p { font-size:13px; color:#888; margin-top:20px; }
+</style>
+</head>
+<body>
+<h1>タクドラPLEASURE</h1>
+<div id="qr"></div>
+<p>https://pleasure.delivery-every.com/app</p>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script>
+  QRCode.toCanvas(document.createElement('canvas'), 'https://pleasure.delivery-every.com/app', { width: 280, margin: 1 }, function(err, canvas) {
+    if (!err) document.getElementById('qr').appendChild(canvas);
+  });
+</script>
+</body>
+</html>
