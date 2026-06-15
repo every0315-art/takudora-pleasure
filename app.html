@@ -1861,27 +1861,10 @@
   });
 
 
-  // 日時を毎秒更新
-  function updateDatetime() {
-    const el = document.getElementById('weather-datetime');
-    if (!el) return;
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const d = now.getDate();
-    const w = week[now.getDay()];
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-    el.textContent = `${y}年${m}月${d}日（${w}）${hh}:${mm}:${ss}`;
-  }
-  updateDatetime();
-  setInterval(updateDatetime, 1000);
-
   const week = ['日','月','火','水','木','金','土'];
 
-  // tile上部の日時も同期
-  function updateTileDatetime() {
+  // 日時を毎秒更新
+  function updateDatetime() {
     const el = document.getElementById('weather-datetime');
     if (!el) return;
     const now = new Date();
@@ -1890,8 +1873,8 @@
     const mm = String(now.getMinutes()).padStart(2,'0');
     el.textContent = `${m}/${d}（${w}） ${hh}:${mm}`;
   }
-  updateTileDatetime();
-  setInterval(updateTileDatetime, 1000);
+  updateDatetime();
+  setInterval(updateDatetime, 1000);
 
   // TOPタイルに本日のイベントをピックアップ
   function updateTopEventTile() {
