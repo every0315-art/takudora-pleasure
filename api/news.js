@@ -46,12 +46,47 @@ async function tokyoTCNews() {
   return items.slice(0, 10);
 }
 
+async function taxiAssocNews() {
+  const res = await fetch('https://www.taxi-tokyo.or.jp/', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html',
+      'Accept-Language': 'ja',
+    }
+  });
+  const html = await res.text();
+  // 全 ul.home-info__list を結合して li を抽出
+  const lists = [...html.matchAll(/<ul class="home-info__list">([\s\S]*?)<\/ul>/g)].map(m => m[1]).join('');
+  const items = [];
+  for (const m of lists.matchAll(/<li>([\s\S]*?)<\/li>/g)) {
+    const block = m[1];
+    // コメントアウト行を除外
+    if (block.includes('<!--')) continue;
+    const dateM = block.match(/<span class="home-info__list__date">(\d{4})\.(\d+)\.(\d+)<\/span>/);
+    const txtM  = block.match(/<span class="home-info__list__txt">([\s\S]*?)<\/span>/);
+    const linkM = block.match(/<a[^>]+href="([^"]+)"/);
+    if (!dateM || !txtM || !linkM) continue;
+    const y = dateM[1], mo = dateM[2].padStart(2,'0'), d = dateM[3].padStart(2,'0');
+    const pub = `${y}-${mo}-${d}`;
+    const href = linkM[1];
+    const url = href.startsWith('http') ? href : `https://www.taxi-tokyo.or.jp/${href.replace(/^\//, '')}`;
+    const title = txtM[1].replace(/<[^>]+>/g, '').trim();
+    if (!title) continue;
+    items.push({ title, link: url, pub, source: '東京ハイヤー・タクシー協会' });
+  }
+  // 日付降順・重複除去
+  const seen = new Set();
+  return items.filter(i => { const k = i.title; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => b.pub.localeCompare(a.pub))
+    .slice(0, 10);
+}
+
 export default async function handler(req, res) {
   try {
     const [r1, r2, r3] = await Promise.allSettled([
       googleNews('タクシー 東京'),
       tokyoTCNews(),
-      googleNews('東京ハイヤー・タクシー協会'),
+      taxiAssocNews(),
     ]);
 
     res.setHeader('Cache-Control', 's-maxage=600');
