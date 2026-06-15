@@ -1995,6 +1995,23 @@
     { line: 'りんかい線',            from: '新木場',     to: '大崎',         h: 0, m: 33 },
     { line: '京急空港線',            from: '京急蒲田',   to: '羽田空港第3T', h: 0, m: 38 },
     { line: '京急空港線',            from: '羽田空港第3T', to: '京急蒲田',   h: 0, m: 58 },
+    // 23区外→23区内 到着
+    { line: '埼京線',               from: '大宮',         to: '新宿',        h: 0, m: 30, inbound: true },
+    { line: '上野東京ライン',        from: '大宮',         to: '東京',        h: 0, m: 15, inbound: true },
+    { line: '湘南新宿ライン',        from: '横浜',         to: '新宿',        h: 0, m: 15, inbound: true },
+    { line: '総武線快速',            from: '千葉',         to: '東京',        h: 0, m: 18, inbound: true },
+    { line: '副都心線',              from: '和光市',       to: '渋谷',        h: 0, m: 39, inbound: true },
+    { line: '東急東横線',            from: '横浜',         to: '渋谷',        h: 0, m: 52, inbound: true },
+    { line: '東急田園都市線',        from: '中央林間',     to: '渋谷',        h: 0, m: 44, inbound: true },
+    { line: '東急目黒線',            from: '日吉',         to: '目黒',        h: 0, m: 37, inbound: true },
+    { line: '小田急小田原線',        from: '新百合ヶ丘',   to: '新宿',        h: 0, m: 33, inbound: true },
+    { line: '京王線',                from: '調布',         to: '新宿',        h: 0, m: 39, inbound: true },
+    { line: '西武新宿線',            from: '田無',         to: '西武新宿',    h: 0, m: 35, inbound: true },
+    { line: '西武池袋線',            from: '所沢',         to: '池袋',        h: 0, m: 38, inbound: true },
+    { line: '東武東上線',            from: '志木',         to: '池袋',        h: 0, m: 32, inbound: true },
+    { line: '都営新宿線',            from: '本八幡',       to: '新宿',        h: 0, m: 42, inbound: true },
+    { line: '京急本線',              from: '横浜',         to: '品川',        h: 0, m: 50, inbound: true },
+    { line: 'つくばエクスプレス',    from: '守谷',         to: '秋葉原',      h: 0, m: 48, inbound: true },
   ];
 
   function updateLastTrains() {
@@ -2023,7 +2040,8 @@
       } else {
         badge = `<span style="font-size:11px;color:var(--gray);">−</span>`;
       }
-      return `<tr><td style="font-size:12px;">${t.line}<div style="font-size:10px;color:var(--gray);">${t.from} → <strong style="color:var(--white);">${t.to}</strong></div></td><td style="font-size:13px;font-weight:600;white-space:nowrap;">${timeStr}</td><td>${badge}</td></tr>`;
+      const isInbound = t.inbound;
+      return `<tr${isInbound ? ' style="opacity:0.85;"' : ''}><td style="font-size:12px;">${t.line}${isInbound ? '<span style="font-size:9px;color:var(--gold);margin-left:4px;">区外発</span>' : ''}<div style="font-size:10px;color:var(--gray);">${t.from} → <strong style="color:var(--white);">${t.to}</strong></div></td><td style="font-size:13px;font-weight:600;white-space:nowrap;">${timeStr}</td><td>${badge}</td></tr>`;
     });
     el.innerHTML = `<table class="tbl"><tr><th>路線</th><th>終電着</th><th>状況</th></tr>${rows.join('')}</table>
       <div style="font-size:11px;color:var(--gray);margin-top:8px;">終電着 = 終着駅到着時刻（概算）　残り15分以内・到着済 → 需要急増</div>`;
