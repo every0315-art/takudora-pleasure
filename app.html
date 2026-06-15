@@ -508,13 +508,8 @@
       <!-- 行2右：道路情報 -->
       <div class="tile tile-traffic" data-tab="traffic">
         <div class="tile-label">道路情報</div>
-        <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
-          <div class="alert alert-red" style="padding:6px 10px; font-size:11px; margin:0;">首都高C2 板橋〜江北 事故渋滞</div>
-          <div class="alert alert-yellow" style="padding:6px 10px; font-size:11px; margin:0;">環7 世田谷 車線規制〜22:00</div>
-          <div style="font-size:11px; color:var(--gray); margin-top:2px;">
-            <div class="status-row" style="padding:4px 0;"><span>首都高C1</span><span class="s-green">順調</span></div>
-          </div>
-        </div>
+        <img id="top-shutoko-img" alt="首都高交通規制マップ"
+          style="width:100%;border-radius:4px;display:block;margin-top:6px;">
       </div>
 
       <!-- 行3左：売上 -->
@@ -1955,11 +1950,13 @@
 
   // 首都高交通規制マップを毎分更新（サーバープロキシ経由）
   function updateShutokoMap() {
-    const img = document.getElementById('shutoko-img');
-    const label = document.getElementById('shutoko-updated');
-    if (!img) return;
     const now = new Date();
-    img.src = `/api/shutoko?t=${now.getTime()}`;
+    const src = `/api/shutoko?t=${now.getTime()}`;
+    const label = document.getElementById('shutoko-updated');
+    ['shutoko-img', 'top-shutoko-img'].forEach(id => {
+      const img = document.getElementById(id);
+      if (img) img.src = src;
+    });
     if (label) label.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
   }
   updateShutokoMap();
