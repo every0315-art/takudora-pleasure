@@ -2061,7 +2061,14 @@
   document.querySelectorAll('#tab-event .event-item').forEach(item => {
     const name = item.querySelector('.event-name')?.textContent?.trim();
     if (!name) return;
-    const url = 'https://www.google.com/search?q=' + encodeURIComponent(name) + '&tbm=isch';
+    let url;
+    if (name.startsWith('巨人')) {
+      url = 'https://www.giants.jp/game/';
+    } else if (name.startsWith('ヤクルト')) {
+      url = 'https://www.yakult-swallows.co.jp/game';
+    } else {
+      url = 'https://www.google.com/search?q=' + encodeURIComponent(name) + '&tbm=isch';
+    }
     item.addEventListener('click', () => window.open(url, '_blank'));
   });
 
