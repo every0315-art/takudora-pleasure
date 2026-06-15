@@ -947,14 +947,14 @@
 
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-        大型客船 入港予定（30日以内）
+        大型客船 入港予定
         <span id="ships-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
       </div>
-      <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">横浜港（大さん橋・新港・大黒）　東京港は晴海・有明・竹芝</div>
+      <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">東京国際クルーズターミナル（有明・江東区）</div>
       <div id="ships-list">読み込み中…</div>
       <div style="font-size:10px;color:var(--gray);margin-top:8px;">
-        出典: <a href="https://www.city.yokohama.lg.jp/kanko-bunka/minato/kyakusen/nyuko/" target="_blank" style="color:var(--gold);">横浜市 客船入港予定</a>　／
-        <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise" target="_blank" style="color:var(--gold);">東京都港湾局</a>
+        出典: <a href="https://kumarisu-cruise.com/tokyo-international-cruise-terminal/" target="_blank" style="color:var(--gold);">JOPA情報</a>　／
+        <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">東京都港湾局</a>
       </div>
     </div>
 
@@ -2125,7 +2125,7 @@
     try {
       const res  = await fetch('/api/ships');
       const data = await res.json();
-      if (updEl) updEl.textContent = '横浜港';
+      if (updEl) updEl.textContent = '有明';
       if (!data.ships || data.ships.length === 0) {
         listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">今後30日以内の入港予定なし</div>';
         return;
@@ -2143,7 +2143,7 @@
           </div>
           <div style="font-size:13px;font-weight:600;">${s.name}</div>
           <div style="font-size:10px;color:var(--gray);margin-top:2px;">
-            ${s.berth}　前港: ${s.from}　次港: ${s.next}
+            ${s.terminal}${s.arrival?' · 入港'+s.arrival:''}${s.departure?' · 出港'+s.departure:''}
           </div>
         </div>`;
       }).join('');
