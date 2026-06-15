@@ -2118,40 +2118,51 @@
   setInterval(loadNews, 600000); // 10分ごと更新
 
   // 大型客船入港予定（横浜港）
-  async function loadShips() {
+  // 東京国際クルーズターミナル（有明）入港予定（JOPA情報 手動更新）
+  const SHIP_SCHEDULE = [
+    { date:'2026-06-17', name:'ハンセアティック・インスピレーション', arrival:'08:00', departure:'23:00' },
+    { date:'2026-06-18', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'' },
+    { date:'2026-06-19', name:'飛鳥Ⅱ',                               arrival:'09:00', departure:'' },
+    { date:'2026-06-30', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'' },
+    { date:'2026-07-12', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
+    { date:'2026-07-24', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
+    { date:'2026-08-06', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
+    { date:'2026-08-13', name:'スペクトラム・オブ・ザ・シーズ',       arrival:'',      departure:'' },
+    { date:'2026-08-17', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
+  ];
+
+  function renderShips() {
     const listEl = document.getElementById('ships-list');
     const updEl  = document.getElementById('ships-updated');
     if (!listEl) return;
-    try {
-      const res  = await fetch('/api/ships');
-      const data = await res.json();
-      if (updEl) updEl.textContent = '有明';
-      if (!data.ships || data.ships.length === 0) {
-        listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">今後30日以内の入港予定なし</div>';
-        return;
-      }
-      const wday = ['日','月','火','水','木','金','土'];
-      listEl.innerHTML = data.ships.map(s => {
-        const d = new Date(s.date + 'T00:00:00');
-        const label = `${s.month}/${s.day}（${wday[d.getDay()]}）`;
-        const today = new Date(); today.setHours(0,0,0,0);
-        const isToday = d.getTime() === today.getTime();
-        return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <span style="font-size:12px;font-weight:700;color:${isToday?'var(--gold)':'var(--text)'};">${label}${isToday?' ← 本日':''}</span>
-            <span style="font-size:11px;color:var(--gray);">${s.time} 入港</span>
-          </div>
-          <div style="font-size:13px;font-weight:600;">${s.name}</div>
-          <div style="font-size:10px;color:var(--gray);margin-top:2px;">
-            ${s.terminal}${s.arrival?' · 入港'+s.arrival:''}${s.departure?' · 出港'+s.departure:''}
-          </div>
-        </div>`;
-      }).join('');
-    } catch(e) {
-      listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
+    const wday = ['日','月','火','水','木','金','土'];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const limit = new Date(today); limit.setDate(today.getDate() + 30);
+    const upcoming = SHIP_SCHEDULE.filter(s => {
+      const d = new Date(s.date + 'T00:00:00');
+      return d >= today && d <= limit;
+    });
+    if (updEl) updEl.textContent = 'JOPA情報';
+    if (upcoming.length === 0) {
+      listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">今後30日以内の入港予定なし</div>';
+      return;
     }
+    listEl.innerHTML = upcoming.map(s => {
+      const d = new Date(s.date + 'T00:00:00');
+      const m = d.getMonth() + 1, day = d.getDate();
+      const label = `${m}/${day}（${wday[d.getDay()]}）`;
+      const isToday = d.getTime() === today.getTime();
+      const timeInfo = [s.arrival ? '入港 '+s.arrival : '', s.departure ? '出港 '+s.departure : ''].filter(Boolean).join('　');
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+          <span style="font-size:12px;font-weight:700;color:${isToday?'var(--gold)':'var(--text)'};">${label}${isToday?' ← 本日':''}</span>
+          <span style="font-size:11px;color:var(--gray);">${timeInfo}</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;">${s.name}</div>
+      </div>`;
+    }).join('');
   }
-  loadShips();
+  renderShips();
 
   // 日時を毎秒更新
   function updateDatetime() {
