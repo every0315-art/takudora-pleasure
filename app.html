@@ -1907,7 +1907,8 @@
     const container = document.getElementById('today-events');
     if (!container) return;
 
-    const allItems = document.querySelectorAll('#tab-event .card:not(:first-child) .event-item');
+    const allItems = Array.from(document.querySelectorAll('#tab-event .event-item'))
+      .filter(item => !item.closest('#today-events'));
     const matched = [];
     allItems.forEach(item => {
       const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
@@ -1959,7 +1960,8 @@
     const todayD = String(now.getDate());
 
     // 今週カード（複製）を除く元データのみ対象
-    const allItems = document.querySelectorAll('#tab-event .card:not(:first-child) .event-item:not(#today-events .event-item)');
+    const allItems = Array.from(document.querySelectorAll('#tab-event .event-item'))
+      .filter(item => !item.closest('#today-events'));
     let todayItems = [];
 
     allItems.forEach(item => {
