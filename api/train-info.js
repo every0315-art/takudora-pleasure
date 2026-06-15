@@ -46,9 +46,9 @@ const OPERATOR_URLS = {
   '西武新宿線': 'https://www.seiburailway.jp/railways/operation-info/',
   '西武池袋線': 'https://www.seiburailway.jp/railways/operation-info/',
   // 東武鉄道
-  '東武スカイツリーライン': 'https://www.tobu.co.jp/railway/train/',
-  '東武東上線':             'https://www.tobu.co.jp/railway/train/',
-  '東武亀戸線':             'https://www.tobu.co.jp/railway/train/',
+  '東武スカイツリーライン': 'https://www.tobu.co.jp/service_status/',
+  '東武東上線':             'https://www.tobu.co.jp/service_status/',
+  '東武亀戸線':             'https://www.tobu.co.jp/service_status/',
   // 京浜急行電鉄
   '京急本線':   'https://www.keikyu.co.jp/train/top.html',
   '京急空港線': 'https://www.keikyu.co.jp/train/top.html',
