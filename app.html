@@ -2036,7 +2036,8 @@
   })();
 
   // イベントタブ各カードのcard-title以外をvenue-bodyにまとめる（開閉用）
-  document.querySelectorAll('#tab-event .card').forEach(card => {
+  // 最初のカード（今後7日）以外はデフォルトで閉じた状態にする
+  document.querySelectorAll('#tab-event .card').forEach((card, i) => {
     const title = card.querySelector('.card-title');
     if (!title) return;
     const body = document.createElement('div');
@@ -2045,6 +2046,7 @@
       body.appendChild(card.children[1]);
     }
     card.appendChild(body);
+    if (i > 0) card.classList.add('collapsed');
   });
 
   document.getElementById('tab-event').addEventListener('click', e => {
