@@ -1774,10 +1774,12 @@
 </div>
 
 <script>
-  // SW登録解除（キャッシュ問題回避）
+  // SW完全無効化・キャッシュ強制削除
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
     navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+  }
+  if ('caches' in window) {
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
   }
 
   const tabs = document.querySelectorAll('.tab-btn');
