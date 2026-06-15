@@ -378,6 +378,10 @@
     /* ── EVENT ── */
     .event-item { cursor: pointer; }
     .event-item:active { opacity: 0.7; }
+    #tab-event .card-title { cursor: pointer; user-select: none; }
+    #tab-event .card-title::after { content: ' ▼'; font-size: 9px; color: var(--gray); }
+    #tab-event .card.collapsed .card-title::after { content: ' ▶'; }
+    #tab-event .card.collapsed .venue-body { display: none; }
 
     /* ── UPLOAD AREA ── */
     .upload-area {
@@ -1958,7 +1962,26 @@
     'ヤクルト vs 中日': 'https://www.yakult-swallows.co.jp/game',
   };
 
+  // イベントタブ各カードのcard-title以外をvenue-bodyにまとめる（開閉用）
+  document.querySelectorAll('#tab-event .card').forEach(card => {
+    const title = card.querySelector('.card-title');
+    if (!title) return;
+    const body = document.createElement('div');
+    body.className = 'venue-body';
+    while (card.children.length > 1) {
+      body.appendChild(card.children[1]);
+    }
+    card.appendChild(body);
+  });
+
   document.getElementById('tab-event').addEventListener('click', e => {
+    // カードタイトルタップで開閉
+    const title = e.target.closest('.card-title');
+    if (title && title.closest('#tab-event')) {
+      title.closest('.card').classList.toggle('collapsed');
+      return;
+    }
+    // イベントアイテムタップでリンクを開く
     const item = e.target.closest('.event-item');
     if (!item) return;
     const name = item.querySelector('.event-name')?.textContent?.trim();
