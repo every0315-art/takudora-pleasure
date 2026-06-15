@@ -2061,7 +2061,7 @@
   document.querySelectorAll('#tab-event .event-item').forEach(item => {
     const name = item.querySelector('.event-name')?.textContent?.trim();
     if (!name) return;
-    const url = eventLinks[name] || 'https://eplus.jp/sf/search?keyword=' + encodeURIComponent(name);
+    const url = 'https://www.google.com/search?q=' + encodeURIComponent(name) + '&tbm=isch';
     item.addEventListener('click', () => window.open(url, '_blank'));
   });
 
