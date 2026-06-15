@@ -375,12 +375,11 @@
       .news-mini-title { font-size: 11px; }
     }
 
-    /* ── EVENT VENUE COLLAPSIBLE ── */
-    .venue-body { display: none; }
-    .venue-body.open { display: block; }
-    .venue-toggle { font-size:10px; color:var(--gold); margin-left:auto; transition: transform .2s; }
+    /* ── EVENT ── */
     .event-item { cursor: pointer; }
     .event-item:active { opacity: 0.7; }
+    .event-date-header { font-size:12px; font-weight:700; color:var(--gold); padding:10px 0 4px; border-bottom:1px solid rgba(201,168,76,.2); margin-bottom:4px; }
+    .event-venue-tag { font-size:10px; color:var(--gray); margin-top:2px; }
 
     /* ── UPLOAD AREA ── */
     .upload-area {
@@ -967,6 +966,12 @@
     <div class="card" style="border-color:rgba(201,168,76,.4);">
       <div class="card-title">今週のイベント</div>
       <div id="today-events"></div>
+    </div>
+
+    <!-- 日付順スケジュール -->
+    <div class="card" id="sorted-events-card">
+      <div class="card-title">全スケジュール</div>
+      <div id="sorted-events"></div>
     </div>
 
     <!-- 国立競技場 -->
@@ -1975,29 +1980,59 @@
   }
   updateTopEventTile();
 
-  // 会場カードを開閉式に（本日のイベントカードはスキップ）
+  // 会場カードを非表示にして日付順ビューを構築
+  const week = ['日','月','火','水','木','金','土'];
   document.querySelectorAll('#tab-event .card').forEach((card, i) => {
-    if (i === 0) return;
-    const title = card.querySelector('.card-title');
-    const items = [...card.querySelectorAll('.event-item')];
-    if (!title || items.length === 0) return;
-
-    const body = document.createElement('div');
-    body.className = 'venue-body';
-    items.forEach(item => body.appendChild(item));
-    card.appendChild(body);
-
-    const toggle = document.createElement('span');
-    toggle.className = 'venue-toggle';
-    toggle.textContent = '▶';
-    title.style.cursor = 'pointer';
-    title.appendChild(toggle);
-
-    title.addEventListener('click', () => {
-      const open = body.classList.toggle('open');
-      toggle.textContent = open ? '▼' : '▶';
-    });
+    if (i === 0 || card.id === 'sorted-events-card') return;
+    card.style.display = 'none';
   });
+
+  function buildSortedEvents() {
+    const container = document.getElementById('sorted-events');
+    if (!container) return;
+
+    const allItems = document.querySelectorAll('#tab-event .card:not(:first-child):not(#sorted-events-card) .event-item');
+    const events = [];
+    const now = new Date();
+    const year = now.getFullYear();
+
+    allItems.forEach(item => {
+      const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
+      const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
+      if (!m || !d) return;
+      const card = item.closest('.card');
+      const venue = card?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
+      events.push({ m, d, venue, el: item });
+    });
+
+    events.sort((a, b) => a.m !== b.m ? a.m - b.m : a.d - b.d);
+
+    let lastKey = '';
+    container.innerHTML = '';
+    events.forEach(({ m, d, venue, el }) => {
+      const key = `${m}-${d}`;
+      if (key !== lastKey) {
+        lastKey = key;
+        const dateObj = new Date(year, m - 1, d);
+        const w = week[dateObj.getDay()];
+        const header = document.createElement('div');
+        header.className = 'event-date-header';
+        header.textContent = `${m}月${d}日（${w}）`;
+        container.appendChild(header);
+      }
+      const clone = el.cloneNode(true);
+      const tag = document.createElement('div');
+      tag.className = 'event-venue-tag';
+      tag.textContent = venue;
+      clone.querySelector('.event-info')?.appendChild(tag);
+      container.appendChild(clone);
+    });
+
+    if (events.length === 0) {
+      container.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">予定はありません</div>';
+    }
+  }
+  buildSortedEvents();
 
   // イベントアイテムをタップでイベントページへ
   const eventLinks = {
@@ -2046,7 +2081,9 @@
     'ヤクルト vs 中日': 'https://www.yakult-swallows.co.jp/game',
   };
 
-  document.querySelectorAll('#tab-event .event-item').forEach(item => {
+  document.getElementById('tab-event').addEventListener('click', e => {
+    const item = e.target.closest('.event-item');
+    if (!item) return;
     const name = item.querySelector('.event-name')?.textContent?.trim();
     if (!name) return;
     let url;
@@ -2057,7 +2094,7 @@
     } else {
       url = 'https://www.google.com/search?q=' + encodeURIComponent(name) + '&tbm=isch';
     }
-    item.addEventListener('click', () => window.open(url, '_blank'));
+    window.open(url, '_blank');
   });
 
   // スワイプでタブ切り替え
