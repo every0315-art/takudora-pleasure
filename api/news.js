@@ -28,23 +28,20 @@ async function tokyoTCNews() {
     }
   });
   const html = await res.text();
+  // <ul class="news-list"> セクションのみ抽出
+  const listM = html.match(/<ul class="news-list">([\s\S]*?)<\/ul>/);
+  if (!listM) return [];
   const items = [];
-  // <li> に日付(YYYY.MM.DD)、カテゴリ、<a href="/news/...">タイトル</a> が含まれる構造
-  for (const m of html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)) {
+  for (const m of listM[1].matchAll(/<li>([\s\S]*?)<\/li>/g)) {
     const block = m[1];
-    const dateM = block.match(/(\d{4}\.\d{2}\.\d{2})/);
-    const linkM = block.match(/<a\s+href="(\/news\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+    const dateM = block.match(/<time>(\d{4})\.(\d{2})\.(\d{2})<\/time>/);
+    const linkM = block.match(/<a[^>]+class="news-title"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
     if (!dateM || !linkM) continue;
-    const date = dateM[1];
-    const path = linkM[1];
+    const pub = `${dateM[1]}-${dateM[2]}-${dateM[3]}`;
+    const url = linkM[1].startsWith('http') ? linkM[1] : `https://www.tokyo-tc.or.jp${linkM[1]}`;
     const title = linkM[2].replace(/<[^>]+>/g, '').trim();
     if (!title) continue;
-    items.push({
-      title,
-      link: `https://www.tokyo-tc.or.jp${path}`,
-      pub: date,
-      source: '東京タクシーセンター',
-    });
+    items.push({ title, link: url, pub, source: '東京タクシーセンター' });
   }
   return items.slice(0, 10);
 }
