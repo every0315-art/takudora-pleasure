@@ -1870,7 +1870,6 @@
     const el = document.getElementById('weather-datetime');
     if (!el) return;
     const now = new Date();
-    const week = ['日','月','火','水','木','金','土'];
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
     const d = now.getDate();
@@ -1883,12 +1882,13 @@
   updateDatetime();
   setInterval(updateDatetime, 1000);
 
+  const week = ['日','月','火','水','木','金','土'];
+
   // tile上部の日時も同期
   function updateTileDatetime() {
     const el = document.getElementById('weather-datetime');
     if (!el) return;
     const now = new Date();
-    const week = ['日','月','火','水','木','金','土'];
     const m = now.getMonth()+1, d = now.getDate(), w = week[now.getDay()];
     const hh = String(now.getHours()).padStart(2,'0');
     const mm = String(now.getMinutes()).padStart(2,'0');
@@ -1997,7 +1997,6 @@
   updateTopEventTile();
 
   // 会場カードを開閉式に（今週のイベントカードはスキップ）
-  const week = ['日','月','火','水','木','金','土'];
   document.querySelectorAll('#tab-event .card').forEach((card, i) => {
     if (i === 0) return;
     const title = card.querySelector('.card-title');
