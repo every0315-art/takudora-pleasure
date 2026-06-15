@@ -944,41 +944,11 @@
   <!-- ⑥ 電車・交通 -->
   <div class="tab-pane" id="tab-train">
 
-    <div class="alert alert-red">
-      <div class="alert-icon">!</div>
-      <div><strong>中央線快速</strong> — 高円寺駅付近での人身事故により、約15分遅延。タクシー代替需要が発生中。</div>
-    </div>
-
     <div class="card">
-      <div class="card-title">主要路線 運行状況</div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#f15a22;display:inline-block;"></div>中央線快速</div>
-        <span class="badge badge-red">約15分遅延</span>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        運行障害情報 <span style="font-size:10px;color:var(--gray);font-weight:400;" id="train-updated"></span>
       </div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#009bbf;display:inline-block;"></div>京浜東北線</div>
-        <span class="badge badge-green">平常運転</span>
-      </div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#80c241;display:inline-block;"></div>山手線</div>
-        <span class="badge badge-green">平常運転</span>
-      </div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#d7003a;display:inline-block;"></div>東急東横線</div>
-        <span class="badge badge-green">平常運転</span>
-      </div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#0079c2;display:inline-block;"></div>東京メトロ銀座線</div>
-        <span class="badge badge-green">平常運転</span>
-      </div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#e85298;display:inline-block;"></div>都営大江戸線</div>
-        <span class="badge badge-yellow">一部遅れ</span>
-      </div>
-      <div class="train-item">
-        <div class="train-name"><div class="train-line" style="background:#00a0e9;display:inline-block;"></div>京浜急行本線</div>
-        <span class="badge badge-green">平常運転</span>
-      </div>
+      <div id="train-status">読み込み中…</div>
     </div>
 
     <div class="card">
@@ -1963,6 +1933,38 @@
   updateShutokoMap();
   setInterval(updateShutokoMap, 60000);
 
+  // 電車運行障害情報（Yahoo路線情報より）
+  async function loadTrainInfo() {
+    const statusEl = document.getElementById('train-status');
+    const updatedEl = document.getElementById('train-updated');
+    if (!statusEl) return;
+    try {
+      const res = await fetch('/api/train-info');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (updatedEl && data.updateDate) {
+        updatedEl.textContent = data.updateDate.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/, '$2/$3 $4:$5') + ' 更新';
+      }
+      if (!data.lines || data.lines.length === 0) {
+        statusEl.innerHTML = '<div style="color:var(--green);font-size:13px;padding:8px 0;">現在、都内主要路線に障害情報はありません</div>';
+        return;
+      }
+      statusEl.innerHTML = data.lines.map(l => `
+        <div style="border-bottom:1px solid var(--border);padding:8px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-weight:600;font-size:13px;">${l.name}</span>
+            <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${l.status.includes('見合わせ')||l.status.includes('運転見合わせ')?'#c0392b':'#e67e22'};color:#fff;">${l.status}</span>
+          </div>
+          ${l.message ? `<div style="font-size:11px;color:var(--gray);line-height:1.5;">${l.message}</div>` : ''}
+        </div>
+      `).join('');
+    } catch(e) {
+      statusEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
+    }
+  }
+  loadTrainInfo();
+  setInterval(loadTrainInfo, 60000);
+
   // 日時を毎秒更新
   function updateDatetime() {
     const el = document.getElementById('weather-datetime');
@@ -2084,19 +2086,30 @@
     const end = new Date(today);
     end.setDate(today.getDate() + 6);
 
-    // 全イベントを収集・フィルタ
+    // 全イベントを収集・フィルタ（複数日イベントは各日を展開）
     const collected = [];
     document.querySelectorAll('#tab-event .event-item').forEach(item => {
       const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
       const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
       if (!m || !d) return;
-      const itemDate = new Date(now.getFullYear(), m - 1, d);
-      if (itemDate < today || itemDate > end) return;
+      const startDate = new Date(now.getFullYear(), m - 1, d);
       const venue = item.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
       const name = item.querySelector('.event-name')?.textContent || '';
       const meta = item.querySelector('.event-meta')?.innerHTML || '';
       const badge = item.querySelector('.badge')?.outerHTML || '';
-      collected.push({ itemDate, m, d, venue, name, meta, badge });
+      // （X日間）から日数を取得
+      const dayMatch = meta.match(/（(\d+)日間）/);
+      const days = dayMatch ? parseInt(dayMatch[1]) : 1;
+      for (let i = 0; i < days; i++) {
+        const itemDate = new Date(startDate);
+        itemDate.setDate(startDate.getDate() + i);
+        if (itemDate < today || itemDate > end) continue;
+        const dm = itemDate.getMonth() + 1;
+        const dd = itemDate.getDate();
+        const dayNum = i + 1;
+        const dayMeta = days > 1 ? meta.replace(/（(\d+)日間）/, `（${dayNum}日目/${days}日間）`) : meta;
+        collected.push({ itemDate, m: dm, d: dd, venue, name, meta: dayMeta, badge });
+      }
     });
 
     if (collected.length === 0) return;
