@@ -1956,11 +1956,14 @@
     if (todayItems.length > 0) {
       const first = todayItems[0];
       const name = first.querySelector('.event-name')?.textContent || '';
+      const meta = first.querySelector('.event-meta')?.textContent || '';
       const badge = first.querySelector('.badge')?.outerHTML || '';
       const venue = getVenue(first);
       const shortName = name.length > 11 ? name.slice(0, 11) + '…' : name;
+      const endMatch = meta.match(/終演\s*(\S+)/);
+      const endTime = endMatch ? `<span style="font-size:12px;color:var(--gray);">終演 ${endMatch[1]}</span>` : '';
       const countNote = todayItems.length > 1 ? `<span style="font-size:11px;color:var(--gold);"> 他${todayItems.length - 1}件</span>` : '';
-      mainEl.innerHTML = `${shortName}${countNote}`;
+      mainEl.innerHTML = `${shortName}${countNote}<br>${endTime}`;
       const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
       subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span>`;
     } else {
