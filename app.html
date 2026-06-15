@@ -459,7 +459,7 @@
       <!-- 行1中央：天気（横長） -->
       <div class="tile tile-weather">
         <div class="weather-main" style="position:relative;z-index:1;">
-          <div id="weather-datetime" style="font-size:12px; color:var(--gray); margin-bottom:4px;"></div>
+          <div id="weather-datetime" style="font-size:13px; color:var(--text); font-weight:700; text-align:center; margin-bottom:6px;"></div>
           <div class="weather-icon-wrap" style="font-size:52px;line-height:1;">…</div>
           <div class="weather-temp">28<span>℃</span></div>
           <div class="weather-desc">晴れ</div>
@@ -1216,15 +1216,14 @@
 
   // tile上部の日時も同期
   function updateTileDatetime() {
-    const el = document.getElementById('tile-datetime');
+    const el = document.getElementById('weather-datetime');
     if (!el) return;
     const now = new Date();
     const week = ['日','月','火','水','木','金','土'];
     const m = now.getMonth()+1, d = now.getDate(), w = week[now.getDay()];
     const hh = String(now.getHours()).padStart(2,'0');
     const mm = String(now.getMinutes()).padStart(2,'0');
-    const ss = String(now.getSeconds()).padStart(2,'0');
-    el.textContent = `${m}/${d}（${w}） ${hh}:${mm}:${ss}`;
+    el.textContent = `${m}/${d}（${w}） ${hh}:${mm}`;
   }
   updateTileDatetime();
   setInterval(updateTileDatetime, 1000);
