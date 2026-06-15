@@ -41,12 +41,16 @@ export default async function handler(req, res) {
       .map(r => {
         const p = r.routeInfo?.property || {};
         const d = p.diainfo?.[0] || {};
+        const railCode = r.routeInfo?.railCode || '';
         return {
           name: p.displayName || p.railName || '',
           company: p.companyName || '',
           status: d.status || '',
           message: d.message || '',
           updatedAt: d.updateDate || '',
+          url: railCode
+            ? `https://transit.yahoo.co.jp/diainfo/${railCode}/0`
+            : 'https://transit.yahoo.co.jp/diainfo/area/4',
         };
       })
       .filter(l => TOKYO_LINES.has(l.name));
