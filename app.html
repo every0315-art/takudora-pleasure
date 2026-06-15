@@ -380,6 +380,8 @@
     .event-item:active { opacity: 0.7; }
     .event-date-header { font-size:12px; font-weight:700; color:var(--gold); padding:10px 0 4px; border-bottom:1px solid rgba(201,168,76,.2); margin-bottom:4px; }
     .event-venue-tag { font-size:10px; color:var(--gray); margin-top:2px; }
+    .venue-toggle { font-size:10px; color:var(--gold); margin-left:auto; }
+    #tab-event .card.collapsed > *:not(.card-title) { display: none; }
 
     /* ── UPLOAD AREA ── */
     .upload-area {
@@ -2002,23 +2004,15 @@
   document.querySelectorAll('#tab-event .card').forEach((card, i) => {
     if (i === 0) return;
     const title = card.querySelector('.card-title');
-    const items = [...card.querySelectorAll('.event-item')];
-    if (!title || items.length === 0) return;
-
-    const body = document.createElement('div');
-    body.className = 'venue-body open';
-    items.forEach(item => body.appendChild(item));
-    card.appendChild(body);
-
+    if (!title) return;
     const toggle = document.createElement('span');
     toggle.className = 'venue-toggle';
     toggle.textContent = '▼';
     title.style.cursor = 'pointer';
     title.appendChild(toggle);
-
     title.addEventListener('click', () => {
-      const open = body.classList.toggle('open');
-      toggle.textContent = open ? '▼' : '▶';
+      const collapsed = card.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '▶' : '▼';
     });
   });
 
