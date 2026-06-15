@@ -378,10 +378,6 @@
     /* ── EVENT ── */
     .event-item { cursor: pointer; }
     .event-item:active { opacity: 0.7; }
-    .event-date-header { font-size:12px; font-weight:700; color:var(--gold); padding:10px 0 4px; border-bottom:1px solid rgba(201,168,76,.2); margin-bottom:4px; }
-    .event-venue-tag { font-size:10px; color:var(--gray); margin-top:2px; }
-    .venue-toggle { font-size:10px; color:var(--gold); margin-left:auto; }
-    #tab-event .card.collapsed > *:not(.card-title) { display: none; }
 
     /* ── UPLOAD AREA ── */
     .upload-area {
@@ -963,12 +959,6 @@
   <div class="tab-pane" id="tab-event">
 
     <div style="font-size:10px;color:var(--gray);text-align:right;margin-bottom:8px;">※終演時間は推定です</div>
-
-    <!-- 今週のイベント -->
-    <div class="card" style="border-color:rgba(201,168,76,.4);">
-      <div class="card-title">今週のイベント</div>
-      <div id="today-events"></div>
-    </div>
 
     <!-- 国立競技場 -->
     <div class="card">
@@ -1899,99 +1889,33 @@
   updateTileDatetime();
   setInterval(updateTileDatetime, 1000);
 
-  // 今週のイベントを日付順で抽出（今日〜6日後）
-  function buildTodayEvents() {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(now);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-    const year = now.getFullYear();
-    const container = document.getElementById('today-events');
-    if (!container) return;
-
-    const allItems = Array.from(document.querySelectorAll('#tab-event .event-item'))
-      .filter(item => !item.closest('#today-events'));
-    const matched = [];
-    allItems.forEach(item => {
-      const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
-      const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
-      const itemDate = new Date(year, m - 1, d);
-      if (itemDate >= now && itemDate <= weekEnd) {
-        const card = item.closest('.card');
-        const venue = card?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
-        matched.push({ m, d, venue, el: item });
-      }
-    });
-
-    matched.sort((a, b) => a.m !== b.m ? a.m - b.m : a.d - b.d);
-
-    if (matched.length === 0) {
-      container.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">今週の予定はありません</div>';
-    } else {
-      container.innerHTML = '';
-      let lastKey = '';
-      matched.forEach(({ m, d, venue, el }) => {
-        const key = `${m}-${d}`;
-        if (key !== lastKey) {
-          lastKey = key;
-          const w = week[new Date(year, m - 1, d).getDay()];
-          const header = document.createElement('div');
-          header.className = 'event-date-header';
-          header.textContent = `${m}月${d}日（${w}）`;
-          container.appendChild(header);
-        }
-        const clone = el.cloneNode(true);
-        const tag = document.createElement('div');
-        tag.className = 'event-venue-tag';
-        tag.textContent = venue;
-        clone.querySelector('.event-info')?.appendChild(tag);
-        container.appendChild(clone);
-      });
-    }
-  }
-  buildTodayEvents();
-
-  // TOPタイルにイベントをピックアップ
+  // TOPタイルに本日のイベントをピックアップ
   function updateTopEventTile() {
     const mainEl = document.getElementById('top-event-main');
     const subEl = document.getElementById('top-event-sub');
     if (!mainEl || !subEl) return;
 
     const now = new Date();
-    const todayM = String(now.getMonth() + 1);
-    const todayD = String(now.getDate());
+    const todayM = now.getMonth() + 1;
+    const todayD = now.getDate();
+    const todayItems = [];
 
-    // 今週カード（複製）を除く元データのみ対象
-    const allItems = Array.from(document.querySelectorAll('#tab-event .event-item'))
-      .filter(item => !item.closest('#today-events'));
-    let todayItems = [];
-
-    allItems.forEach(item => {
+    document.querySelectorAll('#tab-event .event-item').forEach(item => {
       const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
       const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
-      if (m === parseInt(todayM) && d === parseInt(todayD)) {
-        todayItems.push(item);
-      }
+      if (m === todayM && d === todayD) todayItems.push(item);
     });
-
-    const getVenue = item => {
-      const card = item.closest('.card');
-      const titleEl = card?.querySelector('.card-title');
-      return titleEl ? titleEl.childNodes[0]?.textContent?.trim() || '' : '';
-    };
 
     if (todayItems.length > 0) {
       const first = todayItems[0];
       const name = first.querySelector('.event-name')?.textContent || '';
-      const meta = first.querySelector('.event-meta')?.textContent || '';
       const badge = first.querySelector('.badge')?.outerHTML || '';
-      const venue = getVenue(first);
+      const card = first.closest('.card');
+      const venue = card?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
       const shortName = name.length > 11 ? name.slice(0, 11) + '…' : name;
-      const endMatch = meta.match(/終演\s*(\S+)/);
-      const endTime = endMatch ? `<span style="font-size:12px;color:var(--gray);">終演 ${endMatch[1]}</span>` : '';
       const countNote = todayItems.length > 1 ? `<span style="font-size:11px;color:var(--gold);"> 他${todayItems.length - 1}件</span>` : '';
-      mainEl.innerHTML = `${shortName}${countNote}<br>${endTime}`;
-      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+      mainEl.innerHTML = `${shortName}${countNote}`;
+      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/, 'font-size:9px;') : '';
       subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span>`;
     } else {
       mainEl.innerHTML = '<span style="font-size:13px;color:var(--gray);">本日の予定なし</span>';
@@ -1999,22 +1923,6 @@
     }
   }
   updateTopEventTile();
-
-  // 会場カードを開閉式に（今週のイベントカードはスキップ）
-  document.querySelectorAll('#tab-event .card').forEach((card, i) => {
-    if (i === 0) return;
-    const title = card.querySelector('.card-title');
-    if (!title) return;
-    const toggle = document.createElement('span');
-    toggle.className = 'venue-toggle';
-    toggle.textContent = '▼';
-    title.style.cursor = 'pointer';
-    title.appendChild(toggle);
-    title.addEventListener('click', () => {
-      const collapsed = card.classList.toggle('collapsed');
-      toggle.textContent = collapsed ? '▶' : '▼';
-    });
-  });
 
   // イベントアイテムをタップでイベントページへ
   const eventLinks = {
