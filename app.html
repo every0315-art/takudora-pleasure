@@ -950,11 +950,13 @@
         大型客船 入港予定
         <span id="ships-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
       </div>
-      <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">東京国際クルーズターミナル（有明・江東区）</div>
+      <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">有明 · 竹芝 · 日の出（港区・江東区）</div>
       <div id="ships-list">読み込み中…</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:8px;">
-        出典: <a href="https://kumarisu-cruise.com/tokyo-international-cruise-terminal/" target="_blank" style="color:var(--gold);">JOPA情報</a>　／
+      <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
         <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">東京都港湾局</a>
+        <a href="https://www.tptc.co.jp/terminal/guide/cruise" target="_blank" style="color:var(--gold);">東京国際クルーズターミナル</a>
+        <a href="https://www.tokaikisen.co.jp/timetable/" target="_blank" style="color:var(--gold);">東海汽船 時刻表</a>
+        <a href="https://www.ogasawarakaiun.co.jp/ship/" target="_blank" style="color:var(--gold);">小笠原海運</a>
       </div>
     </div>
 
@@ -2118,17 +2120,25 @@
   setInterval(loadNews, 600000); // 10分ごと更新
 
   // 大型客船入港予定（横浜港）
-  // 東京国際クルーズターミナル（有明）入港予定（JOPA情報 手動更新）
+  // 東京港 客船入港予定（JOPA情報 手動更新）
   const SHIP_SCHEDULE = [
-    { date:'2026-06-17', name:'ハンセアティック・インスピレーション', arrival:'08:00', departure:'23:00' },
-    { date:'2026-06-18', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'' },
-    { date:'2026-06-19', name:'飛鳥Ⅱ',                               arrival:'09:00', departure:'' },
-    { date:'2026-06-30', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'' },
-    { date:'2026-07-12', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
-    { date:'2026-07-24', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
-    { date:'2026-08-06', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
-    { date:'2026-08-13', name:'スペクトラム・オブ・ザ・シーズ',       arrival:'',      departure:'' },
-    { date:'2026-08-17', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'' },
+    // 東京国際クルーズターミナル（有明・江東区）
+    { date:'2026-06-17', name:'ハンセアティック・インスピレーション', arrival:'08:00', departure:'23:00', terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-06-18', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-06-19', name:'飛鳥Ⅱ',                               arrival:'09:00', departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-06-30', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-07-12', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-07-24', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-08-06', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-08-13', name:'スペクトラム・オブ・ザ・シーズ',       arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    { date:'2026-08-17', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
+    // 竹芝客船ターミナル（港区）― 小笠原航路・伊豆諸島航路
+    { date:'2026-06-19', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
+    { date:'2026-07-03', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
+    { date:'2026-07-17', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
+    { date:'2026-07-31', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
+    // 日の出桟橋（港区）― 大型客船・イベント船
+    { date:'2026-06-21', name:'にっぽん丸',                           arrival:'08:00', departure:'',      terminal:'日の出桟橋' },
   ];
 
   function renderShips() {
@@ -2147,18 +2157,30 @@
       listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">今後30日以内の入港予定なし</div>';
       return;
     }
-    listEl.innerHTML = upcoming.map(s => {
-      const d = new Date(s.date + 'T00:00:00');
-      const m = d.getMonth() + 1, day = d.getDate();
-      const label = `${m}/${day}（${wday[d.getDay()]}）`;
-      const isToday = d.getTime() === today.getTime();
-      const timeInfo = [s.arrival ? '入港 '+s.arrival : '', s.departure ? '出港 '+s.departure : ''].filter(Boolean).join('　');
-      return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-          <span style="font-size:12px;font-weight:700;color:${isToday?'var(--gold)':'var(--text)'};">${label}${isToday?' ← 本日':''}</span>
-          <span style="font-size:11px;color:var(--gray);">${timeInfo}</span>
-        </div>
-        <div style="font-size:13px;font-weight:600;">${s.name}</div>
+    // ターミナルごとにグループ化
+    const byTerminal = {};
+    upcoming.forEach(s => {
+      if (!byTerminal[s.terminal]) byTerminal[s.terminal] = [];
+      byTerminal[s.terminal].push(s);
+    });
+    listEl.innerHTML = Object.entries(byTerminal).map(([terminal, entries]) => {
+      const rows = entries.map(s => {
+        const d = new Date(s.date + 'T00:00:00');
+        const m = d.getMonth() + 1, day = d.getDate();
+        const label = `${m}/${day}（${wday[d.getDay()]}）`;
+        const isToday = d.getTime() === today.getTime();
+        const timeInfo = [s.arrival ? '入港 '+s.arrival : '', s.departure ? '出港 '+s.departure : ''].filter(Boolean).join('　');
+        return `<div style="padding:7px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+            <span style="font-size:12px;font-weight:700;color:${isToday?'var(--gold)':'var(--text)'};">${label}${isToday?' ← 本日':''}</span>
+            <span style="font-size:11px;color:var(--gray);">${timeInfo}</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;">${s.name}</div>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--gold);font-weight:700;padding:6px 0 2px;">${terminal}</div>
+        ${rows}
       </div>`;
     }).join('');
   }
