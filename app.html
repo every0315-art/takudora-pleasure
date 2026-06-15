@@ -956,6 +956,12 @@
 
     <div style="font-size:10px;color:var(--gray);text-align:right;margin-bottom:8px;">※終演時間は推定です</div>
 
+    <!-- 本日のイベント -->
+    <div class="card" style="border-color:rgba(201,168,76,.4);">
+      <div class="card-title">本日のイベント</div>
+      <div id="today-events"></div>
+    </div>
+
     <!-- 国立競技場 -->
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
@@ -1523,6 +1529,33 @@
   }
   updateTileDatetime();
   setInterval(updateTileDatetime, 1000);
+
+  // 本日のイベントを抽出
+  function buildTodayEvents() {
+    const now = new Date();
+    const todayMonth = String(now.getMonth() + 1);
+    const todayDay = String(now.getDate());
+    const container = document.getElementById('today-events');
+    if (!container) return;
+
+    const allItems = document.querySelectorAll('#tab-event .event-item');
+    const matched = [];
+    allItems.forEach(item => {
+      const m = item.querySelector('.event-month')?.textContent.replace('月','');
+      const d = item.querySelector('.event-day')?.textContent;
+      if (m === todayMonth && d === todayDay) {
+        matched.push(item.cloneNode(true));
+      }
+    });
+
+    if (matched.length === 0) {
+      container.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">本日の予定はありません</div>';
+    } else {
+      container.innerHTML = '';
+      matched.forEach(el => container.appendChild(el));
+    }
+  }
+  buildTodayEvents();
 
   // スワイプでタブ切り替え
   const tabIds = Array.from(tabs).map(t => t.dataset.tab);
