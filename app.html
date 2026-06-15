@@ -1880,7 +1880,7 @@
   updateDatetime();
   setInterval(updateDatetime, 1000);
 
-  // TOPタイルに本日のイベントをピックアップ
+  // TOPタイルに本日のイベントをピックアップ（なければ直近イベントを表示）
   function updateTopEventTile() {
     const mainEl = document.getElementById('top-event-main');
     const subEl = document.getElementById('top-event-sub');
@@ -1889,27 +1889,46 @@
     const now = new Date();
     const todayM = now.getMonth() + 1;
     const todayD = now.getDate();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const todayItems = [];
+    const futureItems = [];
 
     document.querySelectorAll('#tab-event .event-item').forEach(item => {
       const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
       const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
-      if (m === todayM && d === todayD) todayItems.push(item);
+      if (!m || !d) return;
+      const itemDate = new Date(now.getFullYear(), m - 1, d);
+      if (m === todayM && d === todayD) {
+        todayItems.push(item);
+      } else if (itemDate > today) {
+        futureItems.push({ itemDate, m, d, item });
+      }
     });
 
     if (todayItems.length > 0) {
       const first = todayItems[0];
       const name = first.querySelector('.event-name')?.textContent || '';
       const badge = first.querySelector('.badge')?.outerHTML || '';
-      const card = first.closest('.card');
-      const venue = card?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
+      const venue = first.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
       const shortName = name.length > 11 ? name.slice(0, 11) + '…' : name;
       const countNote = todayItems.length > 1 ? `<span style="font-size:11px;color:var(--gold);"> 他${todayItems.length - 1}件</span>` : '';
       mainEl.innerHTML = `${shortName}${countNote}`;
       const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/, 'font-size:9px;') : '';
       subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span>`;
+    } else if (futureItems.length > 0) {
+      futureItems.sort((a, b) => a.itemDate - b.itemDate);
+      const next = futureItems[0];
+      const name = next.item.querySelector('.event-name')?.textContent || '';
+      const badge = next.item.querySelector('.badge')?.outerHTML || '';
+      const venue = next.item.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
+      const dow = week[next.itemDate.getDay()];
+      const shortName = name.length > 10 ? name.slice(0, 10) + '…' : name;
+      mainEl.innerHTML = `<span style="font-size:11px;color:var(--gray);">本日なし　次:</span> ${shortName}`;
+      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/, 'font-size:9px;') : '';
+      subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${next.m}/${next.d}(${dow}) ${venue}</span>`;
     } else {
-      mainEl.innerHTML = '<span style="font-size:13px;color:var(--gray);">本日の予定なし</span>';
+      mainEl.innerHTML = '<span style="font-size:13px;color:var(--gray);">予定なし</span>';
       subEl.innerHTML = '';
     }
   }
