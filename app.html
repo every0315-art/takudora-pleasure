@@ -1913,18 +1913,13 @@
 
   const week = ['日','月','火','水','木','金','土'];
 
-  // 首都高交通規制マップを毎分更新
+  // 首都高交通規制マップを毎分更新（サーバープロキシ経由）
   function updateShutokoMap() {
     const img = document.getElementById('shutoko-img');
     const label = document.getElementById('shutoko-updated');
     if (!img) return;
     const now = new Date();
-    const ver = now.getFullYear()
-      + String(now.getMonth()+1).padStart(2,'0')
-      + String(now.getDate()).padStart(2,'0')
-      + String(now.getHours()).padStart(2,'0')
-      + String(now.getMinutes()).padStart(2,'0');
-    img.src = `https://search.shutoko-eng.jp/traffic/kisei-pc-v2.png?ver=${ver}`;
+    img.src = `/api/shutoko?t=${now.getTime()}`;
     if (label) label.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
   }
   updateShutokoMap();
