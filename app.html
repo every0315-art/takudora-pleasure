@@ -788,13 +788,13 @@
     </div>
 
     <div class="card">
-      <div class="card-title">道路状況マップ</div>
-      <div class="map-mock">
-        <div class="map-label">
-          地図表示エリア<br>
-          <span style="font-size:11px;">（実装時：Google Maps / 首都高API連携）</span>
-        </div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        首都高 交通規制マップ
+        <span style="font-size:10px;color:var(--gray);font-weight:400;" id="shutoko-updated"></span>
       </div>
+      <img id="shutoko-img" src="" alt="首都高交通規制マップ"
+        style="width:100%;border-radius:6px;display:block;"
+        onerror="this.style.display='none'">
     </div>
 
     <div class="card">
@@ -1912,6 +1912,23 @@
 
 
   const week = ['日','月','火','水','木','金','土'];
+
+  // 首都高交通規制マップを毎分更新
+  function updateShutokoMap() {
+    const img = document.getElementById('shutoko-img');
+    const label = document.getElementById('shutoko-updated');
+    if (!img) return;
+    const now = new Date();
+    const ver = now.getFullYear()
+      + String(now.getMonth()+1).padStart(2,'0')
+      + String(now.getDate()).padStart(2,'0')
+      + String(now.getHours()).padStart(2,'0')
+      + String(now.getMinutes()).padStart(2,'0');
+    img.src = `https://search.shutoko-eng.jp/traffic/kisei-pc-v2.png?ver=${ver}`;
+    if (label) label.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
+  }
+  updateShutokoMap();
+  setInterval(updateShutokoMap, 60000);
 
   // 日時を毎秒更新
   function updateDatetime() {
