@@ -1921,7 +1921,12 @@
         el.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">現在規制情報はありません</div>';
         return;
       }
-      const rows = data.item.map(d => {
+      const filtered = data.item.filter(d => !['車線規制','規制なし'].includes(d[6]));
+      if (filtered.length === 0) {
+        el.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">現在規制情報はありません</div>';
+        return;
+      }
+      const rows = filtered.map(d => {
         const route = d[0] || '';
         const dir = d[2] || '';
         const section = [d[3], d[4]].filter(Boolean).join(' ');
