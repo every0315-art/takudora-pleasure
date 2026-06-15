@@ -1921,7 +1921,7 @@
         el.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">現在規制情報はありません</div>';
         return;
       }
-      const filtered = data.item.filter(d => !['車線規制','１車線規制','規制なし'].includes(d[6]));
+      const filtered = data.item.filter(d => !['車線規制','１車線規制','1車線規制','規制なし'].includes(d[6]));
       if (filtered.length === 0) {
         el.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">現在規制情報はありません</div>';
         return;
