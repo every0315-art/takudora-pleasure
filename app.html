@@ -1962,6 +1962,67 @@
     'ヤクルト vs 中日': 'https://www.yakult-swallows.co.jp/game',
   };
 
+  // 今週のイベントカードを動的生成（venue-bodyラッパー処理より前に実行）
+  (function buildWeekEvents() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const collected = [];
+    document.querySelectorAll('#tab-event .event-item').forEach(item => {
+      const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
+      const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
+      if (!m || !d) return;
+      const itemDate = new Date(now.getFullYear(), m - 1, d);
+      if (itemDate < monday || itemDate > sunday) return;
+      const venue = item.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
+      const name = item.querySelector('.event-name')?.textContent || '';
+      const meta = item.querySelector('.event-meta')?.innerHTML || '';
+      const badge = item.querySelector('.badge')?.outerHTML || '';
+      collected.push({ itemDate, m, d, venue, name, meta, badge });
+    });
+
+    if (collected.length === 0) return;
+    collected.sort((a, b) => a.itemDate - b.itemDate);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'card-title';
+    titleEl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+    titleEl.innerHTML = `今週のイベント <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;">${collected.length}件</span>`;
+    card.appendChild(titleEl);
+
+    collected.forEach(({ m, d, itemDate, venue, name, meta, badge }) => {
+      const dayLabel = week[itemDate.getDay()];
+      const isToday = itemDate.getTime() === today.getTime();
+      const row = document.createElement('div');
+      row.className = 'event-item';
+      row.dataset.eventName = name;
+      row.innerHTML = `
+        <div class="event-date">
+          <div class="event-month">${m}月</div>
+          <div class="event-day" style="${isToday ? 'color:var(--gold);' : ''}">${d}</div>
+          <div style="font-size:9px;color:${isToday ? 'var(--gold)' : 'var(--gray)'};">${dayLabel}${isToday ? '・今日' : ''}</div>
+        </div>
+        <div class="event-info">
+          <div class="event-name">${name}</div>
+          <div class="event-meta">${meta}</div>
+          <div class="event-demand">${badge}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span></div>
+        </div>`;
+      card.appendChild(row);
+    });
+
+    const tabEvent = document.getElementById('tab-event');
+    const notice = tabEvent.querySelector('div[style*="font-size:10px"]');
+    tabEvent.insertBefore(card, notice ? notice.nextSibling : tabEvent.firstElementChild);
+  })();
+
   // イベントタブ各カードのcard-title以外をvenue-bodyにまとめる（開閉用）
   document.querySelectorAll('#tab-event .card').forEach(card => {
     const title = card.querySelector('.card-title');
