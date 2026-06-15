@@ -457,10 +457,10 @@
     <div class="top-layout">
 
       <!-- 行1左：イベント -->
-      <div class="tile tile-event" data-tab="event">
+      <div class="tile tile-event" data-tab="event" id="top-event-tile">
         <div class="tile-label">イベント</div>
-        <div class="tile-main s-white" style="font-size:14px; font-weight:700; line-height:1.4;">B'z 国立競技場<br><span style="font-size:12px; color:var(--gray);">今夜 21:30終演</span></div>
-        <div class="tile-sub"><span class="badge badge-red" style="font-size:9px;">需要 最大級</span> 外苑 / 信濃町</div>
+        <div id="top-event-main" class="tile-main s-white" style="font-size:14px; font-weight:700; line-height:1.4;">－</div>
+        <div id="top-event-sub" class="tile-sub"></div>
       </div>
 
       <!-- 行1中央：天気（横長） -->
@@ -1018,6 +1018,30 @@
       </div>
       <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">終演後：水道橋 / 後楽園 / 飯田橋</div>
       <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">19</div></div>
+        <div class="event-info">
+          <div class="event-name">巨人 vs 中日</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">20</div></div>
+        <div class="event-info">
+          <div class="event-name">巨人 vs 中日</div>
+          <div class="event-meta">開始 14:00 → <strong style="color:var(--white);">終了 17:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">21</div></div>
+        <div class="event-info">
+          <div class="event-name">巨人 vs 中日</div>
+          <div class="event-meta">開始 14:00 → <strong style="color:var(--white);">終了 17:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
         <div class="event-date"><div class="event-month">6月</div><div class="event-day">22</div></div>
         <div class="event-info">
           <div class="event-name">巨人 vs 楽天</div>
@@ -1258,6 +1282,110 @@
           <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
         </div>
       </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">3</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs DeNA</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">4</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs DeNA</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">5</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs DeNA</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">14</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 巨人</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">15</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 巨人</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">16</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 巨人</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">20</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 中日</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">21</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 中日</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">22</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 中日</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">24</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 広島</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">25</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 広島</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">26</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 広島</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">7月</div><div class="event-day">31</div></div>
+        <div class="event-info">
+          <div class="event-name">ヤクルト vs 阪神</div>
+          <div class="event-meta">開始 18:00 → <strong style="color:var(--white);">終了 21:30頃</strong></div>
+          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
+        </div>
+      </div>
     </div>
 
     <!-- 有明アリーナ -->
@@ -1267,6 +1395,22 @@
         <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;">江東区有明 · 収容15,000人</span>
       </div>
       <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">終演後：国際展示場 / 有明テニスの森</div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">16</div></div>
+        <div class="event-info">
+          <div class="event-name">CUTIE STREET 単独LIVE -05 STREET-</div>
+          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
+          <div class="event-demand"><span class="badge badge-gold">需要 あり</span></div>
+        </div>
+      </div>
+      <div class="event-item">
+        <div class="event-date"><div class="event-month">6月</div><div class="event-day">17</div></div>
+        <div class="event-info">
+          <div class="event-name">CUTIE STREET 単独LIVE -05 STREET-</div>
+          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
+          <div class="event-demand"><span class="badge badge-gold">需要 あり</span></div>
+        </div>
+      </div>
       <div class="event-item">
         <div class="event-date"><div class="event-month">6月</div><div class="event-day">20</div></div>
         <div class="event-info">
@@ -1356,62 +1500,27 @@
         <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;">江東区有明 · 収容8,000人</span>
       </div>
       <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">終演後：国際展示場 / 有明テニスの森</div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">6月</div><div class="event-day">20</div></div>
-        <div class="event-info">
-          <div class="event-name">ファンモン×いきものがかり 20周年対バンライブ</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-red">需要 高</span></div>
-        </div>
-      </div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">6月</div><div class="event-day">21</div></div>
-        <div class="event-info">
-          <div class="event-name">ファンモン×いきものがかり 20周年対バンライブ</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-red">需要 高</span></div>
-        </div>
-      </div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">6月</div><div class="event-day">27</div></div>
-        <div class="event-info">
-          <div class="event-name">マルシィ 全国ホールツアー 2026</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-gold">需要 あり</span></div>
-        </div>
-      </div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">6月</div><div class="event-day">28</div></div>
-        <div class="event-info">
-          <div class="event-name">マルシィ 全国ホールツアー 2026</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-gold">需要 あり</span></div>
-        </div>
-      </div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">7月</div><div class="event-day">21</div></div>
-        <div class="event-info">
-          <div class="event-name">Saucy Dog ONEMAN LIVE 2026</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
-        </div>
-      </div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">7月</div><div class="event-day">25</div></div>
-        <div class="event-info">
-          <div class="event-name">中島健人 2026年全国ツアー</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
-        </div>
-      </div>
-      <div class="event-item">
-        <div class="event-date"><div class="event-month">7月</div><div class="event-day">26</div></div>
-        <div class="event-info">
-          <div class="event-name">中島健人 2026年全国ツアー</div>
-          <div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div>
-          <div class="event-demand"><span class="badge badge-yellow">需要 中</span></div>
-        </div>
-      </div>
+      <div class="event-item"><div class="event-date"><div class="event-month">6月</div><div class="event-day">20</div></div><div class="event-info"><div class="event-name">FUNKY MONKEY BΛBY'S × いきものがかり 20周年対バンライブ</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-red">需要 高</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">6月</div><div class="event-day">21</div></div><div class="event-info"><div class="event-name">FUNKY MONKEY BΛBY'S × いきものがかり 20周年対バンライブ</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-red">需要 高</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">6月</div><div class="event-day">27</div></div><div class="event-info"><div class="event-name">マルシィ 全国ホールツアー 2026</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">6月</div><div class="event-day">28</div></div><div class="event-info"><div class="event-name">マルシィ 全国ホールツアー 2026</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">3</div></div><div class="event-info"><div class="event-name">赤西仁</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">4</div></div><div class="event-info"><div class="event-name">赤西仁</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">5</div></div><div class="event-info"><div class="event-name">赤西仁</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">7</div></div><div class="event-info"><div class="event-name">ポルノグラフィティ</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">8</div></div><div class="event-info"><div class="event-name">ポルノグラフィティ</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">10</div></div><div class="event-info"><div class="event-name">女王蜂</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">11</div></div><div class="event-info"><div class="event-name">HANA</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">12</div></div><div class="event-info"><div class="event-name">HANA</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">17</div></div><div class="event-info"><div class="event-name">キタニタツヤ</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">18</div></div><div class="event-info"><div class="event-name">DIR EN GREY</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">19</div></div><div class="event-info"><div class="event-name">DIR EN GREY</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">22</div></div><div class="event-info"><div class="event-name">THE ORAL CIGARETTES</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">23</div></div><div class="event-info"><div class="event-name">THE ORAL CIGARETTES</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">25</div></div><div class="event-info"><div class="event-name">中島健人 2026年全国ツアー</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">26</div></div><div class="event-info"><div class="event-name">中島健人 2026年全国ツアー</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-yellow">需要 中</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">27</div></div><div class="event-info"><div class="event-name">M!LK PREMIUM MILK ファンミーティング</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
+      <div class="event-item"><div class="event-date"><div class="event-month">7月</div><div class="event-day">31</div></div><div class="event-info"><div class="event-name">DAIENKAI</div><div class="event-meta">開演時間未定 → <strong style="color:var(--white);">終演 21:00頃</strong></div><div class="event-demand"><span class="badge badge-gold">需要 あり</span></div></div></div>
     </div>
 
     <!-- 日本武道館 -->
@@ -1773,6 +1882,58 @@
   }
   buildTodayEvents();
 
+  // TOPタイルにイベントをピックアップ
+  function updateTopEventTile() {
+    const mainEl = document.getElementById('top-event-main');
+    const subEl = document.getElementById('top-event-sub');
+    if (!mainEl || !subEl) return;
+
+    const now = new Date();
+    const todayM = String(now.getMonth() + 1);
+    const todayD = String(now.getDate());
+
+    // 今日 or 今後の全イベントを日付順に収集
+    const allItems = document.querySelectorAll('#tab-event .event-item');
+    let todayItems = [];
+    let upcomingItem = null;
+
+    allItems.forEach(item => {
+      const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
+      const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
+      if (m === parseInt(todayM) && d === parseInt(todayD)) {
+        todayItems.push(item);
+      } else if (!upcomingItem) {
+        const isFuture = m > parseInt(todayM) || (m === parseInt(todayM) && d > parseInt(todayD));
+        if (isFuture) upcomingItem = item;
+      }
+    });
+
+    if (todayItems.length > 0) {
+      const first = todayItems[0];
+      const name = first.querySelector('.event-name')?.textContent || '';
+      const meta = first.querySelector('.event-meta')?.textContent || '';
+      const badge = first.querySelector('.badge')?.outerHTML || '';
+      const shortName = name.length > 12 ? name.slice(0, 12) + '…' : name;
+      const endMatch = meta.match(/終演\s*(\S+)/);
+      const endTime = endMatch ? `今夜 ${endMatch[1]}` : '';
+      const countNote = todayItems.length > 1 ? `<span style="font-size:11px;color:var(--gold);"> 他${todayItems.length - 1}件</span>` : '';
+      mainEl.innerHTML = `${shortName}${countNote}<br><span style="font-size:12px;color:var(--gray);">${endTime}</span>`;
+      subEl.innerHTML = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+    } else if (upcomingItem) {
+      const name = upcomingItem.querySelector('.event-name')?.textContent || '';
+      const m = upcomingItem.querySelector('.event-month')?.textContent || '';
+      const d = upcomingItem.querySelector('.event-day')?.textContent || '';
+      const badge = upcomingItem.querySelector('.badge')?.outerHTML || '';
+      const shortName = name.length > 12 ? name.slice(0, 12) + '…' : name;
+      mainEl.innerHTML = `${shortName}<br><span style="font-size:12px;color:var(--gray);">${m}${d}日 開催予定</span>`;
+      subEl.innerHTML = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+    } else {
+      mainEl.innerHTML = '<span style="font-size:13px;color:var(--gray);">予定なし</span>';
+      subEl.innerHTML = '';
+    }
+  }
+  updateTopEventTile();
+
   // 会場カードを開閉式に（本日のイベントカードはスキップ）
   document.querySelectorAll('#tab-event .card').forEach((card, i) => {
     if (i === 0) return;
@@ -1818,6 +1979,16 @@
     'マルシィ 全国ホールツアー 2026': 'https://eplus.jp/sf/search?keyword=%E3%83%9E%E3%83%AB%E3%82%B7%E3%82%A3',
     'Saucy Dog ONEMAN LIVE 2026': 'https://eplus.jp/sf/search?keyword=Saucy+Dog',
     '中島健人 2026年全国ツアー': 'https://eplus.jp/sf/search?keyword=%E4%B8%AD%E5%B3%B6%E5%81%A5%E4%BA%BA',
+    'FUNKY MONKEY BΛBY\'S × いきものがかり 20周年対バンライブ': 'https://eplus.jp/sf/search?keyword=%E3%83%95%E3%82%A1%E3%83%B3%E3%82%AD%E3%83%BC%E3%83%A2%E3%83%B3%E3%82%AD%E3%83%BC',
+    '赤西仁': 'https://eplus.jp/sf/search?keyword=%E8%B5%A4%E8%A5%BF%E4%BB%81',
+    'ポルノグラフィティ': 'https://eplus.jp/sf/search?keyword=%E3%83%9D%E3%83%AB%E3%83%8E%E3%82%B0%E3%83%A9%E3%83%95%E3%82%A3%E3%83%86%E3%82%A3',
+    '女王蜂': 'https://eplus.jp/sf/search?keyword=%E5%A5%B3%E7%8E%8B%E8%9C%82',
+    'HANA': 'https://eplus.jp/sf/search?keyword=HANA',
+    'キタニタツヤ': 'https://eplus.jp/sf/search?keyword=%E3%82%AD%E3%82%BF%E3%83%8B%E3%82%BF%E3%83%84%E3%83%A4',
+    'DIR EN GREY': 'https://eplus.jp/sf/search?keyword=DIR+EN+GREY',
+    'THE ORAL CIGARETTES': 'https://eplus.jp/sf/search?keyword=THE+ORAL+CIGARETTES',
+    'M!LK PREMIUM MILK ファンミーティング': 'https://eplus.jp/sf/search?keyword=M%21LK',
+    'DAIENKAI': 'https://eplus.jp/sf/search?keyword=DAIENKAI',
     'SKY-HI': 'https://eplus.jp/sf/search?keyword=SKY-HI',
     'アンジュルム': 'https://eplus.jp/sf/search?keyword=%E3%82%A2%E3%83%B3%E3%82%B8%E3%83%A5%E3%83%AB%E3%83%A0',
     'モーニング娘。': 'https://eplus.jp/sf/search?keyword=%E3%83%A2%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E5%A8%98%E3%80%82',
