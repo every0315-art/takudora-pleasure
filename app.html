@@ -1892,8 +1892,8 @@
     const todayM = String(now.getMonth() + 1);
     const todayD = String(now.getDate());
 
-    // 今日 or 今後の全イベントを日付順に収集
-    const allItems = document.querySelectorAll('#tab-event .event-item');
+    // today-eventsカード（複製）を除く元データのみ対象
+    const allItems = document.querySelectorAll('#tab-event .card:not(:first-child) .event-item');
     let todayItems = [];
     let upcomingItem = null;
 
@@ -1908,25 +1908,35 @@
       }
     });
 
+    const getVenue = item => {
+      const card = item.closest('.card');
+      const titleEl = card?.querySelector('.card-title');
+      return titleEl ? titleEl.childNodes[0]?.textContent?.trim() || '' : '';
+    };
+
     if (todayItems.length > 0) {
       const first = todayItems[0];
       const name = first.querySelector('.event-name')?.textContent || '';
       const meta = first.querySelector('.event-meta')?.textContent || '';
       const badge = first.querySelector('.badge')?.outerHTML || '';
-      const shortName = name.length > 12 ? name.slice(0, 12) + '…' : name;
+      const venue = getVenue(first);
+      const shortName = name.length > 11 ? name.slice(0, 11) + '…' : name;
       const endMatch = meta.match(/終演\s*(\S+)/);
       const endTime = endMatch ? `今夜 ${endMatch[1]}` : '';
       const countNote = todayItems.length > 1 ? `<span style="font-size:11px;color:var(--gold);"> 他${todayItems.length - 1}件</span>` : '';
       mainEl.innerHTML = `${shortName}${countNote}<br><span style="font-size:12px;color:var(--gray);">${endTime}</span>`;
-      subEl.innerHTML = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+      subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span>`;
     } else if (upcomingItem) {
       const name = upcomingItem.querySelector('.event-name')?.textContent || '';
       const m = upcomingItem.querySelector('.event-month')?.textContent || '';
       const d = upcomingItem.querySelector('.event-day')?.textContent || '';
       const badge = upcomingItem.querySelector('.badge')?.outerHTML || '';
-      const shortName = name.length > 12 ? name.slice(0, 12) + '…' : name;
+      const venue = getVenue(upcomingItem);
+      const shortName = name.length > 11 ? name.slice(0, 11) + '…' : name;
       mainEl.innerHTML = `${shortName}<br><span style="font-size:12px;color:var(--gray);">${m}${d}日 開催予定</span>`;
-      subEl.innerHTML = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/,'font-size:9px;') : '';
+      subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span>`;
     } else {
       mainEl.innerHTML = '<span style="font-size:13px;color:var(--gray);">予定なし</span>';
       subEl.innerHTML = '';
