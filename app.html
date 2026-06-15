@@ -952,15 +952,10 @@
     </div>
 
     <div class="card">
-      <div class="card-title">終電・需要予測</div>
-      <table class="tbl">
-        <tr><th>路線</th><th>主要駅 終電</th><th>需要予測</th></tr>
-        <tr><td>山手線</td><td>新宿 00:53</td><td><span class="badge badge-red">需要高</span></td></tr>
-        <tr><td>中央線</td><td>新宿 00:39</td><td><span class="badge badge-red">需要高</span></td></tr>
-        <tr><td>東横線</td><td>渋谷 00:27</td><td><span class="badge badge-yellow">やや高</span></td></tr>
-        <tr><td>銀座線</td><td>渋谷 00:17</td><td><span class="badge badge-yellow">やや高</span></td></tr>
-      </table>
-      <div style="font-size:12px; color:var(--gray); margin-top:12px;">終電後30分間は各ターミナル駅周辺でタクシー需要が急増します。</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        終電・需要予測 <span id="lasttrain-time" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
+      </div>
+      <div id="lasttrain-table"></div>
     </div>
 
   </div>
@@ -1965,6 +1960,68 @@
   }
   loadTrainInfo();
   setInterval(loadTrainInfo, 60000);
+
+  // 終電・需要予測（実際の時刻表データ＋現在時刻から需要を計算）
+  const LAST_TRAINS = [
+    // [路線, 発駅→方向, 終電HH, 終電MM]
+    { line: '山手線', sta: '新宿 → 池袋方面', h: 0, m: 51 },
+    { line: '中央線快速', sta: '新宿 → 東京', h: 0, m: 38 },
+    { line: '埼京線', sta: '新宿 → 大宮', h: 0, m: 25 },
+    { line: '湘南新宿ライン', sta: '新宿 → 横浜', h: 0, m: 15 },
+    { line: '小田急小田原線', sta: '新宿 → 小田原方面', h: 0, m: 14 },
+    { line: '京王線', sta: '新宿 → 府中方面', h: 0, m: 21 },
+    { line: '都営新宿線', sta: '新宿 → 本八幡', h: 0, m: 8 },
+    { line: '都営大江戸線', sta: '新宿 → 光が丘', h: 0, m: 5 },
+    { line: '丸ノ内線', sta: '新宿 → 荻窪', h: 0, m: 7 },
+    { line: '東急東横線', sta: '渋谷 → 横浜', h: 0, m: 26 },
+    { line: '東急田園都市線', sta: '渋谷 → 中央林間', h: 0, m: 16 },
+    { line: '銀座線', sta: '渋谷 → 浅草', h: 0, m: 13 },
+    { line: '半蔵門線', sta: '渋谷 → 押上', h: 0, m: 17 },
+    { line: '副都心線', sta: '渋谷 → 和光市', h: 0, m: 21 },
+    { line: '西武池袋線', sta: '池袋 → 所沢', h: 0, m: 4 },
+    { line: '東武東上線', sta: '池袋 → 志木', h: 0, m: 7 },
+    { line: '有楽町線', sta: '池袋 → 新木場', h: 0, m: 5 },
+    { line: '京浜東北線', sta: '東京 → 大宮', h: 0, m: 19 },
+    { line: '上野東京ライン', sta: '東京 → 宇都宮/高崎', h: 0, m: 4 },
+    { line: '東急目黒線', sta: '目黒 → 日吉', h: 0, m: 10 },
+    { line: '南北線', sta: '目黒 → 赤羽岩淵', h: 0, m: 13 },
+    { line: '京急本線', sta: '品川 → 横浜', h: 0, m: 26 },
+    { line: '東武スカイツリーライン', sta: '浅草 → 竹ノ塚', h: 0, m: 15 },
+  ];
+
+  function updateLastTrains() {
+    const el = document.getElementById('lasttrain-table');
+    const timeEl = document.getElementById('lasttrain-time');
+    if (!el) return;
+    const now = new Date();
+    let nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin < 4 * 60) nowMin += 24 * 60; // 深夜0〜4時を24〜28時扱い
+    if (timeEl) timeEl.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 現在`;
+
+    const rows = LAST_TRAINS.map(t => {
+      let tMin = t.h * 60 + t.m;
+      if (tMin < 4 * 60) tMin += 24 * 60;
+      const remain = tMin - nowMin;
+      const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
+      let badge;
+      if (remain < 0) {
+        badge = `<span class="badge badge-red">終電済</span>`;
+      } else if (remain <= 15) {
+        badge = `<span class="badge badge-red">残り${remain}分</span>`;
+      } else if (remain <= 45) {
+        badge = `<span class="badge badge-yellow">残り${remain}分</span>`;
+      } else if (nowMin >= 21 * 60) {
+        badge = `<span class="badge" style="background:var(--green);color:#fff;">あと${remain}分</span>`;
+      } else {
+        badge = `<span style="font-size:11px;color:var(--gray);">−</span>`;
+      }
+      return `<tr><td style="font-size:12px;">${t.line}<div style="font-size:10px;color:var(--gray);">${t.sta}</div></td><td style="font-size:13px;font-weight:600;white-space:nowrap;">${timeStr}</td><td>${badge}</td></tr>`;
+    });
+    el.innerHTML = `<table class="tbl"><tr><th>路線</th><th>終電</th><th>状況</th></tr>${rows.join('')}</table>
+      <div style="font-size:11px;color:var(--gray);margin-top:8px;">残り15分以内・終電済み → タクシー需要急増ゾーン</div>`;
+  }
+  updateLastTrains();
+  setInterval(updateLastTrains, 60000);
 
   // 日時を毎秒更新
   function updateDatetime() {
