@@ -1,3 +1,67 @@
+const OPERATOR_URLS = {
+  // JR東日本
+  '山手線':                   'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '京浜東北根岸線':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '中央線快速':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '中央・総武線各駅停車':     'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '中央本線':                 'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '総武線快速':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '埼京線':                   'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '湘南新宿ライン':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '上野東京ライン':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '南武線':                   'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '横浜線':                   'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  // 東京メトロ
+  '銀座線':     'https://www.tokyometro.jp/unkou/index.html',
+  '丸ノ内線':   'https://www.tokyometro.jp/unkou/index.html',
+  '日比谷線':   'https://www.tokyometro.jp/unkou/index.html',
+  '東西線':     'https://www.tokyometro.jp/unkou/index.html',
+  '千代田線':   'https://www.tokyometro.jp/unkou/index.html',
+  '有楽町線':   'https://www.tokyometro.jp/unkou/index.html',
+  '半蔵門線':   'https://www.tokyometro.jp/unkou/index.html',
+  '南北線':     'https://www.tokyometro.jp/unkou/index.html',
+  '副都心線':   'https://www.tokyometro.jp/unkou/index.html',
+  // 都営
+  '都営浅草線': 'https://www.kotsu.metro.tokyo.jp/other/notices/doei_unkou.html',
+  '都営三田線': 'https://www.kotsu.metro.tokyo.jp/other/notices/doei_unkou.html',
+  '都営新宿線': 'https://www.kotsu.metro.tokyo.jp/other/notices/doei_unkou.html',
+  '都営大江戸線':'https://www.kotsu.metro.tokyo.jp/other/notices/doei_unkou.html',
+  // 東急
+  '東急東横線':     'https://www.tokyu.co.jp/railway/train_info/',
+  '東急田園都市線': 'https://www.tokyu.co.jp/railway/train_info/',
+  '東急目黒線':     'https://www.tokyu.co.jp/railway/train_info/',
+  '東急大井町線':   'https://www.tokyu.co.jp/railway/train_info/',
+  '東急池上線':     'https://www.tokyu.co.jp/railway/train_info/',
+  '東急多摩川線':   'https://www.tokyu.co.jp/railway/train_info/',
+  '東急世田谷線':   'https://www.tokyu.co.jp/railway/train_info/',
+  // 小田急
+  '小田急小田原線': 'https://www.odakyu.jp/train/',
+  '小田急江ノ島線': 'https://www.odakyu.jp/train/',
+  '小田急多摩線':   'https://www.odakyu.jp/train/',
+  // 京王
+  '京王線':       'https://www.keio.co.jp/train/transfer/index.html',
+  '京王井の頭線': 'https://www.keio.co.jp/train/transfer/index.html',
+  '京王相模原線': 'https://www.keio.co.jp/train/transfer/index.html',
+  // 西武
+  '西武新宿線': 'https://www.seiburailway.jp/railways/operation/',
+  '西武池袋線': 'https://www.seiburailway.jp/railways/operation/',
+  // 東武
+  '東武スカイツリーライン': 'https://www.tobu.co.jp/railway/guide/operation_information/',
+  '東武東上線':             'https://www.tobu.co.jp/railway/guide/operation_information/',
+  '東武亀戸線':             'https://www.tobu.co.jp/railway/guide/operation_information/',
+  // 京急
+  '京急本線':   'https://www.keikyu.co.jp/train/',
+  '京急空港線': 'https://www.keikyu.co.jp/train/',
+  // その他
+  'ゆりかもめ':               'https://www.yurikamome.co.jp/trafficinfo/',
+  '東京モノレール':           'https://www.tokyo-monorail.co.jp/trains/transfer/',
+  '東京臨海高速鉄道りんかい線':'https://www.twr.co.jp/',
+  '北総線':                   'https://www.hokuso-railway.co.jp/train_info/',
+  '東葉高速線':               'https://www.toyokosoku.co.jp/',
+  'つくばエクスプレス':       'https://www.mir.co.jp/',
+  '多摩都市モノレール':       'https://www.tama-monorail.co.jp/',
+};
+
 // 都内主要路線のホワイトリスト
 const TOKYO_LINES = new Set([
   // JR
@@ -41,16 +105,13 @@ export default async function handler(req, res) {
       .map(r => {
         const p = r.routeInfo?.property || {};
         const d = p.diainfo?.[0] || {};
-        const railCode = r.routeInfo?.railCode || '';
         return {
           name: p.displayName || p.railName || '',
           company: p.companyName || '',
           status: d.status || '',
           message: d.message || '',
           updatedAt: d.updateDate || '',
-          url: railCode
-            ? `https://transit.yahoo.co.jp/diainfo/${railCode}/0`
-            : 'https://transit.yahoo.co.jp/diainfo/area/4',
+          url: OPERATOR_URLS[p.displayName || p.railName || ''] || 'https://transit.yahoo.co.jp/diainfo/area/4',
         };
       })
       .filter(l => TOKYO_LINES.has(l.name));
