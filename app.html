@@ -963,9 +963,9 @@
 
     <div style="font-size:10px;color:var(--gray);text-align:right;margin-bottom:8px;">※終演時間は推定です</div>
 
-    <!-- 本日のイベント -->
+    <!-- 今週のイベント -->
     <div class="card" style="border-color:rgba(201,168,76,.4);">
-      <div class="card-title">本日のイベント</div>
+      <div class="card-title">今週のイベント</div>
       <div id="today-events"></div>
     </div>
 
@@ -1898,26 +1898,28 @@
   updateTileDatetime();
   setInterval(updateTileDatetime, 1000);
 
-  // 本日のイベントを抽出
+  // 今週のイベントを抽出（今日〜6日後）
   function buildTodayEvents() {
     const now = new Date();
-    const todayMonth = String(now.getMonth() + 1);
-    const todayDay = String(now.getDate());
+    now.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(now);
+    weekEnd.setDate(weekEnd.getDate() + 6);
     const container = document.getElementById('today-events');
     if (!container) return;
 
-    const allItems = document.querySelectorAll('#tab-event .event-item');
+    const allItems = document.querySelectorAll('#tab-event .card:not(:first-child) .event-item');
     const matched = [];
     allItems.forEach(item => {
-      const m = item.querySelector('.event-month')?.textContent.replace('月','');
-      const d = item.querySelector('.event-day')?.textContent;
-      if (m === todayMonth && d === todayDay) {
+      const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
+      const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
+      const itemDate = new Date(now.getFullYear(), m - 1, d);
+      if (itemDate >= now && itemDate <= weekEnd) {
         matched.push(item.cloneNode(true));
       }
     });
 
     if (matched.length === 0) {
-      container.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">本日の予定はありません</div>';
+      container.innerHTML = '<div style="font-size:13px;color:var(--gray);padding:8px 0;">今週の予定はありません</div>';
     } else {
       container.innerHTML = '';
       matched.forEach(el => container.appendChild(el));
