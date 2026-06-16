@@ -502,10 +502,12 @@
       </div>
 
       <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda">
-        <div class="tile-label">羽田空港</div>
-        <div class="tile-main gold">32台<br><span style="font-size:13px;">プール待機</span></div>
-        <div class="tile-sub">待ち約18分 · 次便 14:30</div>
+      <div class="tile tile-haneda" data-tab="haneda" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
+        <div class="tile-label" style="padding:6px 10px 0;">羽田空港</div>
+        <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+          <img id="top-haneda-img1" src="" alt="プール状況" style="width:100%;flex:1;object-fit:cover;display:block;min-height:0;">
+          <img id="top-haneda-img2" src="" alt="国際線T3" style="width:100%;flex:1;object-fit:cover;display:block;min-height:0;border-top:1px solid rgba(255,255,255,.1);">
+        </div>
       </div>
 
       <!-- 行2右：道路情報 -->
@@ -2101,6 +2103,10 @@
     const pad = n => String(n).padStart(2, '0');
     const stamp = `${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
     img.src = `https://ttc.taxi-inf.jp/Real01_line.jpg?${stamp}`;
+    const topImg1 = document.getElementById('top-haneda-img1');
+    if (topImg1) topImg1.src = `https://ttc.taxi-inf.jp/Real01_line.jpg?${stamp}`;
+    const topImg2 = document.getElementById('top-haneda-img2');
+    if (topImg2) topImg2.src = `https://ttc.taxi-inf.jp/Real04.jpg?${stamp}`;
     const img2 = document.getElementById('ttc-img2');
     if (img2) img2.src = `https://ttc.taxi-inf.jp/Real02.jpg?${stamp}`;
     const img3 = document.getElementById('ttc-img3');
