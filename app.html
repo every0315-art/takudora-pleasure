@@ -721,60 +721,24 @@
       <div style="padding:6px 12px 10px;font-size:10px;color:var(--gray);">出典: ttc.taxi-inf.jp · タップで詳細</div>
     </div>
 
-    <div class="alert alert-green">
-      <div class="alert-icon">✈</div>
-      <div>国際線の到着ラッシュまであと <strong>約40分</strong>。プール入りのタイミングです。</div>
-    </div>
-
-    <div class="grid2">
-      <div class="card" style="margin:0;">
-        <div class="card-title">タクシープール状況</div>
-        <div class="kpi">
-          <div class="kpi-value gold">32</div>
-          <div class="kpi-label">現在の待機台数</div>
-        </div>
-        <div style="margin-top:12px;">
-          <div class="status-row"><span class="status-label">推定待ち時間</span><span class="status-val s-green">約18分</span></div>
-          <div class="status-row"><span class="status-label">入構待ち</span><span class="status-val s-white">なし</span></div>
-          <div class="status-row"><span class="status-label">プール収容</span><span class="status-val s-white">32 / 200台</span></div>
-        </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        ターミナル別 到着便（リアルタイム）
+        <span id="haneda-arr-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
       </div>
-
-      <div class="card" style="margin:0;">
-        <div class="card-title">ターミナル別 到着便</div>
-        <table class="tbl">
-          <tr><th>時刻</th><th>便名</th><th>出発地</th><th>状態</th></tr>
-          <tr><td>13:45</td><td>NH801</td><td>香港</td><td><span class="badge badge-green">着陸済</span></td></tr>
-          <tr><td>14:10</td><td>JL031</td><td>ロンドン</td><td><span class="badge badge-yellow">遅延20分</span></td></tr>
-          <tr><td>14:30</td><td>KE705</td><td>ソウル</td><td><span class="badge badge-gold">定刻</span></td></tr>
-          <tr><td>14:55</td><td>CA921</td><td>北京</td><td><span class="badge badge-gold">定刻</span></td></tr>
-          <tr><td>15:20</td><td>NH107</td><td>ニューヨーク</td><td><span class="badge badge-gold">定刻</span></td></tr>
-          <tr><td>15:40</td><td>SQ637</td><td>シンガポール</td><td><span class="badge badge-gold">定刻</span></td></tr>
-        </table>
+      <div id="haneda-arr-body" style="min-height:60px;">
+        <div style="color:var(--gray);font-size:12px;padding:8px 0;">読み込み中…</div>
       </div>
+      <div style="padding:6px 0 0;font-size:10px;color:var(--gray);">ADS-B · 高度5,000ft以下または空港2nm以内の機体を表示 · 60秒更新</div>
     </div>
 
     <div class="card">
       <div class="card-title">入構ルール</div>
       <div style="font-size:14px; color:var(--text); line-height:1.9;">
-        <div class="status-row"><span class="status-label">受付場所</span><span class="status-val s-white">T2国際線 タクシープール受付棟</span></div>
+        <div class="status-row"><span class="status-label">受付場所</span><span class="status-val s-white">T3国際線 タクシープール受付棟</span></div>
         <div class="status-row"><span class="status-label">営業許可証</span><span class="status-val s-white">提示必須（東京都二種免許）</span></div>
         <div class="status-row"><span class="status-label">定員超過</span><span class="status-val s-red">受付締切あり（随時確認）</span></div>
         <div class="status-row"><span class="status-label">待機中の禁止事項</span><span class="status-val s-white">エンジン切る・携帯注意</span></div>
-        <div class="status-row"><span class="status-label">次回更新</span><span class="status-val s-yellow">5分後</span></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">今週の傾向</div>
-      <div class="bar-chart">
-        <div class="bar-wrap"><div class="bar-val">18分</div><div class="bar" style="height:60%"></div><div class="bar-label">月</div></div>
-        <div class="bar-wrap"><div class="bar-val">24分</div><div class="bar" style="height:80%"></div><div class="bar-label">火</div></div>
-        <div class="bar-wrap"><div class="bar-val">15分</div><div class="bar" style="height:50%"></div><div class="bar-label">水</div></div>
-        <div class="bar-wrap"><div class="bar-val">31分</div><div class="bar" style="height:100%"></div><div class="bar-label">木</div></div>
-        <div class="bar-wrap"><div class="bar-val">28分</div><div class="bar" style="height:92%"></div><div class="bar-label">金</div></div>
-        <div class="bar-wrap"><div class="bar-val">12分</div><div class="bar" style="height:40%; opacity:.5;"></div><div class="bar-label">土</div></div>
-        <div class="bar-wrap"><div class="bar-val">9分</div><div class="bar" style="height:30%; opacity:.5;"></div><div class="bar-label">日</div></div>
       </div>
     </div>
 
@@ -2145,6 +2109,52 @@
   }
   loadTtcImage();
   setInterval(loadTtcImage, 60000);
+
+  // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
+  const HANEDA_TERMINAL_LABEL = {
+    1: '第1ターミナル（JAL系 国内線）',
+    2: '第2ターミナル（ANA系 国内線）',
+    3: '第3ターミナル（国際線）',
+  };
+  async function loadHanedaArr() {
+    const bodyEl = document.getElementById('haneda-arr-body');
+    const updEl  = document.getElementById('haneda-arr-updated');
+    if (!bodyEl) return;
+    try {
+      const res = await fetch('/api/haneda-arr');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const { terminals, updatedAt } = data;
+      const now = new Date(updatedAt);
+      const pad = n => String(n).padStart(2,'0');
+      if (updEl) updEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())} 更新`;
+      let html = '';
+      for (const t of [1, 2, 3]) {
+        const flights = (terminals[t] || []);
+        html += `<div style="margin-bottom:10px;">`;
+        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 4px;">${HANEDA_TERMINAL_LABEL[t]}</div>`;
+        if (flights.length === 0) {
+          html += `<div style="font-size:12px;color:var(--gray);padding:2px 0 4px;">対象機なし</div>`;
+        } else {
+          html += `<table class="tbl"><tr><th>便名</th><th>航空会社</th><th>状態</th></tr>`;
+          for (const f of flights) {
+            const badge = f.statusCode === 'landed' ? 'badge-green' : 'badge-yellow';
+            html += `<tr><td>${f.flight}</td><td>${f.airline}</td><td><span class="badge ${badge}">${f.status}</span></td></tr>`;
+          }
+          html += `</table>`;
+        }
+        html += `</div>`;
+      }
+      if (data.total === 0) {
+        html = `<div style="font-size:12px;color:var(--gray);padding:6px 0;">現在 高度5,000ft以下の到着機なし（深夜・早朝帯または混信）</div>`;
+      }
+      bodyEl.innerHTML = html;
+    } catch(e) {
+      if (bodyEl) bodyEl.innerHTML = `<div style="color:var(--gray);font-size:12px;padding:6px 0;">データ取得エラー: ${e.message}</div>`;
+    }
+  }
+  loadHanedaArr();
+  setInterval(loadHanedaArr, 60000);
 
   // 終電・需要予測（実際の時刻表データ＋現在時刻から需要を計算）
   const LAST_TRAINS = [
