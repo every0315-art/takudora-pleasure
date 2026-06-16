@@ -691,6 +691,10 @@
         <img id="ttc-img2" src="" alt="タクシープール待機状況（台数）"
           style="width:100%;display:block;background:var(--navy-mid);">
       </a>
+      <a href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener" style="display:block;border-top:1px solid var(--border);">
+        <img id="ttc-img3" src="" alt="タクシープール待機状況（104）"
+          style="width:100%;display:block;background:var(--navy-mid);">
+      </a>
       <div style="padding:6px 12px 10px;font-size:10px;color:var(--gray);">出典: ttc.taxi-inf.jp · タップで詳細</div>
     </div>
 
@@ -2082,6 +2086,8 @@
     img.src = `https://ttc.taxi-inf.jp/Real01_line.jpg?${stamp}`;
     const img2 = document.getElementById('ttc-img2');
     if (img2) img2.src = `https://ttc.taxi-inf.jp/Real02.jpg?${stamp}`;
+    const img3 = document.getElementById('ttc-img3');
+    if (img3) img3.src = `https://ttc.taxi-inf.jp/Real104_line.jpg?${stamp}`;
     if (upd) upd.textContent = `${pad(ts.getHours())}:${pad(ts.getMinutes())} 更新`;
   }
   loadTtcImage();
