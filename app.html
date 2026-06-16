@@ -698,6 +698,15 @@
       <div style="padding:6px 12px 10px;font-size:10px;color:var(--gray);">出典: ttc.taxi-inf.jp · タップで詳細</div>
     </div>
 
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="card-title" style="padding:14px 16px 10px;">✈ 国際線 第3ターミナル</div>
+      <a href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener" style="display:block;">
+        <img id="ttc-img-t3" src="" alt="国際線第3ターミナル タクシー状況"
+          style="width:100%;display:block;background:var(--navy-mid);">
+      </a>
+      <div style="padding:6px 12px 10px;font-size:10px;color:var(--gray);">出典: ttc.taxi-inf.jp · タップで詳細</div>
+    </div>
+
     <div class="alert alert-green">
       <div class="alert-icon">✈</div>
       <div>国際線の到着ラッシュまであと <strong>約40分</strong>。プール入りのタイミングです。</div>
@@ -2088,6 +2097,8 @@
     if (img2) img2.src = `https://ttc.taxi-inf.jp/Real02.jpg?${stamp}`;
     const img3 = document.getElementById('ttc-img3');
     if (img3) img3.src = `https://ttc.taxi-inf.jp/Real104_line.jpg?${stamp}`;
+    const imgT3 = document.getElementById('ttc-img-t3');
+    if (imgT3) imgT3.src = `https://ttc.taxi-inf.jp/Real109.jpg?${stamp}`;
     if (upd) upd.textContent = `${pad(ts.getHours())}:${pad(ts.getMinutes())} 更新`;
   }
   loadTtcImage();
