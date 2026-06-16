@@ -752,17 +752,7 @@
         タクシー 最新ニュース
         <span id="news-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
       </div>
-      <div id="news-taxi">読み込み中…</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">東京タクシーセンター</div>
-      <div id="news-center">読み込み中…</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">東京ハイヤー・タクシー協会</div>
-      <div id="news-association">読み込み中…</div>
+      <div id="news-all">読み込み中…</div>
     </div>
 
   </div>
@@ -2273,25 +2263,30 @@
       const el = document.getElementById('news-updated');
       if (el) el.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
 
-      const taxiEl = document.getElementById('news-taxi');
-      if (taxiEl) taxiEl.innerHTML = renderNewsItems(data.taxi, 'ニュースを取得できませんでした');
+      // 全ソースを統合して新着順にソート
+      const all = [
+        ...(data.taxi        || []),
+        ...(data.center      || []),
+        ...(data.association || []),
+      ].sort((a, b) => {
+        const da = a.pub ? new Date(a.pub) : new Date(0);
+        const db = b.pub ? new Date(b.pub) : new Date(0);
+        return db - da;
+      });
 
-      const centerEl = document.getElementById('news-center');
-      if (centerEl) centerEl.innerHTML = renderNewsItems(data.center, '新着情報なし');
-
-      const assocEl = document.getElementById('news-association');
-      if (assocEl) assocEl.innerHTML = renderNewsItems(data.association, '新着情報なし');
+      const allEl = document.getElementById('news-all');
+      if (allEl) allEl.innerHTML = renderNewsItems(all, 'ニュースを取得できませんでした');
 
       // TOPタイル更新
       const topMain = document.getElementById('top-news-main');
       const topSub  = document.getElementById('top-news-sub');
-      if (topMain && data.taxi && data.taxi.length > 0) {
-        topMain.innerHTML = `<span style="font-size:11px;line-height:1.4;">${data.taxi[0].title}</span>`;
-        if (topSub) topSub.textContent = data.taxi[1]?.title?.slice(0, 28) + '…' || '';
+      if (topMain && all.length > 0) {
+        topMain.innerHTML = `<span style="font-size:11px;line-height:1.4;">${all[0].title}</span>`;
+        if (topSub) topSub.textContent = all[1]?.title?.slice(0, 28) + '…' || '';
       }
     } catch(e) {
-      const taxiEl = document.getElementById('news-taxi');
-      if (taxiEl) taxiEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
+      const allEl = document.getElementById('news-all');
+      if (allEl) allEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
     }
   }
   loadNews();
