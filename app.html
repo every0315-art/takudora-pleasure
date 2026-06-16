@@ -225,6 +225,7 @@
     .top-layout {
       display: grid;
       grid-template-columns: 1fr 1.6fr 1fr;
+      grid-template-rows: repeat(3, 160px);
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -237,6 +238,7 @@
       padding: 16px 18px;
       cursor: pointer;
       transition: border-color .2s, transform .15s;
+      overflow: hidden;
     }
     .tile:hover {
       border-color: rgba(201,168,76,.35);
@@ -346,6 +348,7 @@
       .tab-pane { padding: 12px 10px; }
       .top-layout {
         grid-template-columns: 1fr 1.4fr 1fr;
+        grid-template-rows: repeat(3, 140px);
         gap: 8px;
       }
       .tile { padding: 10px 10px; border-radius: 8px; }
