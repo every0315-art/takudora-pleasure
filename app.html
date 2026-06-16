@@ -714,6 +714,10 @@
         <img id="ttc-img-t3c" src="" alt="国際線第3ターミナル タクシー状況3"
           style="width:100%;display:block;background:var(--navy-mid);">
       </a>
+      <a href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener" style="display:block;border-top:1px solid var(--border);">
+        <img id="ttc-img-t3d" src="" alt="国際線第3ターミナル タクシー状況4"
+          style="width:100%;display:block;background:var(--navy-mid);">
+      </a>
       <div style="padding:6px 12px 10px;font-size:10px;color:var(--gray);">出典: ttc.taxi-inf.jp · タップで詳細</div>
     </div>
 
@@ -2117,6 +2121,8 @@
     if (imgT3b) imgT3b.src = `https://ttc.taxi-inf.jp/Real03.jpg?${stamp}`;
     const imgT3c = document.getElementById('ttc-img-t3c');
     if (imgT3c) imgT3c.src = `https://ttc.taxi-inf.jp/Real04.jpg?${stamp}`;
+    const imgT3d = document.getElementById('ttc-img-t3d');
+    if (imgT3d) imgT3d.src = `https://ttc.taxi-inf.jp/Real106.jpg?${stamp}`;
     if (upd) upd.textContent = `${pad(ts.getHours())}:${pad(ts.getMinutes())} 更新`;
   }
   loadTtcImage();
