@@ -943,6 +943,22 @@
 
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        東京着発 新幹線 <span style="font-size:10px;color:var(--gray);font-weight:400;" id="shinkansen-updated"></span>
+      </div>
+      <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">東京駅 発着の新幹線運行状況</div>
+      <div id="shinkansen-status">読み込み中…</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+        <a href="https://transit.yahoo.co.jp/traininfo/detail/1/0/" target="_blank" rel="noopener" style="color:var(--gold);">東海道新幹線</a>
+        <a href="https://transit.yahoo.co.jp/traininfo/detail/3/0/" target="_blank" rel="noopener" style="color:var(--gold);">東北新幹線</a>
+        <a href="https://transit.yahoo.co.jp/traininfo/detail/5/0/" target="_blank" rel="noopener" style="color:var(--gold);">上越新幹線</a>
+        <a href="https://transit.yahoo.co.jp/traininfo/detail/4/0/" target="_blank" rel="noopener" style="color:var(--gold);">北陸新幹線</a>
+        <a href="https://traininfo.jreast.co.jp/train_info/shinkansen.aspx" target="_blank" rel="noopener" style="color:var(--gold);">JR東日本 新幹線情報</a>
+        <a href="https://jr-central.co.jp/info.html" target="_blank" rel="noopener" style="color:var(--gold);">JR東海 運行情報</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
         終電・需要予測 <span id="lasttrain-time" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
       </div>
       <div id="lasttrain-table"></div>
@@ -1981,6 +1997,63 @@
   }
   loadTrainInfo();
   setInterval(loadTrainInfo, 60000);
+
+  // 新幹線運行状況（JR東日本・JR東海 運行情報を取得）
+  async function loadShinkansenInfo() {
+    const el = document.getElementById('shinkansen-status');
+    const updEl = document.getElementById('shinkansen-updated');
+    if (!el) return;
+    // 東京発着の主要新幹線リスト（Yahoo路線APIで取得、なければ平常表示）
+    const lines = [
+      { name: '東海道新幹線', company: 'JR東海', color: '#f39c12', url: 'https://transit.yahoo.co.jp/traininfo/detail/1/0/' },
+      { name: '東北新幹線',   company: 'JR東日本', color: '#27ae60', url: 'https://transit.yahoo.co.jp/traininfo/detail/3/0/' },
+      { name: '上越新幹線',   company: 'JR東日本', color: '#2980b9', url: 'https://transit.yahoo.co.jp/traininfo/detail/5/0/' },
+      { name: '北陸新幹線',   company: 'JR東日本', color: '#8e44ad', url: 'https://transit.yahoo.co.jp/traininfo/detail/4/0/' },
+    ];
+    try {
+      const res = await fetch('/api/shinkansen-info');
+      const data = await res.json();
+      if (updEl && data.updateDate) {
+        updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
+      }
+      const statusMap = {};
+      (data.lines || []).forEach(l => { statusMap[l.name] = l; });
+      el.innerHTML = lines.map(line => {
+        const info = statusMap[line.name];
+        const status = info ? info.status : '平常運転';
+        const isNormal = !info || status === '平常運転';
+        const bgColor = isNormal ? 'rgba(39,174,96,.15)' : '#c0392b';
+        const textColor = isNormal ? 'var(--green)' : '#fff';
+        return `
+          <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${line.color};flex-shrink:0;"></span>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
+                <div style="font-size:10px;color:var(--gray);">${line.company}</div>
+              </div>
+            </div>
+            <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:${bgColor};color:${textColor};font-weight:600;">${status}</span>
+          </a>`;
+      }).join('');
+    } catch(e) {
+      // APIなければ平常運転として表示
+      if (updEl) updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
+      el.innerHTML = lines.map(line => `
+        <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${line.color};flex-shrink:0;"></span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
+              <div style="font-size:10px;color:var(--gray);">${line.company}</div>
+            </div>
+          </div>
+          <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(39,174,96,.15);color:var(--green);font-weight:600;">平常運転</span>
+        </a>`).join('');
+    }
+  }
+  loadShinkansenInfo();
+  setInterval(loadShinkansenInfo, 60000);
 
   // 終電・需要予測（実際の時刻表データ＋現在時刻から需要を計算）
   const LAST_TRAINS = [
