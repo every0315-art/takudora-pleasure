@@ -224,11 +224,20 @@ export default async function handler(req, res) {
       });
     }
 
+    // scheduled の便名→到着時刻マップを作成
+    const schedMap = {};
+    for (const t of [1, 2, 3]) {
+      for (const f of scheduled[t] || []) {
+        schedMap[f.flight] = f.arrStr;
+      }
+    }
+
     // 発地を並列取得（最大8件）
     const enriched = await Promise.all(
       candidates.slice(0, 8).map(async f => ({
         ...f,
         origin: await fetchOrigin(f.flight),
+        arrStr: schedMap[f.flight] || null,
       }))
     );
 
