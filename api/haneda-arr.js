@@ -9,6 +9,25 @@ const TERMINAL_MAP = {
 
 const DOMESTIC_PREFIXES = new Set(Object.keys(TERMINAL_MAP));
 
+// ヘリ・小型機の type コードを除外
+const EXCLUDED_TYPES = new Set([
+  'A139','AW139','AS65','AS55','AS50','AS32','AS35','EC35','EC45','EC55',
+  'EC15','EC30','H175','H160','H145','BK17','S76','S92','B407','B412',
+  'B429','R44','R66','A109','AW09','AW19','C172','C152','C182','C206',
+  'C208','C210','PA28','PA34','SR20','SR22','DA40','DA42','PC12',
+]);
+
+// T3 に表示する国際線旅客キャリアの ICAO プレフィックス
+const INTL_CARRIERS = new Set([
+  'KAL','AAR','CPA','CES','CCA','CAL','CSN','CSZ','HVN','VJC','PAL','MAS',
+  'SIA','THA','BAW','AFR','DLH','KLM','SWR','IBE','AZA','FIN','SAS','UAE',
+  'QTR','ETD','THY','SVA','GFA','UAL','DAL','AAL','ASA','HAL','ACA','AMX',
+  'QFA','ANZ','EK','EY','TK','LH','AF','KE','OZ','MU','CZ','CA','CI','BR',
+  'NH','JL','VN','PR','MH','SQ','TG','FJ','GA','AI','9W','6E','XY','RJ',
+  'AM','NZ','AC','AS','HA','AA','UA','DL','BA','VS','LX','OS','SK','AY',
+  'OAE','OAL','OMA',
+]);
+
 // IATA コード → 日本語都市名
 const IATA_JP = {
   // 国内
@@ -70,11 +89,20 @@ export default async function handler(req, res) {
     for (const a of aircraft) {
       const call = (a.flight || '').trim();
       if (!call || call.length < 3) continue;
+      // 地上車両・軍用を除外
       if (a.category === 'C2' || a.category === 'C1') continue;
       if ((a.dbFlags || 0) & 1) continue;
+      // ヘリ・小型機を除外（type コード）
+      if (a.t && EXCLUDED_TYPES.has(a.t)) continue;
+      // カテゴリA1/A2（超軽量機）を除外
+      if (a.category === 'A2' || a.category === 'B1' || a.category === 'B2') continue;
 
       const prefix = call.match(/^([A-Z]+)/)?.[1] || '';
       if (!prefix || prefix.length < 2) continue;
+
+      // T3: 認識できる国際旅客キャリアのみ表示（それ以外は除外）
+      const isDomestic = DOMESTIC_PREFIXES.has(prefix);
+      if (!isDomestic && !INTL_CARRIERS.has(prefix)) continue;
 
       const isGround = a.alt_baro === 'ground';
       const alt = isGround ? 0 : (typeof a.alt_baro === 'number' ? a.alt_baro : 99999);
@@ -84,7 +112,7 @@ export default async function handler(req, res) {
       const isLanded      = isGround && dst <= 2;
       if (!isApproaching && !isLanded) continue;
 
-      const terminal = TERMINAL_MAP[prefix] || (DOMESTIC_PREFIXES.has(prefix) ? 1 : 3);
+      const terminal = TERMINAL_MAP[prefix] || 3;
       candidates.push({
         flight:     call,
         type:       a.t || '',
