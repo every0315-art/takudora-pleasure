@@ -2578,7 +2578,7 @@
     });
 
     upcoming.sort((a, b) => a.itemDate - b.itemDate);
-    const show = upcoming.slice(0, 5);
+    const show = upcoming.slice(0, 8);
 
     if (show.length === 0) {
       listEl.innerHTML = '<span style="font-size:12px;color:var(--gray);">予定なし</span>';
