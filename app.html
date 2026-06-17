@@ -2109,13 +2109,28 @@
     3: { label: '第3ターミナル（国際線）',        exit: '出口①' },
   };
   function fmtJst(arrStr) {
-    const m = arrStr.match(/^(\d{1,2}):(\d{2})([ap])$/);
-    if (!m) return arrStr;
+    const m = arrStr && arrStr.match(/^(\d{1,2}):(\d{2})([ap])$/);
+    if (!m) return arrStr || '—';
     let h = parseInt(m[1], 10);
     const min = m[2];
     if (m[3] === 'a') { if (h === 12) h = 0; }
     else { if (h !== 12) h += 12; }
     return `${String(h).padStart(2,'0')}:${min}`;
+  }
+  function parseArrMs(arrStr) {
+    const m = arrStr && arrStr.match(/^(\d{1,2}):(\d{2})([ap])$/);
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    if (m[3] === 'a') { if (h === 12) h = 0; }
+    else { if (h !== 12) h += 12; }
+    const now = Date.now();
+    const jstNow = new Date(now + 9 * 3600000);
+    const Y = jstNow.getUTCFullYear(), M = jstNow.getUTCMonth(), D = jstNow.getUTCDate();
+    let utc = Date.UTC(Y, M, D, h - 9, min);
+    if (utc - now < -12 * 3600000) utc += 86400000;
+    if (utc - now > 18 * 3600000) utc -= 86400000;
+    return utc;
   }
   async function loadHanedaArr() {
     const bodyEl = document.getElementById('haneda-arr-body');
@@ -2131,31 +2146,43 @@
       if (updEl) updEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())} 更新`;
       let html = '';
       for (const t of [1, 2, 3]) {
-        const flights   = (terminals[t]  || []);
-        const upcoming  = (scheduled && scheduled[t] || []);
+        const rtFlights = (terminals[t]  || []);
+        const schFlights = (scheduled && scheduled[t] || []);
         const info = HANEDA_TERMINAL_INFO[t];
         html += `<div style="margin-bottom:14px;">`;
         html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 2px;">${info.label}</div>`;
 
-        // リアルタイム到着便
-        if (flights.length === 0) {
-          html += `<div style="font-size:12px;color:var(--gray);padding:2px 0 4px;">現着機なし</div>`;
-        } else {
-          html += `<table class="tbl"><tr><th>便名</th><th>到着予定</th><th>発地</th><th>状態</th><th>到着出口</th></tr>`;
-          for (const f of flights) {
-            const badge = f.statusCode === 'landed' ? 'badge-green' : 'badge-yellow';
-            const arrTxt = f.arrStr ? `<span style="font-weight:700;">${fmtJst(f.arrStr)}</span>` : `<span style="color:var(--gray);">—</span>`;
-            html += `<tr><td>${f.flight}</td><td>${arrTxt}</td><td>${f.origin||'---'}</td><td><span class="badge ${badge}">${f.status}</span></td><td style="font-size:10px;color:var(--gray);">${info.exit}</td></tr>`;
-          }
-          html += `</table>`;
+        // ADS-B便と予定便を統合してソート
+        const rtSet = new Set(rtFlights.map(f => f.flight));
+        const merged = [];
+        for (const f of rtFlights) {
+          const sortMs = f.statusCode === 'landed' ? -1 : (parseArrMs(f.arrStr) || Date.now() + 3 * 60000);
+          merged.push({ ...f, _sort: sortMs, _type: 'rt' });
         }
+        for (const f of schFlights) {
+          if (rtSet.has(f.flight)) continue; // ADS-Bにある便は除外
+          const sortMs = parseArrMs(f.arrStr) || Date.now() + 90 * 60000;
+          merged.push({ ...f, _sort: sortMs, _type: 'sch' });
+        }
+        merged.sort((a, b) => a._sort - b._sort);
 
-        // 今後1時間以内の予定到着便
-        if (upcoming.length > 0) {
-          html += `<div style="font-size:10px;font-weight:700;color:var(--gray);padding:6px 0 2px;">今後1時間以内の予定到着便</div>`;
-          html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>機種</th><th>到着出口</th></tr>`;
-          for (const f of upcoming) {
-            html += `<tr><td style="font-weight:700;">${fmtJst(f.arrStr)}</td><td>${f.flight}</td><td>${f.origin||'---'}</td><td>${f.type||'---'}</td><td style="font-size:10px;color:var(--gray);">${info.exit}</td></tr>`;
+        if (merged.length === 0) {
+          html += `<div style="font-size:12px;color:var(--gray);padding:2px 0 4px;">今後1時間以内の到着便なし</div>`;
+        } else {
+          html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>状態</th><th>到着出口</th></tr>`;
+          for (const f of merged) {
+            let timeTd, statusTd;
+            if (f._type === 'rt') {
+              const badge = f.statusCode === 'landed' ? 'badge-green' : 'badge-yellow';
+              timeTd = f.arrStr
+                ? `<strong>${fmtJst(f.arrStr)}</strong>`
+                : `<span class="badge ${badge}" style="font-size:9px;">${f.statusCode === 'landed' ? '着陸済' : '進入中'}</span>`;
+              statusTd = `<span class="badge ${badge}">${f.status}</span>`;
+            } else {
+              timeTd = `<strong>${fmtJst(f.arrStr)}</strong>`;
+              statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
+            }
+            html += `<tr><td>${timeTd}</td><td>${f.flight}</td><td>${f.origin||'---'}</td><td>${statusTd}</td><td style="font-size:10px;color:var(--gray);">${info.exit}</td></tr>`;
           }
           html += `</table>`;
         }
