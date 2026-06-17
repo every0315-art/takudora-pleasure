@@ -136,6 +136,29 @@ async function fetchEnrouteArrivals() {
   return flights;
 }
 
+// FlightAware 個別フライトページから到着時刻を取得（arrStr が取れなかった便の補完用）
+async function fetchArrTime(callsign) {
+  try {
+    const r = await fetch(
+      `https://www.flightaware.com/live/flight/${encodeURIComponent(callsign)}`,
+      { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(6000) }
+    );
+    if (!r.ok) return null;
+    const html = await r.text();
+    // 実績→推定→ゲート の優先順で epoch を探す
+    const m = html.match(/"actualArrivalTime":\{"epoch":(\d+)/)
+           || html.match(/"estimatedArrivalTime":\{"epoch":(\d+)/)
+           || html.match(/"gateArrivalTime":\{"epoch":(\d+)/);
+    if (!m) return null;
+    const jst = new Date(parseInt(m[1], 10) * 1000 + 9 * 3600000);
+    let h = jst.getUTCHours();
+    const min = String(jst.getUTCMinutes()).padStart(2, '0');
+    const ap = h < 12 ? 'a' : 'p';
+    if (h === 0) h = 12; else if (h > 12) h -= 12;
+    return `${h}:${min}${ap}`;
+  } catch { return null; }
+}
+
 // ADS-B で現在の進入中・着陸済便を取得（状態バッジ用）
 async function fetchAdsbStatus() {
   const r = await fetch(
@@ -198,6 +221,20 @@ export default async function handler(req, res) {
         terminal, ...st,
       });
     }
+
+    // arrStr が null の便（ADS-B のみ）に個別ページで到着時刻を補完（最大4件）
+    const nowMs2 = Date.now();
+    const jn = new Date(nowMs2 + 9 * 3600000);
+    const [Y2, M2, D2] = [jn.getUTCFullYear(), jn.getUTCMonth(), jn.getUTCDate()];
+    await Promise.all(
+      merged.filter(f => !f.arrStr).slice(0, 4).map(async f => {
+        const t = await fetchArrTime(f.flight);
+        if (t) {
+          f.arrStr = t;
+          f.arrMs = parseJstTime(t, Y2, M2, D2, nowMs2) || f.arrMs;
+        }
+      })
+    );
 
     merged.sort((a, b) => a.arrMs - b.arrMs);
 
