@@ -2585,14 +2585,32 @@
       return;
     }
 
-    listEl.innerHTML = show.map(ev => {
-      const shortName = ev.name.length > 12 ? ev.name.slice(0, 12) + '…' : ev.name;
-      return `<div style="display:flex;flex-direction:column;gap:1px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:9px;color:${ev.isToday ? 'var(--gold)' : 'var(--gray)'};">${ev.isToday ? '本日' : `${ev.m}/${ev.d}`}</span>
-          <span style="font-size:9px;color:${ev.badgeColor};">${ev.badgeText.replace('需要 ', '')}</span>
-        </div>
-        <span style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortName}</span>
+    // 日付でグループ化
+    const grouped = [];
+    let lastKey = null;
+    for (const ev of show) {
+      const key = `${ev.m}/${ev.d}`;
+      if (key !== lastKey) {
+        grouped.push({ key, isToday: ev.isToday, events: [] });
+        lastKey = key;
+      }
+      grouped[grouped.length - 1].events.push(ev);
+    }
+
+    listEl.innerHTML = grouped.map(g => {
+      const dateLabel = g.isToday
+        ? `<span style="color:var(--gold);font-weight:700;">本日</span>`
+        : `<span style="color:var(--gray);">${g.key}</span>`;
+      const evHtml = g.events.map(ev => {
+        const shortName = ev.name.length > 12 ? ev.name.slice(0, 12) + '…' : ev.name;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+          <span style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${shortName}</span>
+          <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;">${ev.badgeText.replace('需要 ', '')}</span>
+        </div>`;
+      }).join('');
+      return `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+        <div style="font-size:9px;margin-bottom:2px;">${dateLabel}</div>
+        ${evHtml}
       </div>`;
     }).join('');
   }
