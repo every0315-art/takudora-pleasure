@@ -36,6 +36,9 @@ const IATA_JP = {
   KIX:'大阪(関空)', UKB:'神戸', OKJ:'岡山', HIJ:'広島', TKS:'徳島', MYJ:'松山',
   KCZ:'高知', FUK:'福岡', NGS:'長崎', KMJ:'熊本', OIT:'大分', KMI:'宮崎',
   KOJ:'鹿児島', ISG:'石垣', MMY:'宮古島', OKA:'那覇',
+  IWK:'岩国', KMQ:'小松', TOY:'富山', FSZ:'静岡', OKI:'隠岐', TTJ:'鳥取',
+  TKS:'徳島', IWJ:'石見', TSJ:'対馬', FUJ:'福江', OBO:'帯広', AKJ:'旭川',
+  MMB:'女満別', SHB:'中標津', KUH:'釧路', WKJ:'稚内', RIS:'利尻',
   // 国際
   HKG:'香港', ICN:'ソウル', GMP:'ソウル(金浦)', PEK:'北京', PKX:'北京(大興)',
   PVG:'上海(浦東)', SHA:'上海(虹橋)', CAN:'広州', CTU:'成都', XIY:'西安',
