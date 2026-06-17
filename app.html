@@ -2130,10 +2130,10 @@
         if (flights.length === 0) {
           html += `<div style="font-size:12px;color:var(--gray);padding:2px 0 2px;">対象機なし</div>`;
         } else {
-          html += `<table class="tbl"><tr><th>便名</th><th>機種</th><th>状態</th></tr>`;
+          html += `<table class="tbl"><tr><th>便名</th><th>発地</th><th>機種</th><th>状態</th></tr>`;
           for (const f of flights) {
             const badge = f.statusCode === 'landed' ? 'badge-green' : 'badge-yellow';
-            html += `<tr><td>${f.flight}</td><td>${f.type||'---'}</td><td><span class="badge ${badge}">${f.status}</span></td></tr>`;
+            html += `<tr><td>${f.flight}</td><td>${f.origin||'---'}</td><td>${f.type||'---'}</td><td><span class="badge ${badge}">${f.status}</span></td></tr>`;
           }
           html += `</table>`;
         }
