@@ -1,5 +1,5 @@
 // adsb.fi 無料 API で羽田空港周辺の到着便をリアルタイム取得
-// FlightAware で発地を補完
+// FlightAware で発地・予定到着便を補完
 // T1=JAL系, T2=ANA系, T3=国際線
 
 const TERMINAL_MAP = {
@@ -25,7 +25,7 @@ const INTL_CARRIERS = new Set([
   'QFA','ANZ','EK','EY','TK','LH','AF','KE','OZ','MU','CZ','CA','CI','BR',
   'NH','JL','VN','PR','MH','SQ','TG','FJ','GA','AI','9W','6E','XY','RJ',
   'AM','NZ','AC','AS','HA','AA','UA','DL','BA','VS','LX','OS','SK','AY',
-  'OAE','OAL','OMA',
+  'OAE','OAL','OMA','ITY',
 ]);
 
 // IATA コード → 日本語都市名
@@ -37,8 +37,9 @@ const IATA_JP = {
   KCZ:'高知', FUK:'福岡', NGS:'長崎', KMJ:'熊本', OIT:'大分', KMI:'宮崎',
   KOJ:'鹿児島', ISG:'石垣', MMY:'宮古島', OKA:'那覇',
   IWK:'岩国', KMQ:'小松', TOY:'富山', FSZ:'静岡', OKI:'隠岐', TTJ:'鳥取',
-  TKS:'徳島', IWJ:'石見', TSJ:'対馬', FUJ:'福江', OBO:'帯広', AKJ:'旭川',
+  IWJ:'石見', TSJ:'対馬', FUJ:'福江', OBO:'帯広', AKJ:'旭川',
   MMB:'女満別', SHB:'中標津', KUH:'釧路', WKJ:'稚内', RIS:'利尻',
+  KKJ:'北九州', TAK:'高松', GAJ:'山形', SHM:'白浜', UBJ:'山口宇部', TKO:'徳之島',
   // 国際
   HKG:'香港', ICN:'ソウル', GMP:'ソウル(金浦)', PEK:'北京', PKX:'北京(大興)',
   PVG:'上海(浦東)', SHA:'上海(虹橋)', CAN:'広州', CTU:'成都', XIY:'西安',
@@ -51,8 +52,25 @@ const IATA_JP = {
   JFK:'ニューヨーク', ORD:'シカゴ', SFO:'サンフランシスコ', SEA:'シアトル',
   YVR:'バンクーバー', YYZ:'トロント', MEX:'メキシコシティ', GRU:'サンパウロ',
   SYD:'シドニー', MEL:'メルボルン', AKL:'オークランド',
+  IAD:'ワシントン', IAH:'ヒューストン', ORD:'シカゴ',
 };
 
+// "10:26a" → JST の Unix ms (UTC)
+function parseJstTime(str, Y, M, D, nowMs) {
+  const m = str.match(/^(\d{1,2}):(\d{2})([ap])$/);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (m[3] === 'a') { if (h === 12) h = 0; }
+  else              { if (h !== 12) h += 12; }
+  // JST=UTC+9 なので UTC に変換
+  let utc = Date.UTC(Y, M, D, h - 9, min);
+  if (utc - nowMs < -12 * 3600000) utc += 86400000; // 翌日補正
+  if (utc - nowMs >  18 * 3600000) utc -= 86400000; // 前日補正（安全）
+  return utc;
+}
+
+// FlightAware で発地を取得
 async function fetchOrigin(callsign) {
   try {
     const r = await fetch(
@@ -64,46 +82,125 @@ async function fetchOrigin(callsign) {
     );
     if (!r.ok) return null;
     const html = await r.text();
-    // "origin":{..."iata":"XXX"..."friendlyLocation":"..."...}
     const block = html.match(/"origin":\s*\{([^}]{0,400})\}/)?.[1] || '';
     const iata  = block.match(/"iata":"([^"]+)"/)?.[1] || '';
     const loc   = block.match(/"friendlyLocation":"([^"]+)"/)?.[1] || '';
     if (!iata || iata === 'HND' || iata === 'RJTT') return null;
     return IATA_JP[iata] || loc.replace(/, Japan$/, '') || iata;
+  } catch { return null; }
+}
+
+// FlightAware RJTT enroute-board から今後1時間以内の予定到着便を取得
+async function fetchScheduledArrivals() {
+  try {
+    const r = await fetch('https://www.flightaware.com/live/airport/RJTT', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!r.ok) return { 1: [], 2: [], 3: [] };
+    const html = await r.text();
+
+    // enroute-board セクションを抽出
+    const start = html.indexOf('id="enroute-board"');
+    if (start < 0) return { 1: [], 2: [], 3: [] };
+    // 次のボードセクションまで
+    let end = html.length;
+    for (const m of html.matchAll(/id="(arrivals|departures|scheduled)-board"/g)) {
+      if (m.index > start) { end = m.index; break; }
+    }
+    const chunk = html.substring(start, end);
+
+    const now = Date.now();
+    const jstNow = new Date(now + 9 * 3600000);
+    const Y = jstNow.getUTCFullYear(), M = jstNow.getUTCMonth(), D = jstNow.getUTCDate();
+
+    const flights = [];
+    for (const rowM of chunk.matchAll(/<tr[^>]+id="Row_[^"]*"[\s\S]*?<\/tr>/g)) {
+      const row = rowM[0];
+
+      // 便名
+      const callM = row.match(/\/live\/flight\/([A-Z0-9]+)"/);
+      const call = callM?.[1] || '';
+      if (!call) continue;
+
+      const prefix = call.match(/^([A-Z]+)/)?.[1] || '';
+      const isDomestic = DOMESTIC_PREFIXES.has(prefix);
+      if (!isDomestic && !INTL_CARRIERS.has(prefix)) continue;
+
+      // 機種
+      const typeM = row.match(/\/live\/aircrafttype\/([A-Z0-9]+)"/);
+      const type = typeM?.[1] || '';
+
+      // 発地 IATA（itemprop="url" のリンクテキスト）
+      const origM = row.match(/itemprop="url">([A-Z]{3,4})<\/a>/);
+      const origIata = origM?.[1] || '';
+
+      // HND 到着時刻（JST）— 行内の最後の JST タイムスタンプ
+      const jstTimes = [...row.matchAll(/(\d{1,2}:\d{2}[ap])&nbsp;<span class="tz">JST<\/span>/g)];
+      if (!jstTimes.length) continue;
+      const arrStr = jstTimes[jstTimes.length - 1][1];
+
+      const arrMs = parseJstTime(arrStr, Y, M, D, now);
+      if (!arrMs) continue;
+
+      const diff = arrMs - now;
+      // 5分前〜60分後の便のみ
+      if (diff < -5 * 60000 || diff > 60 * 60000) continue;
+
+      const terminal = TERMINAL_MAP[prefix] || 3;
+      flights.push({
+        flight: call,
+        type,
+        origin: IATA_JP[origIata] || origIata || null,
+        arrStr,
+        arrMs,
+        terminal,
+      });
+    }
+
+    flights.sort((a, b) => a.arrMs - b.arrMs);
+
+    const byTerminal = { 1: [], 2: [], 3: [] };
+    for (const f of flights) {
+      const t = f.terminal <= 2 ? f.terminal : 3;
+      byTerminal[t].push({ flight: f.flight, type: f.type, origin: f.origin, arrStr: f.arrStr });
+    }
+    return byTerminal;
   } catch {
-    return null;
+    return { 1: [], 2: [], 3: [] };
   }
 }
 
 export default async function handler(req, res) {
   try {
-    const r = await fetch(
-      'https://opendata.adsb.fi/api/v2/lat/35.5494/lon/139.7798/dist/40',
-      {
-        headers: { 'User-Agent': 'TakudoraPleasure/1.0' },
-        signal: AbortSignal.timeout(8000),
-      }
-    );
-    if (!r.ok) throw new Error(`adsb.fi ${r.status}`);
-    const data = await r.json();
+    // ADS-B と FlightAware を並列取得
+    const [adsbRes, scheduled] = await Promise.all([
+      fetch(
+        'https://opendata.adsb.fi/api/v2/lat/35.5494/lon/139.7798/dist/40',
+        {
+          headers: { 'User-Agent': 'TakudoraPleasure/1.0' },
+          signal: AbortSignal.timeout(8000),
+        }
+      ),
+      fetchScheduledArrivals(),
+    ]);
+
+    if (!adsbRes.ok) throw new Error(`adsb.fi ${adsbRes.status}`);
+    const data = await adsbRes.json();
     const aircraft = data.aircraft || [];
 
     const candidates = [];
     for (const a of aircraft) {
       const call = (a.flight || '').trim();
       if (!call || call.length < 3) continue;
-      // 地上車両・軍用を除外
       if (a.category === 'C2' || a.category === 'C1') continue;
       if ((a.dbFlags || 0) & 1) continue;
-      // ヘリ・小型機を除外（type コード）
       if (a.t && EXCLUDED_TYPES.has(a.t)) continue;
-      // カテゴリA1/A2（超軽量機）を除外
       if (a.category === 'A2' || a.category === 'B1' || a.category === 'B2') continue;
 
       const prefix = call.match(/^([A-Z]+)/)?.[1] || '';
       if (!prefix || prefix.length < 2) continue;
 
-      // T3: 認識できる国際旅客キャリアのみ表示（それ以外は除外）
       const isDomestic = DOMESTIC_PREFIXES.has(prefix);
       if (!isDomestic && !INTL_CARRIERS.has(prefix)) continue;
 
@@ -145,8 +242,13 @@ export default async function handler(req, res) {
 
     res.setHeader('Cache-Control', 's-maxage=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json({ terminals: byTerminal, total: enriched.length, updatedAt: new Date().toISOString() });
+    res.json({
+      terminals: byTerminal,
+      scheduled,
+      total: enriched.length,
+      updatedAt: new Date().toISOString(),
+    });
   } catch (e) {
-    res.status(502).json({ error: e.message, terminals: { 1: [], 2: [], 3: [] }, total: 0 });
+    res.status(502).json({ error: e.message, terminals: { 1: [], 2: [], 3: [] }, scheduled: { 1: [], 2: [], 3: [] }, total: 0 });
   }
 }
