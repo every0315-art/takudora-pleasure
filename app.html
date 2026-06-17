@@ -461,10 +461,9 @@
     <div class="top-layout">
 
       <!-- 行1左：イベント -->
-      <div class="tile tile-event" data-tab="event" id="top-event-tile">
+      <div class="tile tile-event" data-tab="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
         <div class="tile-label">イベント</div>
-        <div id="top-event-main" class="tile-main s-white" style="font-size:14px; font-weight:700; line-height:1.4;">－</div>
-        <div id="top-event-sub" class="tile-sub"></div>
+        <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
       </div>
 
       <!-- 行1中央：天気（横長） -->
@@ -2398,57 +2397,50 @@
   updateDatetime();
   setInterval(updateDatetime, 1000);
 
-  // TOPタイルに本日のイベントをピックアップ（なければ直近イベントを表示）
+  // TOPタイルに直近イベントを最大5件リスト表示
   function updateTopEventTile() {
-    const mainEl = document.getElementById('top-event-main');
-    const subEl = document.getElementById('top-event-sub');
-    if (!mainEl || !subEl) return;
+    const listEl = document.getElementById('top-event-list');
+    if (!listEl) return;
 
     const now = new Date();
-    const todayM = now.getMonth() + 1;
-    const todayD = now.getDate();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    const todayItems = [];
-    const futureItems = [];
+    const upcoming = [];
 
     document.querySelectorAll('#tab-event .event-item').forEach(item => {
       const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
       const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
       if (!m || !d) return;
       const itemDate = new Date(now.getFullYear(), m - 1, d);
-      if (m === todayM && d === todayD) {
-        todayItems.push(item);
-      } else if (itemDate > today) {
-        futureItems.push({ itemDate, m, d, item });
+      if (itemDate >= today) {
+        const name = item.querySelector('.event-name')?.textContent || '';
+        const badge = item.querySelector('.badge');
+        const badgeText = badge?.textContent || '';
+        const badgeColor = badge?.classList.contains('badge-red') ? 'var(--red)' : badge?.classList.contains('badge-yellow') ? 'var(--yellow)' : 'var(--gray)';
+        const venue = item.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
+        const isToday = itemDate.getTime() === today.getTime();
+        upcoming.push({ itemDate, m, d, name, badgeText, badgeColor, venue, isToday });
       }
     });
 
-    if (todayItems.length > 0) {
-      const first = todayItems[0];
-      const name = first.querySelector('.event-name')?.textContent || '';
-      const badge = first.querySelector('.badge')?.outerHTML || '';
-      const venue = first.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
-      const shortName = name.length > 11 ? name.slice(0, 11) + '…' : name;
-      const countNote = todayItems.length > 1 ? `<span style="font-size:11px;color:var(--gold);"> 他${todayItems.length - 1}件</span>` : '';
-      mainEl.innerHTML = `${shortName}${countNote}`;
-      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/, 'font-size:9px;') : '';
-      subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span>`;
-    } else if (futureItems.length > 0) {
-      futureItems.sort((a, b) => a.itemDate - b.itemDate);
-      const next = futureItems[0];
-      const name = next.item.querySelector('.event-name')?.textContent || '';
-      const badge = next.item.querySelector('.badge')?.outerHTML || '';
-      const venue = next.item.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
-      const dow = week[next.itemDate.getDay()];
-      const shortName = name.length > 10 ? name.slice(0, 10) + '…' : name;
-      mainEl.innerHTML = `<span style="font-size:11px;color:var(--gray);">本日なし　次:</span> ${shortName}`;
-      const badgeHtml = badge ? badge.replace(/font-size:[^;]+;?/, 'font-size:9px;') : '';
-      subEl.innerHTML = `${badgeHtml}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${next.m}/${next.d}(${dow}) ${venue}</span>`;
-    } else {
-      mainEl.innerHTML = '<span style="font-size:13px;color:var(--gray);">予定なし</span>';
-      subEl.innerHTML = '';
+    upcoming.sort((a, b) => a.itemDate - b.itemDate);
+    const show = upcoming.slice(0, 5);
+
+    if (show.length === 0) {
+      listEl.innerHTML = '<span style="font-size:12px;color:var(--gray);">予定なし</span>';
+      return;
     }
+
+    listEl.innerHTML = show.map(ev => {
+      const dateLabel = ev.isToday
+        ? `<span style="color:var(--gold);font-weight:700;">本日</span>`
+        : `<span style="color:var(--gray);">${ev.m}/${ev.d}</span>`;
+      const shortName = ev.name.length > 10 ? ev.name.slice(0, 10) + '…' : ev.name;
+      return `<div style="display:flex;align-items:center;gap:5px;line-height:1.3;">
+        <span style="font-size:10px;min-width:26px;">${dateLabel}</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortName}</span>
+        <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;">${ev.badgeText.replace('需要 ', '')}</span>
+      </div>`;
+    }).join('');
   }
   updateTopEventTile();
 
