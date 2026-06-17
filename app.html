@@ -2104,9 +2104,9 @@
 
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
   const HANEDA_TERMINAL_INFO = {
-    1: { label: '第1ターミナル（JAL系 国内線）', exit: '出口①②' },
-    2: { label: '第2ターミナル（ANA系 国内線）', exit: '出口③④' },
-    3: { label: '第3ターミナル（国際線）',        exit: '出口①' },
+    1: { label: '第1ターミナル（JAL系 国内線）', arrExits: '到着出口 1〜8番', taxiStand: '乗り場1・2' },
+    2: { label: '第2ターミナル（ANA系 国内線）', arrExits: '到着出口 1〜5番・国際線', taxiStand: '乗り場3・4' },
+    3: { label: '第3ターミナル（国際線）',        arrExits: '到着出口 1番',      taxiStand: '乗り場5' },
   };
   function fmtJst(arrStr) {
     const m = arrStr && arrStr.match(/^(\d{1,2}):(\d{2})([ap])$/);
@@ -2134,11 +2134,12 @@
         const flights = terminals[t] || [];
         const info = HANEDA_TERMINAL_INFO[t];
         html += `<div style="margin-bottom:16px;">`;
-        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 4px;">${info.label}</div>`;
+        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 2px;">${info.label}</div>`;
+        html += `<div style="font-size:10px;color:var(--gray);margin-bottom:4px;">${info.arrExits}　<span style="color:var(--gold);">${info.taxiStand}</span></div>`;
         if (flights.length === 0) {
           html += `<div style="font-size:12px;color:var(--gray);">該当便なし</div>`;
         } else {
-          html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>状態</th><th>出口</th></tr>`;
+          html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>状態</th></tr>`;
           for (const f of flights) {
             const timeTd = f.arrStr
               ? `<strong>${fmtJst(f.arrStr)}</strong>`
@@ -2151,7 +2152,7 @@
             } else {
               statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
             }
-            html += `<tr><td>${timeTd}</td><td>${f.flight}</td><td>${f.origin||'—'}</td><td>${statusTd}</td><td style="font-size:10px;color:var(--gray);">${info.exit}</td></tr>`;
+            html += `<tr><td>${timeTd}</td><td>${f.flight}</td><td>${f.origin||'—'}</td><td>${statusTd}</td></tr>`;
           }
           html += `</table>`;
         }
