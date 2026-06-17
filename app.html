@@ -225,7 +225,7 @@
     .top-layout {
       display: grid;
       grid-template-columns: 1fr 1.6fr 1fr;
-      grid-template-rows: 240px 120px 240px;
+      grid-template-rows: 240px 160px 240px;
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -265,22 +265,29 @@
       margin-top: 6px;
     }
 
-    /* 天気タイル — 上部中央・横長 */
+    /* 天気タイル */
     .tile-weather {
       grid-column: 2;
       grid-row: 2;
       display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
       background: linear-gradient(160deg, #112240 0%, #1a3560 100%);
       border-color: rgba(201,168,76,.25);
-      padding: 20px 24px;
-      cursor: default;
+      padding: 12px 16px;
+      cursor: pointer;
+      overflow: hidden;
     }
     .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
-    .tile-weather { position: relative; overflow: hidden; cursor: pointer; }
+    .weather-dt {
+      font-size: 11px; color: var(--white); font-weight: 700;
+      text-align: center; flex-shrink: 0; line-height: 1.2;
+    }
+    .weather-body {
+      display: flex; flex-direction: row; flex: 1;
+      gap: 12px; align-items: center; overflow: hidden;
+    }
 
     /* 雨雲レーダーモーダル */
     .radar-modal {
@@ -305,9 +312,9 @@
     .radar-modal iframe { flex: 1; width: 100%; border: none; }
 
     /* タイル位置
-       行1: イベント / 天気 / 街の様子
-       行2: 交通    / 羽田 / 道路
-       行3: 売上    / コミュニティ / ニュース
+       行1: 電車    / 羽田 / 街の様子
+       行2: イベント / 天気 / コミュニティ
+       行3: 売上    / 道路 / ニュース
     */
     .tile-event      { grid-column:1; grid-row:2; }
     .tile-haneda     { grid-column:2; grid-row:1; }
@@ -319,24 +326,26 @@
     .tile-community  { grid-column:3; grid-row:2; }
     .tile-news       { grid-column:3; grid-row:3; }
 
-    .weather-main { display:flex; flex-direction:column; align-items:center; gap:3px; }
-    .weather-location { font-size: 11px; color: var(--gray); letter-spacing: .1em; }
-    .weather-icon-wrap { line-height:1; }
-    .weather-temp { font-size: 44px; font-weight: 900; color: var(--white); line-height: 1; }
-    .weather-temp span { font-size: 22px; font-weight: 400; color: var(--gray); }
-    .weather-desc { font-size: 14px; color: var(--text); }
+    .weather-main { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
+    .weather-location { font-size: 10px; color: var(--gray); letter-spacing: .1em; }
+    .weather-icon-wrap { font-size: 36px; line-height:1; }
+    .weather-temp { font-size: 30px; font-weight: 900; color: var(--white); line-height: 1; }
+    .weather-temp span { font-size: 15px; font-weight: 400; color: var(--gray); }
+    .weather-desc { font-size: 12px; color: var(--text); }
     .weather-demand {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 11px; color: var(--gray);
-      background: rgba(255,255,255,.04);
-      padding: 5px 12px; border-radius: 20px;
-      white-space: nowrap;
+      display: flex; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--gray);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 3px 8px; border-radius: 20px;
+      white-space: nowrap; margin-top: 2px;
     }
-    .weather-forecast { display: flex; flex-direction:column; gap: 6px; }
-    .fc-item { display:flex; align-items:center; gap:8px; }
-    .fc-time { font-size: 11px; color: var(--gray); width:28px; }
-    .fc-icon { font-size: 16px; width:20px; text-align:center; }
-    .fc-tmp { font-size: 13px; font-weight: 700; color: var(--white); width:28px; }
+    .weather-forecast { display: flex; flex-direction:column; gap:0; flex:1; min-width:0; }
+    .fc-item { display:flex; align-items:center; gap:6px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+    .fc-item:last-child { border-bottom:none; }
+    .fc-time { font-size: 10px; color: var(--gray); width:26px; flex-shrink:0; }
+    .fc-icon { font-size: 15px; width:18px; text-align:center; flex-shrink:0; }
+    .fc-tmp { font-size: 13px; font-weight: 700; color: var(--white); width:26px; flex-shrink:0; }
     .fc-rain { font-size: 10px; font-weight: 700; }
 
     /* ニュースミニ */
@@ -356,23 +365,42 @@
       .tile-main { font-size: 14px; }
       .tile-sub { font-size: 10px; }
 
+      /* 天気タイル — mobile: 縦積み */
       .tile-weather {
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 8px 6px;
-        gap: 3px;
+        padding: 8px 10px;
+        gap: 2px;
       }
-      .weather-temp { font-size: 30px; }
-      .weather-temp span { font-size: 16px; }
-      .weather-desc { font-size: 12px; }
-      .weather-demand { font-size: 10px; padding: 4px 8px; }
-      .weather-forecast { flex-direction: row; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
-      .fc-item { flex-direction: column; align-items: center; gap: 2px; }
-      .fc-time { width: auto; font-size: 9px; }
-      .fc-icon { font-size: 13px; width: auto; }
-      .fc-tmp { font-size: 11px; width: auto; }
+      .weather-dt { font-size: 10px; margin-bottom: 1px; }
+      .weather-body {
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+        width: 100%;
+      }
+      .weather-main { gap: 1px; }
+      .weather-icon-wrap { font-size: 26px !important; }
+      .weather-temp { font-size: 22px; }
+      .weather-temp span { font-size: 12px; }
+      .weather-desc { font-size: 10px; }
+      .weather-demand { font-size: 8px; padding: 2px 5px; margin-top: 1px; }
+      .weather-forecast {
+        width: 100%; flex-direction: column; gap: 0;
+        border-top: 1px solid rgba(255,255,255,.08);
+        padding-top: 4px; margin-top: 2px;
+      }
+      .fc-item { padding: 2px 0; gap: 4px; }
+      .fc-time { font-size: 9px; width: 22px; }
+      .fc-icon { font-size: 12px; width: 15px; }
+      .fc-tmp { font-size: 10px; width: 22px; }
       .fc-rain { font-size: 9px; }
+
+      /* 売上タイル — 縦中央寄せ */
+      .tile-sales {
+        display: flex; flex-direction: column; justify-content: center;
+      }
 
       .alert { padding: 5px 8px; font-size: 10px; }
       .news-mini-title { font-size: 11px; }
@@ -468,21 +496,23 @@
 
       <!-- 行1中央：天気（横長） -->
       <div class="tile tile-weather">
-        <div class="weather-main" style="position:relative;z-index:1;">
-          <div id="weather-datetime" style="font-size:13px; color:var(--text); font-weight:700; text-align:center; margin-bottom:6px;"></div>
-          <div class="weather-icon-wrap" style="font-size:52px;line-height:1;">…</div>
-          <div class="weather-temp">28<span>℃</span></div>
-          <div class="weather-desc">晴れ</div>
-          <div class="weather-demand">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
-            需要：<strong style="color:var(--yellow);">やや低め</strong>
+        <div id="weather-datetime" class="weather-dt"></div>
+        <div class="weather-body">
+          <div class="weather-main">
+            <div class="weather-icon-wrap">…</div>
+            <div class="weather-temp">28<span>℃</span></div>
+            <div class="weather-desc">晴れ</div>
+            <div class="weather-demand">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
+              需要：<strong style="color:var(--yellow);">やや低め</strong>
+            </div>
           </div>
-        </div>
-        <div class="weather-forecast">
-          <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-          <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-          <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
-          <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+          <div class="weather-forecast">
+            <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+            <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+            <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
+            <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+          </div>
         </div>
       </div>
 
@@ -501,12 +531,12 @@
       </div>
 
       <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
-        <div class="tile-label" style="padding:6px 10px 0;">羽田空港</div>
-        <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
-          <img id="top-haneda-img1" src="" alt="プール状況" style="width:100%;flex:1;object-fit:cover;display:block;min-height:0;">
-          <img id="top-haneda-img2" src="" alt="国際線T3" style="width:100%;flex:1;object-fit:cover;display:block;min-height:0;border-top:1px solid rgba(255,255,255,.1);">
+      <div class="tile tile-haneda" data-tab="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
+        <div class="tile-label" style="padding:0 0 0;">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
+        <div id="top-haneda-summary" style="margin-top:6px;">
+          <div style="font-size:11px;color:var(--gray);">読込中…</div>
         </div>
+        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:calc(100% + 20px);margin:8px -10px 0;display:block;object-fit:cover;">
       </div>
 
       <!-- 行2右：道路情報 -->
@@ -519,8 +549,8 @@
       <!-- 行3左：売上 -->
       <div class="tile tile-sales" data-tab="sales">
         <div class="tile-label">売上管理</div>
-        <div class="tile-main gold">¥48,200<br><span style="font-size:11px;">本日</span></div>
-        <div class="tile-sub">今月 ¥891,400 · 前月比 +12%</div>
+        <div id="top-sales-main">—</div>
+        <div id="top-sales-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
 
       <!-- 行3中央：コミュニティ -->
@@ -547,100 +577,143 @@
   <!-- ① 売上管理 -->
   <div class="tab-pane" id="tab-sales">
 
-    <div class="grid3" style="margin-bottom:16px;">
-      <div class="card" style="margin:0;">
-        <div class="kpi">
-          <div class="kpi-value gold">¥48,200</div>
-          <div class="kpi-label">本日の売上</div>
-          <div class="kpi-sub">目標 ¥50,000</div>
+    <!-- 今月のサマリー -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          今月の実績
+          <span id="monthly-summary-period" style="font-size:11px;font-weight:400;color:var(--gray);"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:var(--gray);">締め日</span>
+          <select id="closing-day-select" onchange="saveClosingDay(this.value)"
+            style="background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:5px;color:var(--white);font-size:12px;padding:3px 6px;cursor:pointer;">
+            <option value="0">末日</option>
+            <option value="5">5日</option>
+            <option value="10">10日</option>
+            <option value="15">15日</option>
+            <option value="20">20日</option>
+            <option value="25">25日</option>
+          </select>
         </div>
       </div>
-      <div class="card" style="margin:0;">
-        <div class="kpi">
-          <div class="kpi-value">¥891,400</div>
-          <div class="kpi-label">今月の売上</div>
-          <div class="kpi-sub">前月比 <span class="s-green">+12%</span></div>
-        </div>
-      </div>
-      <div class="card" style="margin:0;">
-        <div class="kpi">
-          <div class="kpi-value green">¥312,000</div>
-          <div class="kpi-label">今月の利益概算</div>
-          <div class="kpi-sub">経費控除後</div>
-        </div>
+      <div id="monthly-summary-content">
+        <div style="color:var(--gray);font-size:12px;text-align:center;padding:12px 0;">今月のデータがありません</div>
       </div>
     </div>
 
-    <div class="grid2">
-      <div class="card" style="margin:0;">
-        <div class="card-title">週間売上</div>
-        <div class="bar-chart">
-          <div class="bar-wrap">
-            <div class="bar-val">6.2万</div>
-            <div class="bar" style="height:82%"></div>
-            <div class="bar-label">月</div>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-val">5.8万</div>
-            <div class="bar" style="height:76%"></div>
-            <div class="bar-label">火</div>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-val">4.9万</div>
-            <div class="bar" style="height:64%"></div>
-            <div class="bar-label">水</div>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-val">7.1万</div>
-            <div class="bar" style="height:95%"></div>
-            <div class="bar-label">木</div>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-val">8.3万</div>
-            <div class="bar" style="height:100%; background:linear-gradient(to top,var(--gold-light),var(--gold));"></div>
-            <div class="bar-label">金</div>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-val">7.6万</div>
-            <div class="bar" style="height:90%"></div>
-            <div class="bar-label">土</div>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-val">4.8万</div>
-            <div class="bar" style="height:63%; opacity:.5;"></div>
-            <div class="bar-label">日</div>
-          </div>
+    <!-- 日報アップロード -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        日報入力
+        <div style="display:flex;gap:4px;">
+          <button id="btn-mode-ocr" onclick="switchReportMode('ocr')"
+            style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;background:var(--gold);border:none;color:#000;">写真読み取り</button>
+          <button id="btn-mode-manual" onclick="switchReportMode('manual')"
+            style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--gray);">手動入力</button>
         </div>
       </div>
 
-      <div class="card" style="margin:0;">
-        <div class="card-title">今月の経費</div>
-        <table class="tbl">
-          <tr><th>項目</th><th>金額</th></tr>
-          <tr><td>燃料費（LPG）</td><td>¥42,300</td></tr>
-          <tr><td>車両保険</td><td>¥18,500</td></tr>
-          <tr><td>携帯・通信費</td><td>¥6,800</td></tr>
-          <tr><td>その他経費</td><td>¥9,200</td></tr>
-          <tr><td style="color:var(--white); font-weight:700;">合計</td><td style="color:var(--gold); font-weight:700;">¥76,800</td></tr>
+      <!-- 手動入力フォーム -->
+      <div id="report-manual-form" style="display:none;margin-top:4px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="grid-column:1/-1;">
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">日付</div>
+            <input type="date" id="mf-date" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;font-weight:600;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">売上（¥）</div>
+            <input type="number" id="mf-sales" placeholder="78770" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;font-weight:600;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">税金（¥）</div>
+            <input type="number" id="mf-tax" placeholder="7160" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">営業回数（回）</div>
+            <input type="number" id="mf-trips" placeholder="16" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">全走（km）</div>
+            <input type="number" id="mf-distance" placeholder="237.7" step="0.1" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">出庫時間</div>
+            <input type="time" id="mf-departure" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">入庫時間</div>
+            <input type="time" id="mf-arrival" style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          </div>
+        </div>
+        <button onclick="saveManualReport()" style="width:100%;margin-top:12px;padding:11px;background:var(--gold);color:#000;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">保存</button>
+        <div id="mf-status" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
+      </div>
+
+      <div id="report-ocr-area">
+      <div id="report-upload-area"
+        style="border:2px dashed rgba(201,168,76,.35);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;"
+        onclick="document.getElementById('report-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+        ondragleave="this.style.borderColor='rgba(201,168,76,.35)'"
+        ondrop="handleReportDrop(event)">
+        <div style="font-size:28px;margin-bottom:8px;">📋</div>
+        <div style="font-size:13px;color:var(--text);font-weight:600;">日報をここにドロップ</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px;">またはタップして選択　JPG / PNG / PDF</div>
+      </div>
+      <input type="file" id="report-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleReportFile(this.files[0])">
+
+      <!-- プレビュー＋読み取り結果 -->
+      <div id="report-result" style="display:none;margin-top:16px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <img id="report-preview" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;">
+          <div style="flex:1;">
+            <div id="report-status" style="font-size:12px;color:var(--gold);margin-bottom:10px;">読み取り中…</div>
+            <div id="report-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button onclick="retryReport()" style="flex:1;background:none;border:1px solid var(--gold);color:var(--gold);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
+            もう一度やり直す
+          </button>
+          <button onclick="document.getElementById('report-file-input').click()" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
+            別の日報を読み取る
+          </button>
+        </div>
+      </div>
+      </div> <!-- /report-ocr-area -->
+    </div>
+
+    <!-- 日報一覧 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">日報一覧</div>
+      <div id="report-history-wrap" style="overflow-x:auto;margin:0 -2px;">
+        <table id="report-history-table" style="width:100%;min-width:480px;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.12);">
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:left;padding:0 8px 8px 0;letter-spacing:.05em;">日付</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:right;padding:0 6px 8px;letter-spacing:.05em;">売上(¥)</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:right;padding:0 6px 8px;letter-spacing:.05em;">回数(回)</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:right;padding:0 6px 8px;letter-spacing:.05em;">全走(km)</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:right;padding:0 6px 8px;letter-spacing:.05em;">税金(¥)</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:center;padding:0 4px 8px;letter-spacing:.05em;">出庫</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:center;padding:0 4px 8px;letter-spacing:.05em;">入庫</th>
+              <th style="font-size:10px;font-weight:600;color:var(--gray);text-align:center;padding:0 4px 8px;letter-spacing:.05em;">営業時間</th>
+              <th colspan="2" style="padding:0 0 8px;"></th>
+            </tr>
+          </thead>
+          <tbody id="report-history-body">
+            <tr><td colspan="10" style="color:var(--gray);text-align:center;padding:20px 0;font-size:13px;">まだ日報がありません</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">日報の入力（写真OCR）</div>
-      <div class="upload-area">
-        <div class="upload-icon">📷</div>
-        <div class="upload-text"><strong>日報の写真をタップして撮影</strong><br>売上・走行距離・乗車回数を自動で読み取ります</div>
-      </div>
-      <div style="margin-top:16px;">
-        <div class="sec-title">最近の日報</div>
-        <table class="tbl">
-          <tr><th>日付</th><th>売上</th><th>乗車</th><th>走行km</th></tr>
-          <tr><td>6/11（火）</td><td>¥48,200</td><td>31回</td><td>218km</td></tr>
-          <tr><td>6/10（月）</td><td>¥52,400</td><td>34回</td><td>241km</td></tr>
-          <tr><td>6/9（日）</td><td>¥38,100</td><td>25回</td><td>189km</td></tr>
-          <tr><td>6/8（土）</td><td>¥71,600</td><td>44回</td><td>287km</td></tr>
-        </table>
+    <!-- 曜日別実績 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">曜日別実績</div>
+      <div id="dow-chart-content">
+        <div style="color:var(--gray);font-size:12px;text-align:center;padding:12px 0;">データがありません</div>
       </div>
     </div>
 
@@ -1867,7 +1940,7 @@
       // SVGを天気アイコン文字に置き換え
       const iconWrap = document.querySelector('.weather-icon-wrap');
       if (iconWrap) {
-        iconWrap.innerHTML = `<div style="font-size:64px;line-height:1;">${getIcon(d.icon)}</div>`;
+        iconWrap.textContent = getIcon(d.icon);
       }
 
       // 予報更新
@@ -2103,18 +2176,28 @@
 
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
   const HANEDA_TERMINAL_INFO = {
-    1: { label: '第1ターミナル（JAL系 国内線）', arrExits: '到着出口 1〜8番', taxiStand: '乗り場1・2' },
-    2: { label: '第2ターミナル（ANA系 国内線）', arrExits: '到着出口 1〜5番・国際線', taxiStand: '乗り場3・4' },
+    1: { label: '第1ターミナル（JAL系 国内線）', arrExits: '到着出口 1〜8番　出口1-4→❶　出口5-8→❷', taxiStand: '乗り場❶❷' },
+    2: { label: '第2ターミナル（ANA系 国内線・国際線）', arrExits: '到着出口 1〜6番・国際線　出口1-4→❸　出口5-6・国際線→❹', taxiStand: '乗り場❸❹' },
     3: { label: '第3ターミナル（国際線）',        arrExits: '到着出口 1番',      taxiStand: '乗り場5' },
   };
+  function getTaxiStand(terminal, exitGates, intl) {
+    const stands = [];
+    if (terminal === 1) {
+      const nums = (exitGates || '').split('・').map(Number).filter(Boolean);
+      if (nums.some(n => n >= 1 && n <= 4)) stands.push('❶');
+      if (nums.some(n => n >= 5 && n <= 8)) stands.push('❷');
+    } else if (terminal === 2) {
+      const nums = (exitGates || '').split('・').map(Number).filter(Boolean);
+      if (nums.some(n => n >= 1 && n <= 4)) stands.push('❸');
+      if (intl || nums.some(n => n >= 5 && n <= 6)) stands.push('❹');
+    }
+    return stands.join('');
+  }
   function fmtJst(arrStr) {
-    const m = arrStr && arrStr.match(/^(\d{1,2}):(\d{2})([ap])$/);
-    if (!m) return '—';
-    let h = parseInt(m[1], 10);
-    const min = m[2];
-    if (m[3] === 'a') { if (h === 12) h = 0; }
-    else { if (h !== 12) h += 12; }
-    return `${String(h).padStart(2,'0')}:${min}`;
+    if (!arrStr || arrStr === '-') return '—';
+    const m = arrStr.match(/^(\d{1,2}):(\d{2})$/);
+    if (m) return `${m[1].padStart(2,'0')}:${m[2]}`;
+    return '—';
   }
   async function loadHanedaArr() {
     const bodyEl = document.getElementById('haneda-arr-body');
@@ -2128,30 +2211,102 @@
       const now = new Date(updatedAt);
       const pad = n => String(n).padStart(2,'0');
       if (updEl) updEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())} 更新`;
-      let html = '';
+      const topUpdEl = document.getElementById('top-haneda-updated');
+      if (topUpdEl) topUpdEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      // 乗り場別集計
+      const standCount = { '❶':0, '❷':0, '❸':0, '❹':0 };
+      for (const t of [1, 2]) {
+        for (const f of (terminals[t] || [])) {
+          const s = getTaxiStand(t, f.exitGates, f.intl);
+          for (const ch of ['❶','❷','❸','❹']) { if (s.includes(ch)) standCount[ch]++; }
+        }
+      }
+      const intlT2 = (terminals[2] || []).filter(f => f.intl).length;
+      const intlT3 = (terminals[3] || []).length;
+      const standMeta = {
+        '❶': { terminal: '第1T', color: '#c9a84c' },
+        '❷': { terminal: '第1T', color: '#c9a84c' },
+        '❸': { terminal: '第2T', color: '#4ca8c9' },
+        '❹': { terminal: '第2T', color: '#4ca8c9' },
+      };
+      let html = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">`;
+      for (const [s, c] of Object.entries(standCount)) {
+        const m = standMeta[s];
+        html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid ${m.color};border-radius:8px;padding:12px 8px;text-align:center;">
+          <div style="font-size:22px;line-height:1.2;">${s}</div>
+          <div style="font-size:20px;font-weight:900;color:var(--white);line-height:1.1;margin:2px 0;">${c}</div>
+          <div style="font-size:10px;color:var(--gray);letter-spacing:.05em;">便 · ${m.terminal}</div>
+        </div>`;
+      }
+      html += `</div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">`;
+      html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid #4ca8c9;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:10px;color:var(--gray);letter-spacing:.05em;">第2T 国際線</div><div style="font-size:11px;color:#4ca8c9;margin-top:2px;">乗り場❹</div></div>
+        <div style="font-size:26px;font-weight:900;color:var(--white);">${intlT2}<span style="font-size:12px;font-weight:400;color:var(--gray);margin-left:3px;">便</span></div>
+      </div>`;
+      html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid #9b7fe8;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:10px;color:var(--gray);letter-spacing:.05em;">第3T 国際線</div><div style="font-size:11px;color:#9b7fe8;margin-top:2px;">乗り場5</div></div>
+        <div style="font-size:26px;font-weight:900;color:var(--white);">${intlT3}<span style="font-size:12px;font-weight:400;color:var(--gray);margin-left:3px;">便</span></div>
+      </div>`;
+      html += `</div>`;
+
+      // TOPタイルにサマリーを反映
+      const topSummaryEl = document.getElementById('top-haneda-summary');
+      if (topSummaryEl) {
+        const standColors = { '❶':'#c9a84c','❷':'#c9a84c','❸':'#4ca8c9','❹':'#4ca8c9' };
+        let ts = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">`;
+        for (const [s, c] of Object.entries(standCount)) {
+          ts += `<div style="border-top:2px solid ${standColors[s]};border-radius:4px;background:rgba(255,255,255,.04);padding:5px 2px;text-align:center;">
+            <div style="font-size:14px;line-height:1.1;">${s}</div>
+            <div style="font-size:15px;font-weight:900;color:var(--white);line-height:1.1;">${c}</div>
+            <div style="font-size:9px;color:var(--gray);">便</div>
+          </div>`;
+        }
+        ts += `</div>`;
+        ts += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">`;
+        ts += `<div style="border-top:2px solid #4ca8c9;border-radius:4px;background:rgba(255,255,255,.04);padding:5px 2px;text-align:center;">
+          <div style="font-size:10px;color:#4ca8c9;line-height:1.2;font-weight:700;">第2T国際</div>
+          <div style="font-size:15px;font-weight:900;color:var(--white);line-height:1.1;">${intlT2}</div>
+          <div style="font-size:9px;color:var(--gray);">便 · 乗り場❹</div>
+        </div>`;
+        ts += `<div style="border-top:2px solid #9b7fe8;border-radius:4px;background:rgba(255,255,255,.04);padding:5px 2px;text-align:center;">
+          <div style="font-size:10px;color:#9b7fe8;line-height:1.2;font-weight:700;">第3T国際</div>
+          <div style="font-size:15px;font-weight:900;color:var(--white);line-height:1.1;">${intlT3}</div>
+          <div style="font-size:9px;color:var(--gray);">便 · 乗り場5</div>
+        </div>`;
+        ts += `</div>`;
+        topSummaryEl.innerHTML = ts;
+      }
+
       for (const t of [1, 2, 3]) {
         const flights = terminals[t] || [];
         const info = HANEDA_TERMINAL_INFO[t];
         html += `<div style="margin-bottom:16px;">`;
-        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 2px;">${info.label}</div>`;
+        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 2px;display:flex;justify-content:space-between;align-items:baseline;">${info.label}<span style="font-size:11px;font-weight:400;color:var(--gray);">${flights.length}便</span></div>`;
         html += `<div style="font-size:10px;color:var(--gray);margin-bottom:4px;">${info.arrExits}　<span style="color:var(--gold);">${info.taxiStand}</span></div>`;
         if (flights.length === 0) {
           html += `<div style="font-size:12px;color:var(--gray);">該当便なし</div>`;
         } else {
-          html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>状態</th></tr>`;
+          html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>出口</th><th>状態</th></tr>`;
           for (const f of flights) {
-            const timeTd = f.arrStr
-              ? `<strong>${fmtJst(f.arrStr)}</strong>`
-              : `<span style="color:var(--gray);">—</span>`;
+            const timeTd = `<strong>${fmtJst(f.arrStr)}</strong>`;
+            const stand = getTaxiStand(t, f.exitGates, f.intl);
+            const exitTd = f.exitGates
+              ? `<span style="color:var(--gold);font-size:10px;">${f.exitGates}番</span>${stand ? `<br><span style="font-size:12px;">${stand}</span>` : ''}`
+              : (stand ? `<span style="font-size:12px;">${stand}</span>` : `<span style="color:var(--gray);">—</span>`);
             let statusTd;
             if (f.statusCode === 'landed') {
-              statusTd = `<span class="badge badge-green">着陸済</span>`;
+              statusTd = `<span class="badge badge-green">到着済</span>`;
             } else if (f.statusCode === 'approach') {
               statusTd = `<span class="badge badge-yellow">進入中</span>`;
+            } else if (f.statusCode === 'delayed') {
+              statusTd = `<span class="badge badge-yellow">遅延</span>`;
+            } else if (f.statusCode === 'canceled') {
+              statusTd = `<span style="color:var(--gray);font-size:10px;">欠航</span>`;
             } else {
               statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
             }
-            html += `<tr><td>${timeTd}</td><td>${f.flight}</td><td>${f.origin||'—'}</td><td>${statusTd}</td></tr>`;
+            html += `<tr><td>${timeTd}</td><td>${f.flight}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
           }
           html += `</table>`;
         }
@@ -2617,12 +2772,21 @@
   let touchStartX = 0;
   let touchStartY = 0;
 
+  let swipeBlocked = false;
   document.querySelector('.content').addEventListener('touchstart', e => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
+    // 横スクロール可能な要素の上ではスワイプを無効化
+    let el = e.target;
+    swipeBlocked = false;
+    while (el && el !== document.body) {
+      if (el.scrollWidth > el.clientWidth + 4) { swipeBlocked = true; break; }
+      el = el.parentElement;
+    }
   }, { passive: true });
 
   document.querySelector('.content').addEventListener('touchend', e => {
+    if (swipeBlocked) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
     // 横方向が縦より大きく、50px以上動いたらスワイプ判定
@@ -2640,6 +2804,617 @@
     const nextBtn = document.querySelector('.tab-btn.active');
     nextBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, { passive: true });
+
+  // ── 日報履歴 ──
+  const REPORT_KEY = 'takudora_reports';
+  const OCR_CORRECTIONS_KEY = 'takudora_ocr_corrections';
+  const CLOSING_DAY_KEY = 'takudora_closing_day';
+
+  function loadClosingDay() {
+    return parseInt(localStorage.getItem(CLOSING_DAY_KEY) || '0');
+  }
+
+  function saveClosingDay(val) {
+    localStorage.setItem(CLOSING_DAY_KEY, val);
+    renderMonthlySummary();
+  }
+
+  function getMonthPeriod() {
+    const closingDay = loadClosingDay();
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+
+    if (!closingDay) {
+      const ym = `${y}-${String(m).padStart(2,'0')}`;
+      return {
+        start: `${ym}-01`,
+        end:   `${ym}-31`,
+        label: `${y}年${m}月`,
+      };
+    }
+
+    // 今日が締め日以前 → 前月(closingDay+1)〜今月(closingDay)
+    // 今日が締め日より後 → 今月(closingDay+1)〜来月(closingDay)
+    let sy, sm, ey, em;
+    if (d <= closingDay) {
+      ey = y; em = m;
+      if (m === 1) { sy = y - 1; sm = 12; } else { sy = y; sm = m - 1; }
+    } else {
+      sy = y; sm = m;
+      if (m === 12) { ey = y + 1; em = 1; } else { ey = y; em = m + 1; }
+    }
+    const pad = n => String(n).padStart(2,'0');
+    return {
+      start: `${sy}-${pad(sm)}-${pad(closingDay + 1)}`,
+      end:   `${ey}-${pad(em)}-${pad(closingDay)}`,
+      label: `${ey}年${em}月度（${sm}/${closingDay+1}〜${em}/${closingDay}）`,
+    };
+  }
+
+  function initClosingDaySelect() {
+    const sel = document.getElementById('closing-day-select');
+    if (sel) sel.value = String(loadClosingDay());
+  }
+
+  function loadOcrCorrections() {
+    try { return JSON.parse(localStorage.getItem(OCR_CORRECTIONS_KEY) || '[]'); } catch { return []; }
+  }
+
+  function saveOcrCorrection(ocrVals, savedVals) {
+    const fields = ['sales','trips','distance','tax','departure','arrival'];
+    const diffs = fields
+      .filter(f => String(ocrVals[f] ?? '') !== String(savedVals[f] ?? ''))
+      .map(f => ({ field: f, ocr: ocrVals[f] ?? null, correct: savedVals[f] ?? null }));
+    if (!diffs.length) return;
+    const corrections = loadOcrCorrections();
+    corrections.unshift({ diffs, savedAt: new Date().toISOString().slice(0,10) });
+    localStorage.setItem(OCR_CORRECTIONS_KEY, JSON.stringify(corrections.slice(0, 8)));
+  }
+
+  function loadReports() {
+    try { return JSON.parse(localStorage.getItem(REPORT_KEY) || '[]'); } catch { return []; }
+  }
+
+  function saveReport(d) {
+    const reports = loadReports();
+    // 同じ日付があれば上書き
+    const idx = reports.findIndex(r => r.date === d.date);
+    if (idx >= 0) reports[idx] = d; else reports.unshift(d);
+    localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+    renderReportHistory();
+  }
+
+  function deleteReport(date) {
+    const reports = loadReports().filter(r => r.date !== date);
+    localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+    renderReportHistory();
+  }
+
+  function clearReportHistory() {
+    if (!confirm('日報一覧をすべて削除しますか？')) return;
+    localStorage.removeItem(REPORT_KEY);
+    renderReportHistory();
+  }
+
+  function renderDowChart() {
+    const el = document.getElementById('dow-chart-content');
+    if (!el) return;
+    const all = loadReports().filter(r => r.date && r.sales != null);
+    if (all.length < 2) {
+      el.innerHTML = '<div style="color:var(--gray);font-size:12px;text-align:center;padding:12px 0;">データが不足しています（2件以上必要）</div>';
+      return;
+    }
+    // 曜日ごとに集計 (0=日〜6=土)
+    const DOW = ['日','月','火','水','木','金','土'];
+    const DOW_ORDER = [1,2,3,4,5,6,0]; // 月〜土→日 の順に表示
+    const groups = Array.from({length:7}, () => []);
+    for (const r of all) {
+      const w = new Date(r.date).getDay();
+      groups[w].push(Number(r.sales));
+    }
+    const avgs = groups.map(g => g.length ? Math.round(g.reduce((s,v)=>s+v,0)/g.length) : null);
+    const counts = groups.map(g => g.length);
+    const validAvgs = avgs.filter(v => v != null);
+    if (!validAvgs.length) return;
+    const maxAvg = Math.max(...validAvgs);
+    const overallAvg = Math.round(validAvgs.reduce((s,v)=>s+v,0)/validAvgs.length);
+
+    const dowColor = w => w===0?'#f87171':w===6?'#60a5fa':'var(--gold)';
+    const bars = DOW_ORDER.map(w => {
+      const avg = avgs[w];
+      const cnt = counts[w];
+      if (avg == null) return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;">
+        <div style="font-size:9px;color:rgba(255,255,255,.2);">—</div>
+        <div style="width:100%;display:flex;align-items:flex-end;height:72px;">
+          <div style="width:100%;height:4px;background:rgba(255,255,255,.08);border-radius:3px 3px 0 0;"></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${dowColor(w)};">${DOW[w]}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.2);">0日</div>
+      </div>`;
+      const pct = Math.round(avg / maxAvg * 100);
+      const aboveAvg = avg >= overallAvg;
+      const man = avg >= 10000 ? (avg/10000).toFixed(1)+'万' : avg.toLocaleString();
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;">
+        <div style="font-size:9px;font-weight:600;color:${aboveAvg?dowColor(w):'rgba(255,255,255,.35)'};">${man}</div>
+        <div style="width:100%;display:flex;align-items:flex-end;height:72px;">
+          <div style="width:100%;height:${pct}%;background:${aboveAvg?`linear-gradient(to top,${dowColor(w)},${dowColor(w)}88)`:'rgba(255,255,255,.15)'};border-radius:3px 3px 0 0;transition:height .3s;"></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${dowColor(w)};">${DOW[w]}</div>
+        <div style="font-size:9px;color:var(--gray);">${cnt}日</div>
+      </div>`;
+    }).join('');
+
+    const avgPct = Math.round(overallAvg / maxAvg * 100);
+    el.innerHTML = `
+      <div style="position:relative;padding-top:4px;">
+        <div style="position:absolute;top:${100-avgPct}%;left:0;right:0;border-top:1px dashed rgba(255,255,255,.2);pointer-events:none;">
+          <span style="position:absolute;right:0;top:-14px;font-size:8px;color:rgba(255,255,255,.4);">平均 ¥${Math.round(overallAvg/1000)}K</span>
+        </div>
+        <div style="display:flex;gap:4px;align-items:flex-end;height:72px;">${bars}</div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;">
+        ${DOW_ORDER.map(w => {
+          const avg = avgs[w]; const cnt = counts[w];
+          if (!avg) return '';
+          const man = avg >= 10000 ? '¥'+(avg/10000).toFixed(1)+'万' : '¥'+avg.toLocaleString();
+          return `<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:5px 10px;display:flex;gap:8px;align-items:center;">
+            <span style="font-size:13px;font-weight:700;color:${dowColor(w)};">${DOW[w]}</span>
+            <span style="font-size:12px;color:var(--white);font-weight:600;">${man}</span>
+            <span style="font-size:10px;color:var(--gray);">${cnt}日</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function updateTopSalesTile() {
+    const mainEl = document.getElementById('top-sales-main');
+    const subEl  = document.getElementById('top-sales-sub');
+    if (!mainEl || !subEl) return;
+    const period = getMonthPeriod();
+    const reports = loadReports().filter(r => r.date && r.date >= period.start && r.date <= period.end && r.sales != null);
+    if (reports.length === 0) {
+      mainEl.textContent = '—';
+      subEl.textContent = '今月のデータなし';
+      return;
+    }
+    const total = reports.reduce((s, r) => s + Number(r.sales), 0);
+    const totalExTax = reports.reduce((s, r) => {
+      const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
+      return s + Number(r.sales) - tax;
+    }, 0);
+    const fmt = v => v >= 10000 ? (v / 10000).toFixed(1) + '万' : v.toLocaleString();
+
+    // 営業時間・時間単価
+    let totalMinutes = 0, timeCount = 0;
+    for (const r of reports) {
+      if (r.departure && r.arrival) {
+        const parseMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+        let dep = parseMin(r.departure), arr = parseMin(r.arrival);
+        if (arr < dep) arr += 24 * 60;
+        totalMinutes += arr - dep;
+        timeCount++;
+      }
+    }
+    const fmtTime = m => `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}m`;
+    const hourlyRate = timeCount && totalMinutes > 0 ? Math.round(total / (totalMinutes / 60)) : null;
+
+    mainEl.innerHTML = `
+      <div style="font-size:clamp(14px,4.2vw,24px);font-weight:800;color:var(--gold);line-height:1;white-space:nowrap;">¥${total.toLocaleString()}</div>
+      <div style="font-size:10px;color:rgba(201,168,76,.55);margin-top:1px;">税込</div>
+      <div style="font-size:clamp(12px,3.5vw,18px);font-weight:700;color:rgba(255,255,255,.7);margin-top:4px;white-space:nowrap;">¥${totalExTax.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:1px;margin-bottom:8px;">税抜</div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">
+        <div style="font-size:9px;color:var(--gray);">時間単価</div>
+        <div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:rgba(255,255,255,.85);margin-top:2px;white-space:nowrap;">${hourlyRate ? '¥'+fmt(Math.round(hourlyRate/100)*100) : '—'}</div>
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:6px;">
+        <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
+        ${(() => {
+          const TOTAL = 277;
+          const usedH = totalMinutes / 60;
+          const remH = Math.max(0, TOTAL - usedH);
+          const remHH = Math.floor(remH);
+          const remMM = Math.round((remH - remHH) * 60);
+          const pct = Math.min(100, Math.round(usedH / TOTAL * 100));
+          const col = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'var(--green)';
+          return `<div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:${col};margin-top:2px;white-space:nowrap;">${timeCount ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</div>`;
+        })()}
+      </div>`;
+    subEl.innerHTML = `${reports.length}日分&nbsp;·&nbsp;${timeCount ? fmtTime(totalMinutes) : '—'}`;
+  }
+
+  function renderMonthlySummary() {
+    const el = document.getElementById('monthly-summary-content');
+    const periodEl = document.getElementById('monthly-summary-period');
+    if (!el) return;
+    const period = getMonthPeriod();
+    if (periodEl) periodEl.textContent = period.label;
+    const reports = loadReports().filter(r => r.date && r.date >= period.start && r.date <= period.end);
+    if (reports.length === 0) {
+      el.innerHTML = '<div style="color:var(--gray);font-size:12px;text-align:center;padding:12px 0;">今月のデータがありません</div>';
+      return;
+    }
+    let totalSales = 0, totalSalesExTax = 0, totalDistance = 0, totalTrips = 0, totalMinutes = 0;
+    let distanceCount = 0, tripsCount = 0, timeCount = 0;
+    for (const r of reports) {
+      if (r.sales != null) {
+        totalSales += Number(r.sales);
+        const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
+        totalSalesExTax += Number(r.sales) - tax;
+      }
+      if (r.distance != null) { totalDistance += Number(r.distance); distanceCount++; }
+      if (r.trips != null) { totalTrips += Number(r.trips); tripsCount++; }
+      if (r.departure && r.arrival) {
+        const parseMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+        let dep = parseMin(r.departure), arr = parseMin(r.arrival);
+        if (arr < dep) arr += 24 * 60;
+        totalMinutes += arr - dep;
+        timeCount++;
+      }
+    }
+    const fmtTime = m => `${Math.floor(m/60)}時間${String(m%60).padStart(2,'0')}分`;
+    const salesCount = reports.filter(r => r.sales != null).length;
+    const avgSales = salesCount ? Math.round(totalSales / salesCount) : null;
+    const avgSalesExTax = salesCount ? Math.round(totalSalesExTax / salesCount) : null;
+    el.innerHTML = `
+      <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:12px 14px;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:6px;">
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">売上合計（税込）</div>
+            <div style="font-size:24px;font-weight:700;color:var(--gold);">¥${totalSales.toLocaleString()}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">売上合計（税抜）</div>
+            <div style="font-size:20px;font-weight:600;color:var(--white);">¥${totalSalesExTax.toLocaleString()}</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid rgba(201,168,76,.2);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;">
+          <div style="font-size:11px;color:var(--gray);">1日平均（税込）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSales != null ? '¥'+avgSales.toLocaleString() : '—'}</span></div>
+          <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--white);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">走行距離</div>
+          <div style="font-size:15px;font-weight:700;color:var(--white);">${distanceCount ? Math.round(totalDistance).toLocaleString()+'km' : '—'}</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:3px;">平均 ${distanceCount ? Math.round(totalDistance/distanceCount)+'km' : '—'}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">営業時間</div>
+          <div style="font-size:15px;font-weight:700;color:var(--white);">${timeCount ? fmtTime(totalMinutes) : '—'}</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:3px;">平均 ${timeCount ? fmtTime(Math.round(totalMinutes/timeCount)) : '—'}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">営業回数</div>
+          <div style="font-size:15px;font-weight:700;color:var(--white);">${tripsCount ? totalTrips+'回' : '—'}</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:3px;">平均 ${tripsCount ? (totalTrips/tripsCount).toFixed(1)+'回' : '—'}</div>
+        </div>
+      </div>
+      ${(() => {
+        const TOTAL_HOURS = 277;
+        const usedH = totalMinutes / 60;
+        const remainH = Math.max(0, TOTAL_HOURS - usedH);
+        const usedPct = Math.min(100, Math.round(usedH / TOTAL_HOURS * 100));
+        const barColor = usedPct >= 90 ? '#f87171' : usedPct >= 70 ? '#fbbf24' : 'var(--green)';
+        const remainHH = Math.floor(remainH);
+        const remainMM = Math.round((remainH - remainHH) * 60);
+        const projected = timeCount && totalMinutes > 0 ? Math.round(totalSales / usedH * TOTAL_HOURS) : null;
+        return `<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:10px;color:var(--gray);">残り営業可能時間 <span style="font-size:9px;">(月277h)</span></div>
+            <div style="font-size:13px;font-weight:700;color:${barColor};">${timeCount ? remainHH+'h'+String(remainMM).padStart(2,'0')+'m' : '—'}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:3px;height:6px;overflow:hidden;">
+            <div style="height:100%;width:${usedPct}%;background:${barColor};border-radius:3px;transition:width .4s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:5px;">
+            <div style="font-size:10px;color:var(--gray);">消化 ${timeCount ? Math.floor(usedH)+'h'+String(Math.round((usedH%1)*60)).padStart(2,'0')+'m' : '—'} (${usedPct}%)</div>
+            ${projected ? `<div style="font-size:10px;color:var(--gray);">着地予測 <span style="color:var(--gold);font-weight:600;">¥${Math.round(projected/10000*10)/10}万</span></div>` : ''}
+          </div>
+        </div>`;
+      })()}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">時間単価</div>
+          <div style="font-size:14px;font-weight:700;color:var(--white);">${timeCount && totalMinutes > 0 ? '¥'+Math.round(totalSales/(totalMinutes/60)/100)*100 : '—'}</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">/h</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">回数単価</div>
+          <div style="font-size:14px;font-weight:700;color:var(--white);">${tripsCount && totalTrips > 0 ? '¥'+Math.round(totalSales/totalTrips/10)*10 : '—'}</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">/回</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">距離単価</div>
+          <div style="font-size:14px;font-weight:700;color:var(--white);">${distanceCount && totalDistance > 0 ? '¥'+Math.round(totalSales/totalDistance) : '—'}</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">/km</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:right;">${reports.length}日分のデータより集計</div>
+      ${(() => {
+        const salesData = reports.filter(r => r.sales != null).map(r => ({ date: r.date, sales: Number(r.sales) })).sort((a,b) => a.date.localeCompare(b.date));
+        if (salesData.length < 2) return '';
+        const maxS = Math.max(...salesData.map(d => d.sales));
+        const avg = salesData.reduce((s,d) => s+d.sales, 0) / salesData.length;
+        const avgPct = Math.round(avg / maxS * 100);
+        const dow = d => ['日','月','火','水','木','金','土'][new Date(d).getDay()];
+        const dowC = d => { const w=new Date(d).getDay(); return w===0?'#f87171':w===6?'#60a5fa':'rgba(255,255,255,.45)'; };
+        const bars = salesData.map(d => {
+          const pct = Math.round(d.sales / maxS * 100);
+          const aboveAvg = d.sales >= avg;
+          const md = d.date.slice(5).replace('-','/');
+          const man = (d.sales/10000).toFixed(1);
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;">
+            <div style="font-size:9px;font-weight:600;color:${aboveAvg?'var(--gold)':'rgba(255,255,255,.35)'};white-space:nowrap;">${man}万</div>
+            <div style="width:100%;display:flex;align-items:flex-end;height:64px;">
+              <div style="width:100%;height:${pct}%;background:${aboveAvg?'linear-gradient(to top,var(--gold),rgba(201,168,76,.6))':'rgba(255,255,255,.15)'};border-radius:3px 3px 0 0;transition:height .3s;"></div>
+            </div>
+            <div style="font-size:9px;color:${dowC(d.date)};font-weight:600;line-height:1;">${md.slice(3)}</div>
+            <div style="font-size:8px;color:${dowC(d.date)};line-height:1;">${dow(d.date)}</div>
+          </div>`;
+        }).join('');
+        return `<div style="margin-top:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 10px 8px;position:relative;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">日別売上</div>
+          <div style="position:relative;">
+            <div style="position:absolute;top:${100-avgPct}%;left:0;right:0;border-top:1px dashed rgba(201,168,76,.4);z-index:1;">
+              <span style="position:absolute;right:0;top:-14px;font-size:8px;color:rgba(201,168,76,.6);">平均</span>
+            </div>
+            <div style="display:flex;gap:3px;align-items:flex-end;height:64px;">${bars}</div>
+          </div>
+        </div>`;
+      })()}`;
+  }
+
+  function renderReportHistory() {
+    const tbody = document.getElementById('report-history-body');
+    if (!tbody) return;
+    renderMonthlySummary();
+    updateTopSalesTile();
+    renderDowChart();
+    const reports = loadReports().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (reports.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="color:var(--gray);text-align:center;padding:16px 0;">まだ日報がありません</td></tr>';
+      return;
+    }
+    const fmtN = v => v != null ? Number(v).toLocaleString() : '—';
+    const dowTxt = d => { if(!d) return ''; return ['日','月','火','水','木','金','土'][new Date(d).getDay()]; };
+    const dowColor = d => { if(!d) return 'var(--gray)'; const w=new Date(d).getDay(); return w===0?'#f87171':w===6?'#60a5fa':'var(--gray)'; };
+    const mdFmt = d => d ? d.slice(5).replace('-','/') : '—';
+    const calcWorktime = r => {
+      if (!r.departure || !r.arrival) return '—';
+      const pm = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+      let dep = pm(r.departure), arr = pm(r.arrival);
+      if (arr < dep) arr += 24*60;
+      const mins = arr - dep;
+      return `${Math.floor(mins/60)}:${String(mins%60).padStart(2,'0')}`;
+    };
+    tbody.innerHTML = reports.map(r => `<tr id="rrow-${r.date}" style="border-bottom:1px solid rgba(255,255,255,.06);">
+      <td style="white-space:nowrap;padding:10px 8px 10px 0;">
+        <span style="font-size:14px;font-weight:700;color:var(--gold);">${mdFmt(r.date)}</span>
+        <span style="font-size:11px;font-weight:600;color:${dowColor(r.date)};margin-left:4px;">${dowTxt(r.date)}</span>
+      </td>
+      <td style="text-align:right;padding:10px 6px;font-size:13px;font-weight:600;color:var(--white);">${fmtN(r.sales)}</td>
+      <td style="text-align:right;padding:10px 6px;font-size:13px;color:var(--text);">${r.trips!=null?r.trips:'—'}</td>
+      <td style="text-align:right;padding:10px 6px;font-size:13px;color:var(--text);">${r.distance!=null?r.distance:'—'}</td>
+      <td style="text-align:right;padding:10px 6px;font-size:12px;color:var(--gray);">${fmtN(r.tax)}</td>
+      <td style="text-align:center;padding:10px 4px;font-size:12px;color:var(--text);white-space:nowrap;">${r.departure||'—'}</td>
+      <td style="text-align:center;padding:10px 4px;font-size:12px;color:var(--text);white-space:nowrap;">${r.arrival||'—'}</td>
+      <td style="text-align:center;padding:10px 4px;font-size:12px;color:var(--text);white-space:nowrap;">${calcWorktime(r)}</td>
+      <td style="padding:10px 4px;"><button onclick="editReport('${r.date}')" style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold);cursor:pointer;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;">編集</button></td>
+      <td style="padding:10px 0 10px 4px;"><button onclick="deleteReport('${r.date}')" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--gray);cursor:pointer;font-size:11px;padding:3px 7px;border-radius:4px;">✕</button></td>
+    </tr>`).join('');
+  }
+
+  function editReport(date) {
+    const reports = loadReports();
+    const r = reports.find(x => x.date === date);
+    if (!r) return;
+    const row = document.getElementById(`rrow-${date}`);
+    if (!row) return;
+    const is = `background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:3px;color:var(--white);font-size:11px;width:100%;padding:2px 4px;`;
+    row.innerHTML = `
+      <td><input id="re-date" value="${r.date||''}" style="${is}min-width:80px;color:var(--gold);"></td>
+      <td><input id="re-sales" type="number" value="${r.sales??''}" style="${is}min-width:60px;text-align:right;"></td>
+      <td><input id="re-trips" type="number" value="${r.trips??''}" style="${is}min-width:40px;text-align:right;"></td>
+      <td><input id="re-distance" type="number" value="${r.distance??''}" style="${is}min-width:50px;text-align:right;"></td>
+      <td><input id="re-tax" type="number" value="${r.tax??''}" style="${is}min-width:50px;text-align:right;"></td>
+      <td><input id="re-departure" value="${r.departure||''}" style="${is}min-width:44px;"></td>
+      <td><input id="re-arrival" value="${r.arrival||''}" style="${is}min-width:44px;"></td>
+      <td colspan="3">
+        <button onclick="saveEditedReport('${date}')" style="background:var(--gold);border:none;color:#000;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;cursor:pointer;">保存</button>
+        <button onclick="renderReportHistory()" style="background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;margin-left:4px;">✕</button>
+      </td>`;
+  }
+
+  function saveEditedReport(oldDate) {
+    const get = id => document.getElementById(id)?.value.trim() || null;
+    const toNum = v => (v === null || v === '') ? null : Number(v);
+    const d = {
+      date:      get('re-date'),
+      sales:     toNum(get('re-sales')),
+      trips:     toNum(get('re-trips')),
+      distance:  toNum(get('re-distance')),
+      tax:       toNum(get('re-tax')),
+      departure: get('re-departure'),
+      arrival:   get('re-arrival'),
+    };
+    const reports = loadReports().filter(r => r.date !== oldDate);
+    const idx = reports.findIndex(r => r.date === d.date);
+    if (idx >= 0) reports[idx] = d; else reports.push(d);
+    localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+    renderReportHistory();
+  }
+
+  function retryReport() {
+    if (!window._lastReportFile) return;
+    handleReportFile(window._lastReportFile);
+  }
+
+  function confirmAndSaveReport() {
+    const get = id => document.getElementById(id)?.value.trim() || null;
+    const toNum = v => (v === null || v === '') ? null : Number(v);
+    const d = {
+      date:      get('rf-date'),
+      sales:     toNum(get('rf-sales')),
+      trips:     toNum(get('rf-trips')),
+      distance:  toNum(get('rf-distance')),
+      tax:       toNum(get('rf-tax')),
+      departure: get('rf-departure'),
+      arrival:   get('rf-arrival'),
+    };
+    if (window._lastOcrResult) {
+      saveOcrCorrection(window._lastOcrResult, d);
+      window._lastOcrResult = null;
+    }
+    saveReport(d);
+    const resultEl = document.getElementById('report-result');
+    if (resultEl) {
+      resultEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--green);font-weight:600;">保存しました</div>';
+      setTimeout(() => { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }, 1500);
+    }
+  }
+
+  // 手動入力の日付を今日にデフォルト設定
+  const mfDate = document.getElementById('mf-date');
+  if (mfDate) {
+    const now = new Date();
+    mfDate.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  }
+
+  function switchReportMode(mode) {
+    const ocr = document.getElementById('report-ocr-area');
+    const manual = document.getElementById('report-manual-form');
+    const btnOcr = document.getElementById('btn-mode-ocr');
+    const btnManual = document.getElementById('btn-mode-manual');
+    if (mode === 'manual') {
+      ocr.style.display = 'none';
+      manual.style.display = 'block';
+      btnManual.style.background = 'var(--gold)'; btnManual.style.color = '#000'; btnManual.style.border = 'none';
+      btnOcr.style.background = 'rgba(255,255,255,.08)'; btnOcr.style.color = 'var(--gray)'; btnOcr.style.border = '1px solid var(--border)';
+    } else {
+      ocr.style.display = 'block';
+      manual.style.display = 'none';
+      btnOcr.style.background = 'var(--gold)'; btnOcr.style.color = '#000'; btnOcr.style.border = 'none';
+      btnManual.style.background = 'rgba(255,255,255,.08)'; btnManual.style.color = 'var(--gray)'; btnManual.style.border = '1px solid var(--border)';
+    }
+  }
+
+  function saveManualReport() {
+    const get = id => document.getElementById(id)?.value.trim() || null;
+    const toNum = v => (v === null || v === '') ? null : Number(v);
+    const d = {
+      date:      get('mf-date'),
+      sales:     toNum(get('mf-sales')),
+      trips:     toNum(get('mf-trips')),
+      distance:  toNum(get('mf-distance')),
+      tax:       toNum(get('mf-tax')),
+      departure: get('mf-departure'),
+      arrival:   get('mf-arrival'),
+    };
+    if (!d.date) { alert('日付を入力してください'); return; }
+    saveReport(d);
+    // フォームリセット
+    ['mf-sales','mf-tax','mf-trips','mf-distance','mf-departure','mf-arrival'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    // 日付を翌日に進める
+    const next = new Date(d.date); next.setDate(next.getDate() + 1);
+    const mfDate = document.getElementById('mf-date');
+    if (mfDate) mfDate.value = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
+    const st = document.getElementById('mf-status');
+    if (st) { st.textContent = '保存しました'; st.style.display = 'block'; setTimeout(() => st.style.display = 'none', 1500); }
+  }
+
+  initClosingDaySelect();
+  renderReportHistory();
+
+  // ── 日報読み取り ──
+  function handleReportDrop(e) {
+    e.preventDefault();
+    document.getElementById('report-upload-area').style.borderColor = 'rgba(201,168,76,.35)';
+    const file = e.dataTransfer.files[0];
+    if (file) handleReportFile(file);
+  }
+
+  async function handleReportFile(file) {
+    if (!file) return;
+    window._lastReportFile = file;
+    const resultEl  = document.getElementById('report-result');
+    const statusEl  = document.getElementById('report-status');
+    const fieldsEl  = document.getElementById('report-fields');
+    const previewEl = document.getElementById('report-preview');
+
+    resultEl.style.display = 'block';
+    fieldsEl.innerHTML = '';
+    statusEl.textContent = '読み取り中…';
+    statusEl.style.color = 'var(--gold)';
+
+    // プレビュー
+    const reader = new FileReader();
+    reader.onload = e => { previewEl.src = e.target.result; };
+    reader.readAsDataURL(file);
+
+    // 画像をCanvasでリサイズ・圧縮してbase64に変換（最大1200px, JPEG 85%）
+    const b64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = ev => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const MAX = 1200;
+          let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+            else        { w = Math.round(w * MAX / h); h = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    try {
+      const res = await fetch('/api/parse-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, mediaType: file.type || 'image/jpeg', corrections: loadOcrCorrections() }),
+      });
+      const json = await res.json();
+      if (!json.ok || !json.data) throw new Error(json.error || '読み取り失敗');
+
+      const d = json.data;
+      window._lastOcrResult = d;
+      const inputStyle = `width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:4px;color:var(--white);font-size:15px;font-weight:700;padding:4px 6px;margin-top:2px;`;
+      const fields = [
+        { label:'日付',     key:'date',      type:'text',   full:true,  val: d.date || '' },
+        { label:'売上',     key:'sales',     type:'number', val: d.sales ?? '' },
+        { label:'営業回数', key:'trips',     type:'number', val: d.trips ?? '' },
+        { label:'全走',     key:'distance',  type:'number', val: d.distance ?? '' },
+        { label:'税金',     key:'tax',       type:'number', val: d.tax ?? '' },
+        { label:'出庫',     key:'departure', type:'text',   val: d.departure || '' },
+        { label:'入庫',     key:'arrival',   type:'text',   val: d.arrival || '' },
+      ];
+      fieldsEl.innerHTML = fields.map(f => `
+        <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:8px 10px;${f.full ? 'grid-column:1/-1;' : ''}">
+          <div style="font-size:10px;color:var(--gray);">${f.label}</div>
+          <input type="${f.type}" id="rf-${f.key}" value="${f.val}" style="${inputStyle}">
+        </div>`).join('') +
+        `<div style="grid-column:1/-1;margin-top:4px;">
+          <button onclick="confirmAndSaveReport()" style="width:100%;padding:10px;background:var(--gold);color:#000;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">確認して保存</button>
+        </div>`;
+
+      statusEl.textContent = '読み取り完了 — 内容を確認して保存してください';
+      statusEl.style.color = 'var(--green)';
+    } catch(e) {
+      statusEl.textContent = 'エラー: ' + e.message;
+      statusEl.style.color = 'var(--red)';
+    }
+  }
 </script>
 </body>
 </html>
