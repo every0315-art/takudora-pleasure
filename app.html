@@ -2101,10 +2101,10 @@
   setInterval(loadTtcImage, 60000);
 
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
-  const HANEDA_TERMINAL_LABEL = {
-    1: '第1ターミナル（JAL系 国内線）',
-    2: '第2ターミナル（ANA系 国内線）',
-    3: '第3ターミナル（国際線）',
+  const HANEDA_TERMINAL_INFO = {
+    1: { label: '第1ターミナル（JAL系 国内線）', exit: '1F 到着ロビー → タクシー乗り場 1番' },
+    2: { label: '第2ターミナル（ANA系 国内線）', exit: '1F 到着ロビー → タクシー乗り場' },
+    3: { label: '第3ターミナル（国際線）',        exit: '1F 到着ロビー出口 → タクシー乗り場' },
   };
   async function loadHanedaArr() {
     const bodyEl = document.getElementById('haneda-arr-body');
@@ -2121,22 +2121,24 @@
       let html = '';
       for (const t of [1, 2, 3]) {
         const flights = (terminals[t] || []);
-        html += `<div style="margin-bottom:10px;">`;
-        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 4px;">${HANEDA_TERMINAL_LABEL[t]}</div>`;
+        const info = HANEDA_TERMINAL_INFO[t];
+        html += `<div style="margin-bottom:12px;">`;
+        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);padding:4px 0 2px;">${info.label}</div>`;
+        html += `<div style="font-size:10px;color:var(--gray);padding:0 0 4px;">到着出口: ${info.exit}</div>`;
         if (flights.length === 0) {
-          html += `<div style="font-size:12px;color:var(--gray);padding:2px 0 4px;">対象機なし</div>`;
+          html += `<div style="font-size:12px;color:var(--gray);padding:2px 0 2px;">対象機なし</div>`;
         } else {
-          html += `<table class="tbl"><tr><th>便名</th><th>航空会社</th><th>状態</th></tr>`;
+          html += `<table class="tbl"><tr><th>便名</th><th>機種</th><th>状態</th></tr>`;
           for (const f of flights) {
             const badge = f.statusCode === 'landed' ? 'badge-green' : 'badge-yellow';
-            html += `<tr><td>${f.flight}</td><td>${f.airline}</td><td><span class="badge ${badge}">${f.status}</span></td></tr>`;
+            html += `<tr><td>${f.flight}</td><td>${f.type||'---'}</td><td><span class="badge ${badge}">${f.status}</span></td></tr>`;
           }
           html += `</table>`;
         }
         html += `</div>`;
       }
       if (data.total === 0) {
-        html = `<div style="font-size:12px;color:var(--gray);padding:6px 0;">現在 高度5,000ft以下の到着機なし（深夜・早朝帯または混信）</div>`;
+        html += `<div style="font-size:12px;color:var(--gray);padding:4px 0 0;">現在 高度5,000ft以下の到着機なし（深夜・早朝帯または受信なし）</div>`;
       }
       bodyEl.innerHTML = html;
     } catch(e) {
