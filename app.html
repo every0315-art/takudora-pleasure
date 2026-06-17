@@ -2176,7 +2176,7 @@
               const badge = f.statusCode === 'landed' ? 'badge-green' : 'badge-yellow';
               timeTd = f.arrStr
                 ? `<strong>${fmtJst(f.arrStr)}</strong>`
-                : `<span class="badge ${badge}" style="font-size:9px;">${f.statusCode === 'landed' ? '着陸済' : '進入中'}</span>`;
+                : `<span style="color:var(--gray);font-size:10px;">—</span>`;
               statusTd = `<span class="badge ${badge}">${f.status}</span>`;
             } else {
               timeTd = `<strong>${fmtJst(f.arrStr)}</strong>`;

@@ -70,24 +70,44 @@ function parseJstTime(str, Y, M, D, nowMs) {
   return utc;
 }
 
-// FlightAware で発地を取得
-async function fetchOrigin(callsign) {
+// FlightAware で発地と到着時刻を取得
+async function fetchFlightInfo(callsign) {
   try {
     const r = await fetch(
       `https://www.flightaware.com/live/flight/${encodeURIComponent(callsign)}`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(6000),
       }
     );
-    if (!r.ok) return null;
+    if (!r.ok) return { origin: null, arrStr: null };
     const html = await r.text();
+
+    // 発地
     const block = html.match(/"origin":\s*\{([^}]{0,400})\}/)?.[1] || '';
     const iata  = block.match(/"iata":"([^"]+)"/)?.[1] || '';
     const loc   = block.match(/"friendlyLocation":"([^"]+)"/)?.[1] || '';
-    if (!iata || iata === 'HND' || iata === 'RJTT') return null;
-    return IATA_JP[iata] || loc.replace(/, Japan$/, '') || iata;
-  } catch { return null; }
+    const origin = (!iata || iata === 'HND' || iata === 'RJTT')
+      ? null
+      : (IATA_JP[iata] || loc.replace(/, Japan$/, '') || iata);
+
+    // 到着時刻 epoch — actualArrivalTime > estimatedArrivalTime > gateArrivalTime の優先順
+    let arrStr = null;
+    const epochM = html.match(/"actualArrivalTime":\{"epoch":(\d+)/)
+                || html.match(/"estimatedArrivalTime":\{"epoch":(\d+)/)
+                || html.match(/"gateArrivalTime":\{"epoch":(\d+)/);
+    if (epochM) {
+      const ms = parseInt(epochM[1], 10) * 1000;
+      const jst = new Date(ms + 9 * 3600000);
+      let h = jst.getUTCHours();
+      const min = String(jst.getUTCMinutes()).padStart(2, '0');
+      const ap = h < 12 ? 'a' : 'p';
+      if (h === 0) h = 12; else if (h > 12) h -= 12;
+      arrStr = `${h}:${min}${ap}`;
+    }
+
+    return { origin, arrStr };
+  } catch { return { origin: null, arrStr: null }; }
 }
 
 // FlightAware RJTT enroute-board から今後1時間以内の予定到着便を取得
@@ -234,12 +254,15 @@ export default async function handler(req, res) {
       }
     }
 
-    // 発地を並列取得（最大8件）— scheduled にある便はそちらの発地を優先して追加リクエスト省略
+    // 発地・到着時刻を並列取得（最大8件）— scheduled にある便はそちらを優先
     const enriched = await Promise.all(
       candidates.slice(0, 8).map(async f => {
         const sched = schedMap[f.flight];
-        const origin = sched?.origin || await fetchOrigin(f.flight);
-        return { ...f, origin, arrStr: sched?.arrStr || null };
+        if (sched?.origin && sched?.arrStr) {
+          return { ...f, origin: sched.origin, arrStr: sched.arrStr };
+        }
+        const info = await fetchFlightInfo(f.flight);
+        return { ...f, origin: sched?.origin || info.origin, arrStr: sched?.arrStr || info.arrStr };
       })
     );
 
