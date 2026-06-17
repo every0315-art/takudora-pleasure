@@ -131,8 +131,10 @@ async function fetchScheduledArrivals() {
       const typeM = row.match(/\/live\/aircrafttype\/([A-Z0-9]+)"/);
       const type = typeM?.[1] || '';
 
-      // 発地 IATA（itemprop="url" のリンクテキスト）
-      const origM = row.match(/itemprop="url">([A-Z]{3,4})<\/a>/);
+      // 発地 IATA — 複数パターンで取得を試みる
+      const origM = row.match(/itemprop="url">([A-Z]{3,4})<\/a>/)
+                 || row.match(/\/airport\/([A-Z]{3,4})"/)
+                 || row.match(/airport\/([A-Z]{3,4})/);
       const origIata = origM?.[1] || '';
 
       // HND 到着時刻（JST）— 行内の最後の JST タイムスタンプ
@@ -151,7 +153,7 @@ async function fetchScheduledArrivals() {
       flights.push({
         flight: call,
         type,
-        origin: IATA_JP[origIata] || origIata || null,
+        origin: IATA_JP[origIata] || (origIata && origIata !== 'HND' && origIata !== 'RJTT' ? origIata : null),
         arrStr,
         arrMs,
         terminal,
@@ -224,21 +226,21 @@ export default async function handler(req, res) {
       });
     }
 
-    // scheduled の便名→到着時刻マップを作成
+    // scheduled の便名→到着時刻・発地マップを作成
     const schedMap = {};
     for (const t of [1, 2, 3]) {
       for (const f of scheduled[t] || []) {
-        schedMap[f.flight] = f.arrStr;
+        schedMap[f.flight] = { arrStr: f.arrStr, origin: f.origin };
       }
     }
 
-    // 発地を並列取得（最大8件）
+    // 発地を並列取得（最大8件）— scheduled にある便はそちらの発地を優先して追加リクエスト省略
     const enriched = await Promise.all(
-      candidates.slice(0, 8).map(async f => ({
-        ...f,
-        origin: await fetchOrigin(f.flight),
-        arrStr: schedMap[f.flight] || null,
-      }))
+      candidates.slice(0, 8).map(async f => {
+        const sched = schedMap[f.flight];
+        const origin = sched?.origin || await fetchOrigin(f.flight);
+        return { ...f, origin, arrStr: sched?.arrStr || null };
+      })
     );
 
     const byTerminal = { 1: [], 2: [], 3: [] };
