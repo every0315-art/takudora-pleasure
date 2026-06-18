@@ -369,35 +369,37 @@
       .tile-weather {
         flex-direction: column;
         align-items: center;
-        padding: 8px 10px;
-        gap: 2px;
+        padding: 6px 8px;
+        gap: 0;
+        overflow: visible;
       }
-      .weather-dt { font-size: 10px; margin-bottom: 1px; }
+      .weather-dt { font-size: 10px; margin-bottom: 2px; }
       .weather-body {
         flex-direction: column;
         align-items: center;
-        gap: 4px;
+        gap: 2px;
         flex: 1;
         width: 100%;
+        overflow: visible;
       }
-      .weather-main { gap: 1px; }
-      .weather-icon-wrap { font-size: 26px !important; }
-      .weather-temp { font-size: 22px; }
-      .weather-temp span { font-size: 12px; }
+      .weather-main { gap: 6px; flex-wrap: wrap; justify-content: center; }
+      .weather-icon-wrap { font-size: 22px !important; }
+      .weather-temp { font-size: 20px; }
+      .weather-temp span { font-size: 11px; }
       .weather-desc { font-size: 10px; }
-      .weather-demand { font-size: 8px; padding: 2px 5px; margin-top: 1px; }
+      .weather-demand { font-size: 8px; padding: 2px 5px; margin-top: 0; }
       .weather-forecast {
         width: 100%; flex-direction: row; gap: 0;
         justify-content: space-around;
         border-top: 1px solid rgba(255,255,255,.08);
-        padding-top: 4px; margin-top: 2px;
+        padding-top: 3px; margin-top: 3px;
       }
-      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 2px; border-right: 1px solid rgba(255,255,255,.05); }
+      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 1px; border-right: 1px solid rgba(255,255,255,.05); }
       .fc-item:last-child { border-right: none; }
       .fc-time { font-size: 9px; width: auto; }
       .fc-icon { font-size: 12px; width: auto; }
       .fc-tmp { font-size: 10px; width: auto; }
-      .fc-rain { font-size: 9px; }
+      .fc-rain { font-size: 8px; }
 
       /* 売上タイル — 縦中央寄せ */
       .tile-sales {
