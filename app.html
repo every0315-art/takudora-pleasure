@@ -285,8 +285,8 @@
       text-align: center; flex-shrink: 0; line-height: 1.2;
     }
     .weather-body {
-      display: flex; flex-direction: row; flex: 1;
-      gap: 12px; align-items: center; overflow: hidden;
+      display: flex; flex-direction: column; flex: 1;
+      gap: 8px; overflow: hidden;
     }
 
     /* 雨雲レーダーモーダル */
@@ -326,7 +326,7 @@
     .tile-community  { grid-column:3; grid-row:2; }
     .tile-news       { grid-column:3; grid-row:3; }
 
-    .weather-main { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
+    .weather-main { display:flex; flex-direction:row; align-items:center; gap:10px; flex-shrink:0; justify-content:center; }
     .weather-location { font-size: 10px; color: var(--gray); letter-spacing: .1em; }
     .weather-icon-wrap { font-size: 36px; line-height:1; }
     .weather-temp { font-size: 30px; font-weight: 900; color: var(--white); line-height: 1; }
