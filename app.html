@@ -488,6 +488,12 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
+    <!-- ストップウォッチ操作バー -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:0 2px;">
+      <div id="sw-display" style="font-size:22px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;flex:1;">00:00.0</div>
+      <button id="sw-start" onclick="swToggle()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
+      <button onclick="swReset()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">RESET</button>
+    </div>
     <div class="top-layout">
 
       <!-- 行1左：イベント -->
@@ -514,14 +520,6 @@
             <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
             <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
             <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
-          </div>
-          <!-- ストップウォッチ -->
-          <div style="display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);padding-top:5px;margin-top:4px;overflow:hidden;">
-            <div id="sw-display" style="font-size:15px;font-weight:900;color:var(--white);letter-spacing:.02em;font-variant-numeric:tabular-nums;flex-shrink:0;">00:00.0</div>
-            <div style="display:flex;gap:4px;margin-left:auto;flex-shrink:0;">
-              <button id="sw-start" onclick="swToggle()" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
-              <button onclick="swReset()" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:none;background:rgba(255,255,255,.1);color:var(--gray);cursor:pointer;">RESET</button>
-            </div>
           </div>
         </div>
       </div>
