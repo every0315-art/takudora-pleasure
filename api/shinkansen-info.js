@@ -44,8 +44,18 @@ export default async function handler(req, res) {
       });
       const html = await r.text();
       const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-      const raw = m ? JSON.parse(m[1])?.props?.pageProps : { error: 'NEXT_DATA not found' };
-      return res.json({ debug: true, pageProps: raw });
+      const pp = m ? JSON.parse(m[1])?.props?.pageProps : { error: 'NEXT_DATA not found' };
+      const troubleRails = (pp?.troubleRails || []).map(r => {
+        const p = r.routeInfo?.property || {};
+        return {
+          name: p.displayName || p.railName,
+          company: p.companyName,
+          railAreaCode: p.railAreaCode,
+          railAreaName: p.railAreaName,
+          diainfo: p.diainfo,
+        };
+      });
+      return res.json({ debug: true, troubleRails, updateDate: pp?.diainfoCheckParam });
     }
 
     const response = await fetch('https://transit.yahoo.co.jp/diainfo/area/1', {
