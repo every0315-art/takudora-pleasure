@@ -54,16 +54,22 @@ export default async function handler(req, res) {
   try {
     // ?debug=1 でtrouble路線の一覧を確認
     if (req.query?.debug === '1') {
-      const urls = [
-        'https://transit.yahoo.co.jp/diainfo/',
-        'https://transit.yahoo.co.jp/diainfo/area/1',
-        'https://transit.yahoo.co.jp/diainfo/area/3',
-        'https://transit.yahoo.co.jp/diainfo/area/5',
+      // Yahoo全エリア + レスキューナウを試す
+      const yahooAreas = [2,4,6,7,8,9,10].map(n => `https://transit.yahoo.co.jp/diainfo/area/${n}`);
+      const others = [
+        'https://www.rescuenow.net/s/',
+        'https://www.rescuenow.net/',
       ];
-      const results = await Promise.all(urls.map(async url => {
+      const results = await Promise.all([...yahooAreas, ...others].map(async url => {
         try {
-          const rails = await fetchFromYahoo(url);
-          return { url, count: rails.length, lines: rails.map(r => r.routeInfo?.property?.displayName) };
+          if (url.includes('yahoo')) {
+            const rails = await fetchFromYahoo(url);
+            return { url, count: rails.length, lines: rails.map(r => r.routeInfo?.property?.displayName) };
+          } else {
+            const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ja' } });
+            const text = strip(await r.text()).slice(0, 300);
+            return { url, status: r.status, preview: text };
+          }
         } catch(e) {
           return { url, error: e.message };
         }
