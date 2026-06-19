@@ -2111,39 +2111,46 @@
       if (updEl && data.updateDate) {
         updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
       }
-      const statusMap = {};
-      (data.all || data.lines || []).forEach(l => { statusMap[l.name] = l; });
+      const infoMap = {};
+      (data.all || []).forEach(l => { infoMap[l.name] = l; });
+
+      const dirBadge = (dir) => {
+        const s = dir.status;
+        const isNormal = s === '平常運転';
+        const bg = s === '運転見合わせ' ? '#c0392b' : s === '遅延' ? '#e67e22' : 'rgba(39,174,96,.15)';
+        const color = isNormal ? 'var(--green)' : '#fff';
+        return `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${bg};color:${color};font-weight:600;white-space:nowrap;">${dir.dir} ${s}</span>`;
+      };
+
       el.innerHTML = lines.map(line => {
-        const info = statusMap[line.name];
-        const status = info ? info.status : '平常運転';
-        const isNormal = !info || status === '平常運転';
-        const bgColor = isNormal ? 'rgba(39,174,96,.15)' : '#c0392b';
-        const textColor = isNormal ? 'var(--green)' : '#fff';
+        const info = infoMap[line.name];
+        const dirs = info?.directions || [
+          { dir: '上り', status: '平常運転' },
+          { dir: '下り', status: '平常運転' },
+        ];
         return `
-          <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;">
-            <div style="display:flex;align-items:center;gap:8px;">
+          <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
               <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${line.color};flex-shrink:0;"></span>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
-                <div style="font-size:10px;color:var(--gray);">${line.company}</div>
-              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
             </div>
-            <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:${bgColor};color:${textColor};font-weight:600;">${status}</span>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+              ${dirs.map(dirBadge).join('')}
+            </div>
           </a>`;
       }).join('');
     } catch(e) {
-      // APIなければ平常運転として表示
       if (updEl) updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
       el.innerHTML = lines.map(line => `
-        <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;">
-          <div style="display:flex;align-items:center;gap:8px;">
+        <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${line.color};flex-shrink:0;"></span>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
-              <div style="font-size:10px;color:var(--gray);">${line.company}</div>
-            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
           </div>
-          <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(39,174,96,.15);color:var(--green);font-weight:600;">平常運転</span>
+          <div style="display:flex;gap:4px;">
+            <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(39,174,96,.15);color:var(--green);font-weight:600;">上り 平常運転</span>
+            <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(39,174,96,.15);color:var(--green);font-weight:600;">下り 平常運転</span>
+          </div>
         </a>`).join('');
     }
   }
