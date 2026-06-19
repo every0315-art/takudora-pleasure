@@ -136,25 +136,28 @@ async function fetchJREast() {
 
 export default async function handler(req, res) {
   try {
-    // ?debug=1 でJR東海の候補JSONエンドポイントを一括試行
+    // ?debug=1 でJSバンドルからAPIエンドポイントを探す
     if (req.query?.debug === '1') {
-      const candidates = [
-        'https://traininfo.jr-central.co.jp/shinkansen/pc/ja/json/shinkansen.json',
-        'https://traininfo.jr-central.co.jp/shinkansen/json/shinkansen.json',
-        'https://traininfo.jr-central.co.jp/api/shinkansen',
-        'https://traininfo.jr-central.co.jp/shinkansen/sp/ja/index.html',
-        'https://jr-central.co.jp/info.html',
-      ];
-      const results = await Promise.all(candidates.map(async url => {
-        try {
-          const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ja' } });
-          const body = await r.text();
-          return { url, status: r.status, preview: strip(body).slice(0, 300) };
-        } catch(e) {
-          return { url, error: e.message };
-        }
-      }));
-      return res.json({ debug: true, results });
+      // HTMLを取得してscriptタグのsrcを抽出
+      const htmlRes = await fetch('https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html', {
+        headers: { 'User-Agent': UA, 'Accept-Language': 'ja' }
+      });
+      const html = await htmlRes.text();
+      const scriptUrls = [...html.matchAll(/src="([^"]+\.js[^"]*)"/g)].map(m => m[1]);
+
+      // 最初のapp系バンドルを取得してAPI URLを検索
+      const appBundle = scriptUrls.find(u => u.includes('main') || u.includes('app') || u.includes('index'));
+      let apiCandidates = [];
+      if (appBundle) {
+        const bundleUrl = appBundle.startsWith('http') ? appBundle : `https://traininfo.jr-central.co.jp${appBundle}`;
+        const bundleRes = await fetch(bundleUrl, { headers: { 'User-Agent': UA } });
+        const bundleJs = await bundleRes.text();
+        // fetchやaxiosのURL文字列を抽出
+        const found = [...bundleJs.matchAll(/["'`](\/[a-zA-Z0-9_\-\/\.]+(?:json|api|data)[a-zA-Z0-9_\-\/\.]*)["'`]/g)].map(m => m[1]);
+        apiCandidates = [...new Set(found)].slice(0, 30);
+      }
+
+      return res.json({ scriptUrls, appBundle, apiCandidates });
     }
 
     const [tokaido, eastLines] = await Promise.all([fetchTokaido(), fetchJREast()]);
