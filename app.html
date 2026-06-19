@@ -2112,7 +2112,7 @@
         updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
       }
       const statusMap = {};
-      (data.lines || []).forEach(l => { statusMap[l.name] = l; });
+      (data.all || data.lines || []).forEach(l => { statusMap[l.name] = l; });
       el.innerHTML = lines.map(line => {
         const info = statusMap[line.name];
         const status = info ? info.status : '平常運転';
