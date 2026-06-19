@@ -1915,11 +1915,21 @@
       const d = await res.json();
       if (d.error) return;
 
-      const iconMap = {
-        '01': '☀', '02': '⛅', '03': '☁', '04': '☁',
-        '09': '🌧', '10': '🌦', '11': '⛈', '13': '❄', '50': '🌫'
+      // 天気アイコン：晴れ/曇り系はコードベース、雨は降水量で切り替え
+      const baseIconMap = {
+        '01': '☀️', '02': '🌤', '03': '🌥', '04': '☁️',
+        '09': '🌧', '10': '🌦', '11': '⛈', '13': '❄️', '50': '🌫'
       };
-      const getIcon = code => iconMap[(code||'').slice(0,2)] || '☀';
+      const getRainIcon = mm => {
+        if (mm >= 10) return '⛈';   // 強雨（10mm/h以上）
+        if (mm >= 3)  return '🌧';  // 中雨（3〜10mm）
+        return '🌦';                 // 小雨（3mm未満）
+      };
+      const getIcon = (code, rainMm = 0) => {
+        const key = (code || '').slice(0, 2);
+        if ((key === '09' || key === '10' || key === '11') && rainMm > 0) return getRainIcon(rainMm);
+        return baseIconMap[key] || '🌤';
+      };
 
       // 天気タイル更新
       document.querySelector('.weather-temp').innerHTML = `${d.temp}<span>℃</span>`;
@@ -1929,7 +1939,7 @@
       // SVGを天気アイコン文字に置き換え
       const iconWrap = document.querySelector('.weather-icon-wrap');
       if (iconWrap) {
-        iconWrap.textContent = getIcon(d.icon);
+        iconWrap.textContent = getIcon(d.icon, d.rain);
       }
 
       // 予報更新
@@ -1937,7 +1947,7 @@
       d.hours.forEach((h, i) => {
         if (!fcItems[i]) return;
         fcItems[i].querySelector('.fc-time').textContent = h.label || h.time;
-        fcItems[i].querySelector('.fc-icon').textContent = getIcon(h.icon);
+        fcItems[i].querySelector('.fc-icon').textContent = getIcon(h.icon, h.rain);
         fcItems[i].querySelector('.fc-tmp').textContent = h.temp + '°';
         const rainEl = fcItems[i].querySelector('.fc-rain');
         if (rainEl) rainEl.textContent = h.isRain ? '需要↑' : '';
