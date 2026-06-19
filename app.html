@@ -538,8 +538,9 @@
       <!-- 行2左：電車・交通 -->
       <div class="tile tile-train" data-tab="train">
         <div class="tile-label">電車・交通</div>
-        <div class="tile-main" id="top-train-main" style="font-size:14px;">読込中</div>
-        <div class="tile-sub" id="top-train-sub"></div>
+        <div id="top-train-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;">
+          <div style="font-size:11px;color:var(--gray);">読込中…</div>
+        </div>
       </div>
 
       <!-- 行2中央：羽田空港 -->
@@ -2043,8 +2044,8 @@
       const topSub  = document.getElementById('top-train-sub');
       if (!data.lines || data.lines.length === 0) {
         statusEl.innerHTML = '<div style="color:var(--green);font-size:13px;padding:8px 0;">現在、都内主要路線に障害情報はありません</div>';
-        if (topMain) { topMain.className = 'tile-main s-green'; topMain.innerHTML = '平常運転'; }
-        if (topSub)  topSub.textContent = '都内主要路線 異常なし';
+        const topList = document.getElementById('top-train-list');
+        if (topList) topList.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--green);padding:4px 0;">平常運転</div><div style="font-size:10px;color:var(--gray);">都内主要路線 異常なし</div>';
         return;
       }
       statusEl.innerHTML = data.lines.map(l => `
@@ -2057,19 +2058,26 @@
           <div style="font-size:10px;color:var(--gold);margin-top:4px;">詳細を見る →</div>
         </a>
       `).join('');
-      // TOPタイル更新
-      if (topMain && topSub) {
-        const first = data.lines[0];
-        const isSuspended = first.status.includes('見合わせ');
-        topMain.className = 'tile-main ' + (isSuspended ? 's-red' : 's-yellow');
-        topMain.innerHTML = `${first.name}<br><span style="font-size:12px;">${first.status}</span>`;
-        const rest = data.lines.length > 1 ? `他${data.lines.length - 1}路線に障害` : '他は平常';
-        topSub.textContent = rest;
+      // TOPタイル更新（最大4件）
+      const topList = document.getElementById('top-train-list');
+      if (topList) {
+        const show = data.lines.slice(0, 4);
+        topList.innerHTML = show.map(l => {
+          const suspended = l.status.includes('見合わせ');
+          const color = suspended ? 'var(--red)' : 'var(--yellow)';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:4px;">
+            <span style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${l.name}</span>
+            <span style="font-size:9px;font-weight:700;color:${color};white-space:nowrap;">${l.status}</span>
+          </div>`;
+        }).join('');
+        if (data.lines.length > 4) {
+          topList.innerHTML += `<div style="font-size:9px;color:var(--gray);margin-top:2px;">他${data.lines.length - 4}路線に障害</div>`;
+        }
       }
     } catch(e) {
       statusEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
-      const topMain = document.getElementById('top-train-main');
-      if (topMain) { topMain.className = 'tile-main'; topMain.textContent = '取得失敗'; }
+      const topList2 = document.getElementById('top-train-list');
+      if (topList2) topList2.innerHTML = '<div style="font-size:11px;color:var(--gray);">取得失敗</div>';
     }
   }
   loadTrainInfo();
