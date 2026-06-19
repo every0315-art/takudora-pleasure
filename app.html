@@ -2120,6 +2120,17 @@
       };
 
       el.innerHTML = lines.map(line => {
+        // 東海道新幹線はJR東海データ取得不可のため直リンク表示
+        if (line.name === '東海道新幹線') {
+          return `
+            <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${line.color};flex-shrink:0;"></span>
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
+              </div>
+              <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(243,156,18,.15);color:#f39c12;font-weight:600;white-space:nowrap;">JR東海で確認 →</span>
+            </a>`;
+        }
         const info = infoMap[line.name];
         const dirs = info?.directions || [
           { dir: '上り', status: '平常運転' },
