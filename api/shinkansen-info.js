@@ -136,14 +136,25 @@ async function fetchJREast() {
 
 export default async function handler(req, res) {
   try {
-    // ?debug=1 で生HTMLのテキスト抜粋を返す（確認用）
+    // ?debug=1 でJR東海の候補JSONエンドポイントを一括試行
     if (req.query?.debug === '1') {
-      const r = await fetch('https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html', {
-        headers: { 'User-Agent': UA, 'Accept-Language': 'ja' }
-      });
-      const html = await r.text();
-      const text = strip(html).slice(0, 2000);
-      return res.json({ debug: true, status: r.status, textPreview: text });
+      const candidates = [
+        'https://traininfo.jr-central.co.jp/shinkansen/pc/ja/json/shinkansen.json',
+        'https://traininfo.jr-central.co.jp/shinkansen/json/shinkansen.json',
+        'https://traininfo.jr-central.co.jp/api/shinkansen',
+        'https://traininfo.jr-central.co.jp/shinkansen/sp/ja/index.html',
+        'https://jr-central.co.jp/info.html',
+      ];
+      const results = await Promise.all(candidates.map(async url => {
+        try {
+          const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ja' } });
+          const body = await r.text();
+          return { url, status: r.status, preview: strip(body).slice(0, 300) };
+        } catch(e) {
+          return { url, error: e.message };
+        }
+      }));
+      return res.json({ debug: true, results });
     }
 
     const [tokaido, eastLines] = await Promise.all([fetchTokaido(), fetchJREast()]);
