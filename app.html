@@ -523,7 +523,7 @@
             <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
           </div>
           <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:5px;margin-top:2px;text-align:center;">
-            <div id="sw-display" style="font-size:20px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;">00:00.0</div>
+            <div id="sw-display" style="font-size:20px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;">00:00:00</div>
           </div>
         </div>
       </div>
@@ -2608,12 +2608,12 @@
   let swRunning = false, swStart = 0, swElapsed = 0, swTimer = null;
   function swTick() {
     swElapsed = Date.now() - swStart;
-    const ms  = swElapsed % 1000;
     const s   = Math.floor(swElapsed / 1000) % 60;
-    const m   = Math.floor(swElapsed / 60000);
+    const m   = Math.floor(swElapsed / 60000) % 60;
+    const h   = Math.floor(swElapsed / 3600000);
     const pad = n => String(n).padStart(2, '0');
     document.getElementById('sw-display').textContent =
-      `${pad(m)}:${pad(s)}.${Math.floor(ms / 100)}`;
+      `${pad(h)}:${pad(m)}:${pad(s)}`;
   }
   function swSave() {
     localStorage.setItem('sw', JSON.stringify({
@@ -2642,7 +2642,7 @@
   function swReset() {
     clearInterval(swTimer);
     swRunning = false; swElapsed = 0;
-    document.getElementById('sw-display').textContent = '00:00.0';
+    document.getElementById('sw-display').textContent = '00:00:00';
     const btn = document.getElementById('sw-start');
     btn.textContent = 'START';
     btn.style.background = 'var(--green)';
@@ -2664,12 +2664,12 @@
         if (btn) { btn.textContent = 'STOP'; btn.style.background = 'var(--red)'; btn.style.color = '#fff'; }
       } else if (saved.elapsed) {
         swElapsed = saved.elapsed;
-        const ms  = swElapsed % 1000;
         const s   = Math.floor(swElapsed / 1000) % 60;
-        const m   = Math.floor(swElapsed / 60000);
+        const m   = Math.floor(swElapsed / 60000) % 60;
+        const h   = Math.floor(swElapsed / 3600000);
         const pad = n => String(n).padStart(2, '0');
         const el  = document.getElementById('sw-display');
-        if (el) el.textContent = `${pad(m)}:${pad(s)}.${Math.floor(ms / 100)}`;
+        if (el) el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
       }
     } catch(e) {}
   })();
