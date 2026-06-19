@@ -1,117 +1,88 @@
 // 新幹線運行情報
-// データ取得: Yahoo!路線情報（NEXT_DATA形式 = train-info.js と同方式で動作確認済み）
+// Yahoo!路線情報 エリア1（新幹線）から取得 — train-info.js と同じ NEXT_DATA 方式
 // リンク先: JR各社公式サイト
+
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-const LINES = [
-  {
-    name: '東海道新幹線',
-    yahooId: '1',   // https://transit.yahoo.co.jp/traininfo/detail/1/0/
-    jrUrl:  'https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html',
-    color:  '#f39c12',
-  },
-  {
-    name: '東北新幹線',
-    yahooId: '3',
-    jrUrl:  'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx',
-    color:  '#27ae60',
-  },
-  {
-    name: '上越新幹線',
-    yahooId: '5',
-    jrUrl:  'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx',
-    color:  '#2980b9',
-  },
-  {
-    name: '北陸新幹線',
-    yahooId: '4',
-    jrUrl:  'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx',
-    color:  '#8e44ad',
-  },
-];
+const LINE_CONFIG = {
+  '東海道新幹線': { color: '#f39c12', jrUrl: 'https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html' },
+  '東北新幹線':   { color: '#27ae60', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
+  '上越新幹線':   { color: '#2980b9', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
+  '北陸新幹線':   { color: '#8e44ad', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
+  '山形新幹線':   { color: '#16a085', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
+  '秋田新幹線':   { color: '#c0392b', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
+};
 
-async function fetchLineStatus(line) {
-  const url = `https://transit.yahoo.co.jp/traininfo/detail/${line.yahooId}/0/`;
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': UA,
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'ja',
-      }
-    });
-    const html = await res.text();
-
-    // NEXT_DATA から取得（train-info.js と同じ方式）
-    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    if (m) {
-      const data = JSON.parse(m[1]);
-      const pp = data?.props?.pageProps;
-
-      // 個別路線ページの diainfo 構造を確認
-      const diainfo = pp?.diainfo || pp?.troubleRails?.[0]?.routeInfo?.property?.diainfo?.[0];
-
-      // 上下線情報を探す
-      const directions = [];
-      const upInfo   = pp?.upDiainfo   || pp?.diaInfoUp   || diainfo?.up;
-      const downInfo = pp?.downDiainfo || pp?.diaInfoDown || diainfo?.down;
-
-      if (upInfo || downInfo) {
-        directions.push({ dir: '上り', status: upInfo?.status   || '平常運転', message: upInfo?.message   || '' });
-        directions.push({ dir: '下り', status: downInfo?.status || '平常運転', message: downInfo?.message || '' });
-      } else if (diainfo) {
-        // 上下区別なし: 同じステータスを両方に適用
-        const status  = diainfo.status  || '平常運転';
-        const message = diainfo.message || '';
-        directions.push({ dir: '上り', status, message });
-        directions.push({ dir: '下り', status, message });
-      } else {
-        // データなし = 平常運転
-        directions.push({ dir: '上り', status: '平常運転', message: '' });
-        directions.push({ dir: '下り', status: '平常運転', message: '' });
-      }
-
-      return { ...line, url: line.jrUrl, directions };
-    }
-
-    // フォールバック: HTMLテキストから判断
-    const text = html.replace(/<[^>]+>/g, ' ');
-    const hasDelay    = text.includes('遅延') || text.includes('遅れ');
-    const hasSuspend  = text.includes('運転見合わせ') || text.includes('運休');
-    const status = hasSuspend ? '運転見合わせ' : hasDelay ? '遅延' : '平常運転';
-    return {
-      ...line,
-      url: line.jrUrl,
-      directions: [
-        { dir: '上り', status, message: '' },
-        { dir: '下り', status, message: '' },
-      ]
-    };
-  } catch(e) {
-    return {
-      ...line,
-      url: line.jrUrl,
-      directions: [
-        { dir: '上り', status: '取得失敗', message: '' },
-        { dir: '下り', status: '取得失敗', message: '' },
-      ]
-    };
+// diainfo 配列を上り/下り別に整理
+function parseDirections(diainfoArr) {
+  if (!diainfoArr || diainfoArr.length === 0) {
+    return [{ dir: '上り', status: '平常運転', message: '' }, { dir: '下り', status: '平常運転', message: '' }];
   }
+  if (diainfoArr.length >= 2) {
+    // 複数エントリがあれば上り/下り別
+    return diainfoArr.slice(0, 2).map((d, i) => ({
+      dir: i === 0 ? '上り' : '下り',
+      status: d.status || '平常運転',
+      message: d.message || '',
+    }));
+  }
+  // 1件 = 上下共通
+  const status  = diainfoArr[0].status  || '平常運転';
+  const message = diainfoArr[0].message || '';
+  return [
+    { dir: '上り', status, message },
+    { dir: '下り', status, message },
+  ];
 }
 
 export default async function handler(req, res) {
   try {
-    // ?debug=1 でNEXT_DATAの生データを返す（構造確認用）
+    // ?debug=1 で pageProps 生データを返す
     if (req.query?.debug === '1') {
-      const url = `https://transit.yahoo.co.jp/traininfo/detail/1/0/`;
-      const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ja' } });
+      const r = await fetch('https://transit.yahoo.co.jp/diainfo/area/1', {
+        headers: { 'User-Agent': UA, 'Accept-Language': 'ja' }
+      });
       const html = await r.text();
       const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
       const raw = m ? JSON.parse(m[1])?.props?.pageProps : { error: 'NEXT_DATA not found' };
       return res.json({ debug: true, pageProps: raw });
     }
 
-    const all = await Promise.all(LINES.map(fetchLineStatus));
+    const response = await fetch('https://transit.yahoo.co.jp/diainfo/area/1', {
+      headers: {
+        'User-Agent': UA,
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'ja',
+      }
+    });
+    const html = await response.text();
+    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!m) throw new Error('NEXT_DATA not found');
+
+    const data = JSON.parse(m[1]);
+    const troubleRails = data?.props?.pageProps?.troubleRails || [];
+
+    // 障害のある路線をマップ化
+    const troubleMap = {};
+    troubleRails.forEach(r => {
+      const p   = r.routeInfo?.property || {};
+      const name = p.displayName || p.railName || '';
+      if (LINE_CONFIG[name]) {
+        troubleMap[name] = parseDirections(p.diainfo);
+      }
+    });
+
+    // 全対象路線を出力（平常 or 障害）
+    const all = Object.entries(LINE_CONFIG).map(([name, cfg]) => ({
+      name,
+      url: cfg.jrUrl,
+      color: cfg.color,
+      directions: troubleMap[name] || [
+        { dir: '上り', status: '平常運転', message: '' },
+        { dir: '下り', status: '平常運転', message: '' },
+      ],
+    }));
+
     res.setHeader('Cache-Control', 's-maxage=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ all, updateDate: new Date().toISOString() });
