@@ -37,6 +37,7 @@ export default async function handler(req, res) {
         icon: item.weather[0].icon,
         temp: Math.round(item.main.temp),
         isRain: item.weather[0].id < 700,
+        rain: item.rain ? (item.rain['3h'] || 0) : 0,
       };
     });
 
