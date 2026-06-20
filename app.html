@@ -468,7 +468,7 @@
   <div class="logo">タクドラ<span>PLEASURE</span></div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-    <div class="user-area">山田 <strong>太郎</strong> さん</div>
+    <div class="user-area" id="header-user-area" onclick="switchTab('account')" style="cursor:pointer;" title="アカウント設定">ゲスト <strong>ユーザー</strong> さん</div>
   </div>
 </div>
 
@@ -483,6 +483,7 @@
   <button class="tab-btn" data-tab="train">電車・交通</button>
   <button class="tab-btn" data-tab="event">イベント</button>
   <button class="tab-btn" data-tab="community">コミュニティ</button>
+  <button class="tab-btn" data-tab="account">👤 アカウント</button>
 </div>
 
 <!-- CONTENT -->
@@ -1835,6 +1836,111 @@
 
   </div>
 
+  <!-- アカウント -->
+  <div class="tab-pane" id="tab-account">
+
+    <!-- プロフィール設定 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:16px;">プロフィール設定</div>
+
+      <div style="display:grid;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">姓</div>
+            <input type="text" id="acc-last-name" placeholder="山田"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">名</div>
+            <input type="text" id="acc-first-name" placeholder="太郎"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社名</div>
+          <input type="text" id="acc-company" placeholder="○○タクシー株式会社"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">車両番号</div>
+          <input type="text" id="acc-car-plate" placeholder="品川 ○ 00-00"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">免許証番号（任意）</div>
+          <input type="text" id="acc-license" placeholder="000000000000"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+      </div>
+
+      <button onclick="saveProfile()"
+        style="width:100%;margin-top:16px;padding:12px;background:var(--gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">
+        保存する
+      </button>
+      <div id="acc-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
+    </div>
+
+    <!-- データ管理 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:12px;">データ管理</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="exportAllData()"
+          style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;">
+          📥 全データをエクスポート（JSON）
+        </button>
+        <button onclick="importAllData()"
+          style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;">
+          📤 データをインポート（JSON）
+        </button>
+        <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
+        <button onclick="confirmClearData()"
+          style="width:100%;padding:11px;background:rgba(240,96,96,.12);border:1px solid rgba(240,96,96,.3);color:var(--red);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;">
+          🗑️ 日報データをすべて削除
+        </button>
+      </div>
+    </div>
+
+    <!-- アプリ情報 -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">アプリ情報</div>
+      <div style="font-size:13px;color:var(--gray);line-height:2;">
+        <div>アプリ名：<span style="color:var(--text);">タクドラPLEASURE</span></div>
+        <div>バージョン：<span style="color:var(--text);">1.0.0</span></div>
+        <div>対象：<span style="color:var(--text);">都内タクシードライバー</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- 初回セットアップモーダル -->
+<div id="setup-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(10,22,40,0.92);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:28px 24px;max-width:380px;width:100%;">
+    <div style="font-size:20px;font-weight:800;color:var(--white);margin-bottom:4px;">ようこそ！</div>
+    <div style="font-size:13px;color:var(--gray);margin-bottom:20px;">タクドラPLEASURE へ。まずお名前を教えてください。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">姓</div>
+        <input type="text" id="setup-last-name" placeholder="山田"
+          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">名</div>
+        <input type="text" id="setup-first-name" placeholder="太郎"
+          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+      </div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社名（任意）</div>
+      <input type="text" id="setup-company" placeholder="○○タクシー株式会社"
+        style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+    </div>
+    <button onclick="saveSetup()"
+      style="width:100%;padding:13px;background:var(--gold);color:#000;font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;">
+      はじめる
+    </button>
+  </div>
 </div>
 
 <!-- 雨雲レーダーモーダル -->
@@ -3498,6 +3604,114 @@
       statusEl.style.color = 'var(--red)';
     }
   }
+
+  // ── ACCOUNT / PROFILE ────────────────────────────────────────────
+  const PROFILE_KEY = 'userProfile';
+
+  function loadProfile() {
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); }
+    catch { return null; }
+  }
+
+  function applyProfileToUI(profile) {
+    if (!profile) return;
+    const area = document.getElementById('header-user-area');
+    if (area) {
+      area.innerHTML = `${profile.lastName || 'ゲスト'} <strong>${profile.firstName || 'ユーザー'}</strong> さん`;
+    }
+    // フォームに値を反映
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('acc-last-name',  profile.lastName);
+    set('acc-first-name', profile.firstName);
+    set('acc-company',    profile.company);
+    set('acc-car-plate',  profile.carPlate);
+    set('acc-license',    profile.license);
+  }
+
+  function saveProfile() {
+    const profile = {
+      lastName:  document.getElementById('acc-last-name').value.trim(),
+      firstName: document.getElementById('acc-first-name').value.trim(),
+      company:   document.getElementById('acc-company').value.trim(),
+      carPlate:  document.getElementById('acc-car-plate').value.trim(),
+      license:   document.getElementById('acc-license').value.trim(),
+    };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    applyProfileToUI(profile);
+    const msg = document.getElementById('acc-save-msg');
+    msg.textContent = '保存しました ✓';
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; }, 2500);
+  }
+
+  function saveSetup() {
+    const lastName  = document.getElementById('setup-last-name').value.trim();
+    const firstName = document.getElementById('setup-first-name').value.trim();
+    const company   = document.getElementById('setup-company').value.trim();
+    if (!lastName && !firstName) { alert('お名前を入力してください'); return; }
+    const profile = { lastName, firstName, company, carPlate: '', license: '' };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    applyProfileToUI(profile);
+    document.getElementById('setup-modal').style.display = 'none';
+  }
+
+  function exportAllData() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      data[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `takudora-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importAllData() {
+    document.getElementById('import-file-input').click();
+  }
+
+  function handleImportFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!confirm(`${Object.keys(data).length}件のデータを復元します。現在のデータは上書きされます。よろしいですか？`)) return;
+        Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+        applyProfileToUI(loadProfile());
+        alert('インポートが完了しました。ページを再読み込みしてください。');
+      } catch {
+        alert('ファイルの読み取りに失敗しました。正しいJSONファイルを選択してください。');
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  function confirmClearData() {
+    if (!confirm('日報データをすべて削除します。この操作は取り消せません。よろしいですか？')) return;
+    localStorage.removeItem('reports');
+    renderReportHistory();
+    renderMonthlySummary();
+    alert('日報データを削除しました。');
+  }
+
+  // 初期化: プロフィール読み込み or 初回セットアップ表示
+  (function initProfile() {
+    const profile = loadProfile();
+    if (profile) {
+      applyProfileToUI(profile);
+    } else {
+      // 初回: セットアップモーダルを表示
+      const modal = document.getElementById('setup-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+  })();
 </script>
 </body>
 </html>
