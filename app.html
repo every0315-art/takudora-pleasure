@@ -459,6 +459,27 @@
     .train-item:last-child { border-bottom:none; }
     .train-name { font-size:14px; color:var(--text); }
     .train-line { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
+
+    /* ── ACCOUNT ── */
+    .pub-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 0; border-bottom:1px solid var(--border);
+      font-size:14px;
+    }
+    .pub-label { color:var(--text); }
+    .toggle-sw { position:relative; display:inline-block; width:42px; height:24px; flex-shrink:0; }
+    .toggle-sw input { opacity:0; width:0; height:0; }
+    .toggle-track {
+      position:absolute; inset:0; border-radius:24px;
+      background:rgba(255,255,255,.12); cursor:pointer; transition:.2s;
+    }
+    .toggle-track:before {
+      content:''; position:absolute; left:3px; top:3px;
+      width:18px; height:18px; border-radius:50%; background:var(--gray);
+      transition:.2s;
+    }
+    .toggle-sw input:checked + .toggle-track { background:rgba(201,168,76,.35); }
+    .toggle-sw input:checked + .toggle-track:before { transform:translateX(18px); background:var(--gold); }
   </style>
 </head>
 <body>
@@ -1839,10 +1860,22 @@
   <!-- アカウント -->
   <div class="tab-pane" id="tab-account">
 
-    <!-- プロフィール設定 -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-title" style="margin-bottom:16px;">プロフィール設定</div>
+    <!-- アバター＋名前ヘッダー -->
+    <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:16px;">
+      <div id="acc-avatar-display" onclick="openAvatarPicker()"
+        style="width:60px;height:60px;border-radius:50%;background:var(--navy-light);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;flex-shrink:0;" title="アバターを変更">
+        🚕
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div id="acc-display-name" style="font-size:18px;font-weight:800;color:var(--white);">ゲスト ユーザー</div>
+        <div id="acc-display-nick" style="font-size:12px;color:var(--gold);margin-top:2px;"></div>
+        <div id="acc-display-belong" style="font-size:11px;color:var(--gray);margin-top:2px;"></div>
+      </div>
+    </div>
 
+    <!-- ① 基本情報 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:16px;">基本情報</div>
       <div style="display:grid;gap:12px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
@@ -1857,22 +1890,63 @@
           </div>
         </div>
         <div>
-          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社名</div>
-          <input type="text" id="acc-company" placeholder="○○タクシー株式会社"
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">ニックネーム（コミュニティ表示名）</div>
+          <input type="text" id="acc-nickname" placeholder="Tドライバー"
             style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">メールアドレス</div>
+          <input type="email" id="acc-email" placeholder="example@email.com"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">所属行燈</div>
+          <select id="acc-group" onchange="updateCompanyOptions()"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+            <option value="">選択してください</option>
+            <option value="日本交通">日本交通</option>
+            <option value="km">km（国際自動車）</option>
+            <option value="帝都自動車交通">帝都自動車交通</option>
+            <option value="大和自動車交通">大和自動車交通</option>
+            <option value="東京無線">東京無線</option>
+            <option value="チェッカーキャブ">チェッカーキャブ</option>
+            <option value="グリーンキャブ">グリーンキャブ</option>
+            <option value="個人タクシー">個人タクシー</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社</div>
+          <select id="acc-company"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+            <option value="">まず所属行燈を選択</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">生年月日</div>
+            <input type="date" id="acc-birthdate"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">経験年数</div>
+            <select id="acc-experience"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+              <option value="">選択</option>
+              <option value="1年未満">1年未満</option>
+              <option value="1〜3年">1〜3年</option>
+              <option value="3〜5年">3〜5年</option>
+              <option value="5〜10年">5〜10年</option>
+              <option value="10年以上">10年以上</option>
+            </select>
+          </div>
         </div>
         <div>
           <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">車両番号</div>
           <input type="text" id="acc-car-plate" placeholder="品川 ○ 00-00"
             style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
         </div>
-        <div>
-          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">免許証番号（任意）</div>
-          <input type="text" id="acc-license" placeholder="000000000000"
-            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
-        </div>
       </div>
-
       <button onclick="saveProfile()"
         style="width:100%;margin-top:16px;padding:12px;background:var(--gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">
         保存する
@@ -1880,7 +1954,92 @@
       <div id="acc-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
     </div>
 
-    <!-- データ管理 -->
+    <!-- ② 公開設定 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:4px;">公開設定</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:14px;">コミュニティで他のドライバーに表示する情報を選択</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div class="pub-row">
+          <span class="pub-label">月間売上</span>
+          <label class="toggle-sw"><input type="checkbox" id="pub-sales"><span class="toggle-track"></span></label>
+        </div>
+        <div class="pub-row">
+          <span class="pub-label">よく使う乗り場</span>
+          <label class="toggle-sw"><input type="checkbox" id="pub-stand"><span class="toggle-track"></span></label>
+        </div>
+        <div class="pub-row">
+          <span class="pub-label">生年月日</span>
+          <label class="toggle-sw"><input type="checkbox" id="pub-birthdate"><span class="toggle-track"></span></label>
+        </div>
+        <div class="pub-row" style="border-bottom:none;">
+          <span class="pub-label">経験年数</span>
+          <label class="toggle-sw"><input type="checkbox" id="pub-experience"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+      <button onclick="savePublicSettings()"
+        style="width:100%;margin-top:14px;padding:10px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;">
+        公開設定を保存
+      </button>
+      <div id="pub-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
+    </div>
+
+    <!-- ③ 給与・税務設定（非公開固定） -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="card-title" style="margin-bottom:0;">給与・税務設定</div>
+        <span style="font-size:10px;color:var(--gray);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:10px;">🔒 非公開</span>
+      </div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:14px;">この情報は常に非公開です</div>
+      <div style="display:grid;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">給与締日</div>
+            <select id="acc-closing-day"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+              <option value="0">末日</option>
+              <option value="5">5日</option>
+              <option value="10">10日</option>
+              <option value="15">15日</option>
+              <option value="20">20日</option>
+              <option value="25">25日</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">歩率（%）</div>
+            <input type="number" id="acc-step-rate" placeholder="60" min="0" max="100"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">プール金（月額 ¥）</div>
+          <input type="number" id="acc-pool" placeholder="30000"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">扶養家族数（人）</div>
+          <select id="acc-dependents"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+            <option value="0">0人（本人のみ）</option>
+            <option value="1">1人</option>
+            <option value="2">2人</option>
+            <option value="3">3人</option>
+            <option value="4">4人以上</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">その他控除（月額 ¥）</div>
+          <input type="number" id="acc-deduction" placeholder="0"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+        </div>
+      </div>
+      <button onclick="saveSalarySettings()"
+        style="width:100%;margin-top:16px;padding:12px;background:var(--gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">
+        給与設定を保存
+      </button>
+      <div id="salary-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
+    </div>
+
+    <!-- ④ データ管理 -->
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title" style="margin-bottom:12px;">データ管理</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
@@ -1900,12 +2059,12 @@
       </div>
     </div>
 
-    <!-- アプリ情報 -->
+    <!-- ⑤ アプリ情報 -->
     <div class="card">
       <div class="card-title" style="margin-bottom:12px;">アプリ情報</div>
       <div style="font-size:13px;color:var(--gray);line-height:2;">
         <div>アプリ名：<span style="color:var(--text);">タクドラPLEASURE</span></div>
-        <div>バージョン：<span style="color:var(--text);">1.0.0</span></div>
+        <div>バージョン：<span style="color:var(--text);">1.1.0</span></div>
         <div>対象：<span style="color:var(--text);">都内タクシードライバー</span></div>
       </div>
     </div>
@@ -1914,31 +2073,72 @@
 
 </div>
 
+<!-- アバター選択モーダル -->
+<div id="avatar-modal" style="position:fixed;inset:0;z-index:1001;background:rgba(10,22,40,0.92);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:24px;max-width:340px;width:100%;">
+    <div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:16px;">アバターを選択</div>
+    <div id="avatar-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;"></div>
+    <button onclick="closeAvatarPicker()"
+      style="width:100%;padding:10px;background:none;border:1px solid var(--border);color:var(--gray);font-size:13px;border-radius:6px;cursor:pointer;">
+      キャンセル
+    </button>
+  </div>
+</div>
+
 <!-- 初回セットアップモーダル -->
 <div id="setup-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(10,22,40,0.92);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px;">
-  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:28px 24px;max-width:380px;width:100%;">
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:28px 24px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;">
     <div style="font-size:20px;font-weight:800;color:var(--white);margin-bottom:4px;">ようこそ！</div>
-    <div style="font-size:13px;color:var(--gray);margin-bottom:20px;">タクドラPLEASURE へ。まずお名前を教えてください。</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-      <div>
-        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">姓</div>
-        <input type="text" id="setup-last-name" placeholder="山田"
-          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+    <div style="font-size:13px;color:var(--gray);margin-bottom:20px;">タクドラPLEASURE へ。まずプロフィールを設定してください。</div>
+    <div style="display:grid;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">姓 *</div>
+          <input type="text" id="setup-last-name" placeholder="山田"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">名 *</div>
+          <input type="text" id="setup-first-name" placeholder="太郎"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+        </div>
       </div>
       <div>
-        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">名</div>
-        <input type="text" id="setup-first-name" placeholder="太郎"
-          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:15px;font-weight:600;padding:9px 12px;">
+        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">ニックネーム</div>
+        <input type="text" id="setup-nickname" placeholder="Tドライバー"
+          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
       </div>
-    </div>
-    <div style="margin-bottom:20px;">
-      <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社名（任意）</div>
-      <input type="text" id="setup-company" placeholder="○○タクシー株式会社"
-        style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+      <div>
+        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">所属行燈</div>
+        <select id="setup-group" onchange="updateSetupCompanyOptions()"
+          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+          <option value="">選択してください</option>
+          <option value="日本交通">日本交通</option>
+          <option value="km">km（国際自動車）</option>
+          <option value="帝都自動車交通">帝都自動車交通</option>
+          <option value="大和自動車交通">大和自動車交通</option>
+          <option value="東京無線">東京無線</option>
+          <option value="チェッカーキャブ">チェッカーキャブ</option>
+          <option value="グリーンキャブ">グリーンキャブ</option>
+          <option value="個人タクシー">個人タクシー</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社</div>
+        <select id="setup-company"
+          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+          <option value="">まず所属行燈を選択</option>
+        </select>
+      </div>
     </div>
     <button onclick="saveSetup()"
-      style="width:100%;padding:13px;background:var(--gold);color:#000;font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;">
+      style="width:100%;margin-top:20px;padding:13px;background:var(--gold);color:#000;font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;">
       はじめる
+    </button>
+    <button onclick="skipSetup()"
+      style="width:100%;margin-top:8px;padding:10px;background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;">
+      あとで設定する
     </button>
   </div>
 </div>
@@ -3606,52 +3806,199 @@
   }
 
   // ── ACCOUNT / PROFILE ────────────────────────────────────────────
-  const PROFILE_KEY = 'userProfile';
+  const PROFILE_KEY    = 'userProfile';
+  const PUB_KEY        = 'userPublicSettings';
+  const SALARY_KEY     = 'userSalarySettings';
+
+  const AVATARS = ['🚕','🚗','🚙','🏎️','🚐','⭐','🌟','💫','🔥','⚡','🎯','👑','🦊','🐯','🦁','🐸','🦅','🌙','☀️','🌊'];
+
+  const COMPANY_MAP = {
+    '日本交通':       ['日本交通㈱','日本城タクシー㈱','東都自動車㈱','その他'],
+    'km':            ['国際自動車㈱','その他'],
+    '帝都自動車交通': ['帝都自動車交通㈱','その他'],
+    '大和自動車交通': ['大和自動車交通㈱','その他'],
+    '東京無線':       ['東京無線加盟各社','その他'],
+    'チェッカーキャブ':['チェッカーキャブ加盟各社','その他'],
+    'グリーンキャブ': ['グリーンキャブ㈱','その他'],
+    '個人タクシー':   ['個人'],
+    'その他':         ['その他'],
+  };
 
   function loadProfile() {
-    try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); }
-    catch { return null; }
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); } catch { return null; }
+  }
+  function loadPublicSettings() {
+    try { return JSON.parse(localStorage.getItem(PUB_KEY) || 'null'); } catch { return null; }
+  }
+  function loadSalarySettings() {
+    try { return JSON.parse(localStorage.getItem(SALARY_KEY) || 'null'); } catch { return null; }
   }
 
   function applyProfileToUI(profile) {
     if (!profile) return;
+    // ヘッダー
     const area = document.getElementById('header-user-area');
-    if (area) {
-      area.innerHTML = `${profile.lastName || 'ゲスト'} <strong>${profile.firstName || 'ユーザー'}</strong> さん`;
-    }
-    // フォームに値を反映
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    if (area) area.innerHTML = `${profile.lastName || 'ゲスト'} <strong>${profile.firstName || 'ユーザー'}</strong> さん`;
+    // アカウントタブ上部
+    const dispName = document.getElementById('acc-display-name');
+    if (dispName) dispName.textContent = `${profile.lastName || ''} ${profile.firstName || ''}`.trim() || 'ゲスト ユーザー';
+    const dispNick = document.getElementById('acc-display-nick');
+    if (dispNick) dispNick.textContent = profile.nickname ? `@${profile.nickname}` : '';
+    const dispBelong = document.getElementById('acc-display-belong');
+    if (dispBelong) dispBelong.textContent = [profile.group, profile.company].filter(Boolean).join(' / ');
+    const dispAvatar = document.getElementById('acc-avatar-display');
+    if (dispAvatar) dispAvatar.textContent = profile.avatar || '🚕';
+    // フォーム
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     set('acc-last-name',  profile.lastName);
     set('acc-first-name', profile.firstName);
-    set('acc-company',    profile.company);
+    set('acc-nickname',   profile.nickname);
+    set('acc-email',      profile.email);
+    set('acc-birthdate',  profile.birthdate);
+    set('acc-experience', profile.experience);
     set('acc-car-plate',  profile.carPlate);
-    set('acc-license',    profile.license);
+    if (profile.group) {
+      set('acc-group', profile.group);
+      updateCompanyOptions();
+      set('acc-company', profile.company);
+    }
+  }
+
+  function applyPublicSettingsToUI(pub) {
+    if (!pub) return;
+    const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+    setChk('pub-sales',      pub.sales);
+    setChk('pub-stand',      pub.stand);
+    setChk('pub-birthdate',  pub.birthdate);
+    setChk('pub-experience', pub.experience);
+  }
+
+  function applySalarySettingsToUI(s) {
+    if (!s) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    set('acc-closing-day', s.closingDay);
+    set('acc-step-rate',   s.stepRate);
+    set('acc-pool',        s.pool);
+    set('acc-dependents',  s.dependents);
+    set('acc-deduction',   s.deduction);
+    // 売上管理の締め日とも同期
+    const closingSel = document.getElementById('closing-day-select');
+    if (closingSel && s.closingDay !== undefined) {
+      closingSel.value = s.closingDay;
+      saveClosingDay(s.closingDay);
+    }
+  }
+
+  function updateCompanyOptions() {
+    const group = document.getElementById('acc-group')?.value;
+    const sel   = document.getElementById('acc-company');
+    if (!sel) return;
+    const opts = COMPANY_MAP[group] || [];
+    sel.innerHTML = opts.length
+      ? opts.map(c => `<option value="${c}">${c}</option>`).join('')
+      : '<option value="">選択してください</option>';
+  }
+
+  function updateSetupCompanyOptions() {
+    const group = document.getElementById('setup-group')?.value;
+    const sel   = document.getElementById('setup-company');
+    if (!sel) return;
+    const opts = COMPANY_MAP[group] || [];
+    sel.innerHTML = opts.length
+      ? opts.map(c => `<option value="${c}">${c}</option>`).join('')
+      : '<option value="">選択してください</option>';
   }
 
   function saveProfile() {
     const profile = {
-      lastName:  document.getElementById('acc-last-name').value.trim(),
-      firstName: document.getElementById('acc-first-name').value.trim(),
-      company:   document.getElementById('acc-company').value.trim(),
-      carPlate:  document.getElementById('acc-car-plate').value.trim(),
-      license:   document.getElementById('acc-license').value.trim(),
+      ...(loadProfile() || {}),
+      lastName:   document.getElementById('acc-last-name').value.trim(),
+      firstName:  document.getElementById('acc-first-name').value.trim(),
+      nickname:   document.getElementById('acc-nickname').value.trim(),
+      email:      document.getElementById('acc-email').value.trim(),
+      group:      document.getElementById('acc-group').value,
+      company:    document.getElementById('acc-company').value,
+      birthdate:  document.getElementById('acc-birthdate').value,
+      experience: document.getElementById('acc-experience').value,
+      carPlate:   document.getElementById('acc-car-plate').value.trim(),
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     applyProfileToUI(profile);
-    const msg = document.getElementById('acc-save-msg');
-    msg.textContent = '保存しました ✓';
-    msg.style.display = 'block';
-    setTimeout(() => { msg.style.display = 'none'; }, 2500);
+    showMsg('acc-save-msg', '保存しました ✓');
   }
 
+  function savePublicSettings() {
+    const pub = {
+      sales:      document.getElementById('pub-sales').checked,
+      stand:      document.getElementById('pub-stand').checked,
+      birthdate:  document.getElementById('pub-birthdate').checked,
+      experience: document.getElementById('pub-experience').checked,
+    };
+    localStorage.setItem(PUB_KEY, JSON.stringify(pub));
+    showMsg('pub-save-msg', '保存しました ✓');
+  }
+
+  function saveSalarySettings() {
+    const s = {
+      closingDay: document.getElementById('acc-closing-day').value,
+      stepRate:   document.getElementById('acc-step-rate').value,
+      pool:       document.getElementById('acc-pool').value,
+      dependents: document.getElementById('acc-dependents').value,
+      deduction:  document.getElementById('acc-deduction').value,
+    };
+    localStorage.setItem(SALARY_KEY, JSON.stringify(s));
+    // 売上管理の締め日とも同期
+    const closingSel = document.getElementById('closing-day-select');
+    if (closingSel) { closingSel.value = s.closingDay; saveClosingDay(s.closingDay); }
+    showMsg('salary-save-msg', '保存しました ✓');
+  }
+
+  function showMsg(id, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 2500);
+  }
+
+  // アバター
+  function openAvatarPicker() {
+    const grid = document.getElementById('avatar-grid');
+    const cur  = (loadProfile() || {}).avatar || '🚕';
+    grid.innerHTML = AVATARS.map(a => `
+      <button onclick="selectAvatar('${a}')"
+        style="font-size:26px;background:${a===cur?'rgba(201,168,76,.2)':'rgba(255,255,255,.05)'};border:1px solid ${a===cur?'var(--gold)':'var(--border)'};border-radius:8px;padding:8px;cursor:pointer;transition:.15s;">
+        ${a}
+      </button>`).join('');
+    document.getElementById('avatar-modal').style.display = 'flex';
+  }
+  function selectAvatar(emoji) {
+    const profile = { ...(loadProfile() || {}), avatar: emoji };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    applyProfileToUI(profile);
+    closeAvatarPicker();
+  }
+  function closeAvatarPicker() {
+    document.getElementById('avatar-modal').style.display = 'none';
+  }
+
+  // 初回セットアップ
   function saveSetup() {
     const lastName  = document.getElementById('setup-last-name').value.trim();
     const firstName = document.getElementById('setup-first-name').value.trim();
-    const company   = document.getElementById('setup-company').value.trim();
     if (!lastName && !firstName) { alert('お名前を入力してください'); return; }
-    const profile = { lastName, firstName, company, carPlate: '', license: '' };
+    const profile = {
+      lastName, firstName,
+      nickname: document.getElementById('setup-nickname').value.trim(),
+      group:    document.getElementById('setup-group').value,
+      company:  document.getElementById('setup-company').value,
+      avatar: '🚕', email:'', birthdate:'', experience:'', carPlate:'',
+    };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     applyProfileToUI(profile);
+    document.getElementById('setup-modal').style.display = 'none';
+  }
+  function skipSetup() {
     document.getElementById('setup-modal').style.display = 'none';
   }
 
@@ -3684,6 +4031,8 @@
         if (!confirm(`${Object.keys(data).length}件のデータを復元します。現在のデータは上書きされます。よろしいですか？`)) return;
         Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
         applyProfileToUI(loadProfile());
+        applyPublicSettingsToUI(loadPublicSettings());
+        applySalarySettingsToUI(loadSalarySettings());
         alert('インポートが完了しました。ページを再読み込みしてください。');
       } catch {
         alert('ファイルの読み取りに失敗しました。正しいJSONファイルを選択してください。');
@@ -3701,15 +4050,15 @@
     alert('日報データを削除しました。');
   }
 
-  // 初期化: プロフィール読み込み or 初回セットアップ表示
+  // 初期化
   (function initProfile() {
     const profile = loadProfile();
     if (profile) {
       applyProfileToUI(profile);
+      applyPublicSettingsToUI(loadPublicSettings());
+      applySalarySettingsToUI(loadSalarySettings());
     } else {
-      // 初回: セットアップモーダルを表示
-      const modal = document.getElementById('setup-modal');
-      if (modal) modal.style.display = 'flex';
+      document.getElementById('setup-modal').style.display = 'flex';
     }
   })();
 </script>
