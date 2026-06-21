@@ -752,9 +752,21 @@
       </div> <!-- /report-ocr-area -->
     </div>
 
+    <!-- 年間売上 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:12px;">年間売上</div>
+      <div id="annual-sales-content"></div>
+    </div>
+
     <!-- 日報一覧 -->
     <div class="card" style="margin-bottom:16px;">
-      <div class="card-title">日報一覧</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+        <div class="card-title" style="margin-bottom:0;">日報一覧</div>
+        <select id="report-period-select" onchange="renderReportHistory()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:3px 8px;cursor:pointer;">
+          <option value="current">今月度</option>
+          <option value="all">全期間</option>
+        </select>
+      </div>
       <div id="report-history-wrap" style="overflow-x:auto;margin:0 -2px;">
         <table id="report-history-table" style="width:100%;min-width:480px;border-collapse:collapse;">
           <thead>
@@ -3804,13 +3816,122 @@
       })()}`;
   }
 
+  // ── 年間売上 ──
+  const ANNUAL_OVERRIDE_KEY = 'takudora_annual_override';
+  function renderAnnualSales() {
+    const el = document.getElementById('annual-sales-content');
+    if (!el) return;
+    const reports = loadReports();
+    const closingDay = loadClosingDay();
+    const now = new Date();
+    const thisYear = now.getFullYear();
+
+    // 締め日ベースで「今年度」の範囲を決定（4月締め日翌日〜翌3月締め日まで的な考え方ではなく、カレンダー年）
+    // 各月の締め日期間を12ヶ月分集計
+    const monthlyMap = {}; // key: "YYYY-MM度"
+    reports.forEach(r => {
+      if (!r.date || !r.sales) return;
+      const [y, m, d] = r.date.split('-').map(Number);
+      // どの締め月に属するか
+      let periodY = y, periodM = m;
+      if (closingDay && d <= closingDay) {
+        // 締め日以前→前月度
+        if (m === 1) { periodY = y - 1; periodM = 12; } else { periodM = m - 1; }
+      }
+      const key = `${periodY}-${String(periodM).padStart(2,'0')}`;
+      if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, trips: 0, days: 0 };
+      monthlyMap[key].sales += Number(r.sales) || 0;
+      monthlyMap[key].trips += Number(r.trips) || 0;
+      monthlyMap[key].days += 1;
+    });
+
+    // 今年分（1〜12月度）を集計
+    let autoTotal = 0;
+    const months = [];
+    for (let m = 1; m <= 12; m++) {
+      const key = `${thisYear}-${String(m).padStart(2,'0')}`;
+      const v = monthlyMap[key] || { sales: 0, trips: 0, days: 0 };
+      autoTotal += v.sales;
+      months.push({ m, ...v });
+    }
+
+    // 手入力上書き値
+    let overrides = {};
+    try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
+    const overrideYear = overrides[thisYear] || {};
+
+    el.innerHTML = `
+      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（締め日ベース）</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
+        ${months.map(({ m, sales, days }) => {
+          const hasOverride = overrideYear[m] !== undefined;
+          const dispSales = hasOverride ? overrideYear[m] : sales;
+          const label = `${m}月`;
+          const future = m > now.getMonth() + 1 || (m === now.getMonth() + 1 && now.getDate() <= (closingDay || 31));
+          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales})">
+            <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
+            <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
+            <div style="font-size:9px;color:var(--gray);">${days}日分</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;">
+        <span style="font-size:12px;color:var(--gray);">年間合計</span>
+        <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(Number(v)||0),0) || autoTotal).toLocaleString()}</span>
+      </div>
+      <div id="annual-edit-area"></div>`;
+  }
+
+  function editAnnualMonth(m, current) {
+    const area = document.getElementById('annual-edit-area');
+    if (!area) return;
+    area.innerHTML = `
+      <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">${m}月度の売上を手入力（空欄で日報データに戻す）</div>
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="annual-input-val" value="${current||''}" placeholder="売上金額"
+            style="flex:1;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          <button onclick="saveAnnualMonth(${m})" style="padding:7px 14px;background:var(--gold);border:none;color:#000;font-weight:700;border-radius:6px;cursor:pointer;font-size:13px;">保存</button>
+          <button onclick="document.getElementById('annual-edit-area').innerHTML=''" style="padding:7px 10px;background:none;border:1px solid var(--border);color:var(--gray);border-radius:6px;cursor:pointer;">✕</button>
+        </div>
+      </div>`;
+    document.getElementById('annual-input-val').focus();
+  }
+
+  function saveAnnualMonth(m) {
+    const val = document.getElementById('annual-input-val')?.value.trim();
+    const now = new Date();
+    let overrides = {};
+    try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
+    if (!overrides[now.getFullYear()]) overrides[now.getFullYear()] = {};
+    if (val === '' || val === null) {
+      delete overrides[now.getFullYear()][m];
+    } else {
+      overrides[now.getFullYear()][m] = Number(val);
+    }
+    localStorage.setItem(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
+    renderAnnualSales();
+  }
+
   function renderReportHistory() {
     const tbody = document.getElementById('report-history-body');
     if (!tbody) return;
     renderMonthlySummary();
+    renderAnnualSales();
     updateTopSalesTile();
     renderDowChart();
-    const reports = loadReports().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const closingDay = loadClosingDay();
+    const periodSel = document.getElementById('report-period-select')?.value || 'current';
+    const allReports = loadReports().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    let reports;
+    if (periodSel === 'current') {
+      // 今月度（締め日ベース）
+      const p = getMonthPeriod();
+      reports = allReports.filter(r => r.date >= p.start && r.date <= p.end);
+    } else {
+      reports = allReports;
+    }
     if (reports.length === 0) {
       tbody.innerHTML = '<tr><td colspan="10" style="color:var(--gray);text-align:center;padding:16px 0;">まだ日報がありません</td></tr>';
       return;
