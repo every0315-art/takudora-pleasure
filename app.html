@@ -3392,43 +3392,6 @@
     window.open(url, '_blank');
   });
 
-  // スワイプでタブ切り替え
-  const tabIds = Array.from(tabs).map(t => t.dataset.tab);
-  let touchStartX = 0;
-  let touchStartY = 0;
-
-  let swipeBlocked = false;
-  document.querySelector('.content').addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    // 横スクロール可能な要素の上ではスワイプを無効化
-    let el = e.target;
-    swipeBlocked = false;
-    while (el && el !== document.body) {
-      if (el.scrollWidth > el.clientWidth + 4) { swipeBlocked = true; break; }
-      el = el.parentElement;
-    }
-  }, { passive: true });
-
-  document.querySelector('.content').addEventListener('touchend', e => {
-    if (swipeBlocked) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    // 横方向が縦より大きく、50px以上動いたらスワイプ判定
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-
-    const activeBtn = document.querySelector('.tab-btn.active');
-    const currentIdx = tabIds.indexOf(activeBtn.dataset.tab);
-    if (dx < 0) {
-      switchTab(tabIds[(currentIdx + 1) % tabIds.length]); // 左スワイプ → 次（最後から先頭へ）
-    } else {
-      switchTab(tabIds[(currentIdx - 1 + tabIds.length) % tabIds.length]); // 右スワイプ → 前（先頭から最後へ）
-    }
-
-    // アクティブなタブボタンをスクロールして見せる
-    const nextBtn = document.querySelector('.tab-btn.active');
-    nextBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, { passive: true });
 
   // ── 日報履歴 ──
   const REPORT_KEY = 'takudora_reports';
