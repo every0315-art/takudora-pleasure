@@ -3915,8 +3915,7 @@
           return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'})">
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
-            <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
-            ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
+            <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${taxExcluded?'¥'+taxExcluded.toLocaleString():(dispSales?'¥'+Number(dispSales).toLocaleString():'—')}</div>
             ${(stepRate && dispSales) ? `<div style="font-size:9px;color:#7ec8a0;">給与¥${kyuyo.toLocaleString()}</div>` : ''}
             ${(poolRate && dispSales) ? `<div style="font-size:9px;color:#e08080;">プール¥${pool.toLocaleString()}</div>` : ''}
             <div style="font-size:9px;color:var(--gray);">${dispDays ? dispDays+'日稼働' : '—'}</div>
