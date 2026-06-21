@@ -3827,13 +3827,12 @@
     const el = document.getElementById('annual-sales-content');
     if (!el) return;
     const reports = loadReports();
-    const closingDay = loadClosingDay();
     const now = new Date();
     const thisYear = now.getFullYear();
 
-    // 締め日ベースで「今年度」の範囲を決定（4月締め日翌日〜翌3月締め日まで的な考え方ではなく、カレンダー年）
-    // 各月の締め日期間を12ヶ月分集計
     const sal = (loadSalarySettings ? loadSalarySettings() : null) || {};
+    // 締め日はsalary settingsを優先、なければ独立キー
+    const closingDay = Number(sal.closingDay) || loadClosingDay() || 0;
     const stepRate = parseFloat(sal.stepRate) || 0;
     const poolRate = parseFloat(sal.poolRate) || 0;
     const payday = Number(sal.payday) || 0; // 支払日（0=末日）
@@ -3917,8 +3916,8 @@
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
             ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
-            ${kyuyo ? `<div style="font-size:9px;color:#7ec8a0;">給与¥${kyuyo.toLocaleString()}</div>` : ''}
-            ${pool ? `<div style="font-size:9px;color:#e08080;">プール¥${pool.toLocaleString()}</div>` : ''}
+            ${(stepRate && dispSales) ? `<div style="font-size:9px;color:#7ec8a0;">給与¥${kyuyo.toLocaleString()}</div>` : ''}
+            ${(poolRate && dispSales) ? `<div style="font-size:9px;color:#e08080;">プール¥${pool.toLocaleString()}</div>` : ''}
             <div style="font-size:9px;color:var(--gray);">${dispDays ? dispDays+'日稼働' : '—'}</div>
           </div>`;
         }).join('')}
