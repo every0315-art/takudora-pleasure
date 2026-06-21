@@ -2081,6 +2081,11 @@
           <input type="hidden" id="acc-closing-day" value="0">
           <div id="closing-day-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
         </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">給与支払日</div>
+          <input type="hidden" id="acc-payday" value="0">
+          <div id="payday-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
             <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">歩率（%）</div>
@@ -3828,19 +3833,30 @@
 
     // 締め日ベースで「今年度」の範囲を決定（4月締め日翌日〜翌3月締め日まで的な考え方ではなく、カレンダー年）
     // 各月の締め日期間を12ヶ月分集計
-    const monthlyMap = {}; // key: "YYYY-MM度"
+    const sal = loadSalarySettings ? loadSalarySettings() : {};
+    const stepRate = parseFloat(sal.stepRate) || 0;
+    const poolRate = parseFloat(sal.poolRate) || 0;
+    const payday = Number(sal.payday) || 0; // 支払日（0=末日）
+
+    const monthlyMap = {}; // key: "YYYY-MM"（給与支払い月）
     reports.forEach(r => {
       if (!r.date || !r.sales) return;
       const [y, m, d] = r.date.split('-').map(Number);
-      // どの締め月に属するか
+      // 締め月に属するか判定
       let periodY = y, periodM = m;
       if (closingDay && d <= closingDay) {
-        // 締め日以前→前月度
         if (m === 1) { periodY = y - 1; periodM = 12; } else { periodM = m - 1; }
       }
-      const key = `${periodY}-${String(periodM).padStart(2,'0')}`;
-      if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, trips: 0, days: 0 };
+      // 支払い月は締め月の翌月（支払日が設定されている場合）
+      let payY = periodY, payM = periodM;
+      if (payday) {
+        payM = periodM + 1;
+        if (payM > 12) { payM = 1; payY = periodY + 1; }
+      }
+      const key = `${payY}-${String(payM).padStart(2,'0')}`;
+      if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, tax: 0, trips: 0, days: 0 };
       monthlyMap[key].sales += Number(r.sales) || 0;
+      monthlyMap[key].tax   += Number(r.tax)   || 0;
       monthlyMap[key].trips += Number(r.trips) || 0;
       monthlyMap[key].days += 1;
     });
@@ -3850,7 +3866,7 @@
     const months = [];
     for (let m = 1; m <= 12; m++) {
       const key = `${thisYear}-${String(m).padStart(2,'0')}`;
-      const v = monthlyMap[key] || { sales: 0, trips: 0, days: 0 };
+      const v = monthlyMap[key] || { sales: 0, tax: 0, trips: 0, days: 0 };
       autoTotal += v.sales;
       months.push({ m, ...v });
     }
@@ -3860,24 +3876,38 @@
     try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
     const overrideYear = overrides[thisYear] || {};
 
+    let annualTaxExcluded = 0, annualTakehome = 0;
     el.innerHTML = `
-      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（締め日ベース）</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（${payday ? `給与支払日${payday===0?'末日':payday+'日'}ベース` : '締め日ベース'}）</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
-        ${months.map(({ m, sales, days }) => {
+        ${months.map(({ m, sales, tax, days }) => {
           const hasOverride = overrideYear[m] !== undefined;
           const dispSales = hasOverride ? overrideYear[m] : sales;
+          const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
+          const takehome = Math.round(taxExcluded * (stepRate - poolRate) / 100);
+          annualTaxExcluded += taxExcluded;
+          annualTakehome += takehome;
           const label = `${m}月`;
           const future = m > now.getMonth() + 1 || (m === now.getMonth() + 1 && now.getDate() <= (closingDay || 31));
           return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales})">
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
+            ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
+            ${takehome ? `<div style="font-size:9px;color:#7ec8a0;">受取¥${takehome.toLocaleString()}</div>` : ''}
             <div style="font-size:9px;color:var(--gray);">${days}日分</div>
           </div>`;
         }).join('')}
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;">
-        <span style="font-size:12px;color:var(--gray);">年間合計</span>
-        <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(Number(v)||0),0) || autoTotal).toLocaleString()}</span>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;">
+          <span style="font-size:12px;color:var(--gray);">年間売上合計</span>
+          <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(Number(v)||0),0) || autoTotal).toLocaleString()}</span>
+        </div>
+        ${(stepRate || poolRate) ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(126,200,160,.08);border:1px solid rgba(126,200,160,.25);border-radius:8px;">
+          <span style="font-size:12px;color:var(--gray);">年間受取額合計<span style="font-size:10px;margin-left:4px;">(歩率${stepRate}%−プール${poolRate}%)</span></span>
+          <span style="font-size:16px;font-weight:900;color:#7ec8a0;">¥${annualTakehome.toLocaleString()}</span>
+        </div>` : ''}
       </div>
       <div id="annual-edit-area"></div>`;
   }
@@ -4278,12 +4308,15 @@
     if (!s) return;
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     set('acc-closing-day', s.closingDay);
+    set('acc-payday',      s.payday);
     set('acc-step-rate',   s.stepRate);
     set('acc-pool-rate',   s.poolRate ?? s.pool ?? '');
     set('acc-dependents',  s.dependents);
     set('acc-deduction',   s.deduction);
     // 締め日カレンダー選択状態を反映
     renderClosingDayCalendar(s.closingDay);
+    // 支払日カレンダー選択状態を反映
+    renderPaydayCalendar(s.payday ?? 0);
     // プール金支払い月を反映
     const months = s.poolMonths ? s.poolMonths.split(',').filter(Boolean) : [];
     set('acc-pool-months', s.poolMonths ?? '');
@@ -4350,6 +4383,7 @@
   function saveSalarySettings() {
     const s = {
       closingDay:  document.getElementById('acc-closing-day').value,
+      payday:      document.getElementById('acc-payday').value,
       stepRate:    document.getElementById('acc-step-rate').value,
       poolRate:    document.getElementById('acc-pool-rate').value,
       poolMonths:  document.getElementById('acc-pool-months').value,
@@ -4580,6 +4614,23 @@
     renderClosingDayCalendar(v);
   }
 
+  // ── 給与支払日カレンダー ──
+  function renderPaydayCalendar(selected) {
+    const wrap = document.getElementById('payday-calendar');
+    if (!wrap) return;
+    const v = Number(selected) || 0;
+    const btnStyle = (d) =>
+      `font-size:12px;font-weight:${d===v?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${d===v?'var(--gold)':'var(--border)'};background:${d===v?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${d===v?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;`;
+    const days = Array.from({length:31},(_,i)=>i+1);
+    wrap.innerHTML = days.map(d=>`<button type="button" style="${btnStyle(d)}" onclick="selectPayday(${d})">${d}</button>`).join('')
+      + `<button type="button" style="${btnStyle(0)};grid-column:span 2;" onclick="selectPayday(0)">末日</button>`;
+  }
+  function selectPayday(v) {
+    const inp = document.getElementById('acc-payday');
+    if (inp) inp.value = v;
+    renderPaydayCalendar(v);
+  }
+
   // ── プール金支払い月カレンダー ──
   function renderPoolMonthCalendar(selected) {
     const wrap = document.getElementById('pool-month-calendar');
@@ -4604,6 +4655,7 @@
 
   // カレンダー初期描画
   renderClosingDayCalendar(0);
+  renderPaydayCalendar(0);
   renderPoolMonthCalendar([]);
 
   // 初期化
