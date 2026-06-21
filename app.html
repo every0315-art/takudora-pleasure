@@ -264,28 +264,24 @@
       margin-top: 6px;
     }
 
-    /* 天気タイル */
-    .tile-weather {
-      grid-column: 2;
-      grid-row: 2;
+    /* 天気バー（TOPページ上部固定・横幅いっぱい） */
+    .weather-bar {
       display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 6px;
+      align-items: center;
       background: linear-gradient(160deg, #112240 0%, #1a3560 100%);
-      border-color: rgba(201,168,76,.25);
-      padding: 12px 16px;
+      border: 1px solid rgba(201,168,76,.25);
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-bottom: 14px;
       cursor: pointer;
-      overflow: hidden;
+      gap: 0;
+      min-height: 70px;
     }
-    .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
+    .weather-bar:hover { border-color: rgba(201,168,76,.45); }
+    .wb-left { display:flex; flex-direction:column; justify-content:center; flex-shrink:0; }
     .weather-dt {
       font-size: 11px; color: var(--white); font-weight: 700;
-      text-align: center; flex-shrink: 0; line-height: 1.2;
-    }
-    .weather-body {
-      display: flex; flex-direction: column; flex: 1;
-      gap: 8px; overflow: hidden;
+      flex-shrink: 0; line-height: 1.2;
     }
 
     /* 雨雲レーダーモーダル */
@@ -363,40 +359,14 @@
       .tile-main { font-size: 14px; }
       .tile-sub { font-size: 10px; }
 
-      /* 天気タイル — mobile: 縦積み */
-      .tile-weather {
-        flex-direction: column;
-        align-items: center;
-        padding: 6px 8px;
-        gap: 0;
-        overflow: visible;
-      }
-      .weather-dt { font-size: 10px; margin-bottom: 2px; }
-      .weather-body {
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        flex: 1;
-        width: 100%;
-        overflow: visible;
-      }
-      .weather-main { gap: 6px; flex-wrap: wrap; justify-content: center; }
-      .weather-icon-wrap { font-size: 22px !important; }
-      .weather-temp { font-size: 20px; }
-      .weather-temp span { font-size: 11px; }
-      .weather-desc { font-size: 10px; }
-      .weather-demand { font-size: 8px; padding: 2px 5px; margin-top: 0; }
-      .weather-forecast {
-        width: 100%; flex-direction: row; gap: 0;
-        justify-content: space-around;
-        border-top: 1px solid rgba(255,255,255,.08);
-        padding-top: 3px; margin-top: 3px;
-      }
-      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 1px; border-right: 1px solid rgba(255,255,255,.05); }
-      .fc-item:last-child { border-right: none; }
-      .fc-time { font-size: 9px; width: auto; }
-      .fc-icon { font-size: 18px; width: auto; }
-      .fc-tmp { font-size: 10px; width: auto; }
+      /* 天気バー — mobile */
+      .weather-bar { padding: 8px 10px; min-height: 60px; margin-bottom: 10px; }
+      .wb-forecast { padding-left: 8px; margin-left: 8px; }
+      .wb-sw { padding-left: 8px; margin-left: 8px; }
+      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 1px; }
+      .fc-time { font-size: 9px; }
+      .fc-icon { font-size: 15px; }
+      .fc-tmp { font-size: 9px; }
       .fc-rain { font-size: 8px; }
 
       /* 売上タイル — 縦中央寄せ */
@@ -511,41 +481,42 @@
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
     <!-- ストップウォッチ操作バー -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:0 2px;justify-content:flex-end;">
-      <button id="sw-start" onclick="swToggle()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
-      <button onclick="swReset()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">RESET</button>
+    <!-- 天気バー（横幅固定・常時表示） -->
+    <div class="weather-bar tile-weather" onclick="document.getElementById('radarModal').style.display='flex'">
+      <div class="wb-left">
+        <div id="weather-datetime" class="weather-dt" style="font-size:10px;color:var(--gray);margin-bottom:2px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="weather-icon-wrap" style="font-size:28px;line-height:1;">…</div>
+          <div>
+            <div class="weather-temp" style="font-size:22px;font-weight:900;color:var(--white);line-height:1;">28<span style="font-size:12px;font-weight:400;color:var(--gray);">℃</span></div>
+            <div class="weather-desc" style="font-size:10px;color:var(--gray);">晴れ</div>
+          </div>
+          <div class="weather-demand" style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(240,180,41,.12);color:var(--yellow);border:1px solid rgba(240,180,41,.2);">
+            需要：<strong>やや低め</strong>
+          </div>
+        </div>
+      </div>
+      <div class="wb-forecast weather-forecast" style="flex:1;display:flex;justify-content:space-around;align-items:center;border-left:1px solid rgba(255,255,255,.07);padding-left:12px;margin-left:12px;">
+        <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+        <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+        <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
+        <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+      </div>
+      <div class="wb-sw" style="border-left:1px solid rgba(255,255,255,.07);padding-left:12px;margin-left:12px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div id="sw-display" style="font-size:18px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;">00:00:00</div>
+        <div style="display:flex;gap:6px;">
+          <button id="sw-start" onclick="event.stopPropagation();swToggle()" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
+          <button onclick="event.stopPropagation();swReset()" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">RESET</button>
+        </div>
+      </div>
     </div>
+
     <div class="top-layout">
 
-      <!-- 行1左：イベント -->
+      <!-- イベント -->
       <div class="tile tile-event" data-tab="event" data-tile="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
         <div class="tile-label">イベント</div>
         <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
-      </div>
-
-      <!-- 行1中央：天気（横長） -->
-      <div class="tile tile-weather" data-tile="weather">
-        <div id="weather-datetime" class="weather-dt"></div>
-        <div class="weather-body">
-          <div class="weather-main">
-            <div class="weather-icon-wrap">…</div>
-            <div class="weather-temp">28<span>℃</span></div>
-            <div class="weather-desc">晴れ</div>
-            <div class="weather-demand">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
-              需要：<strong style="color:var(--yellow);">やや低め</strong>
-            </div>
-          </div>
-          <div class="weather-forecast">
-            <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-            <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-            <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
-            <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
-          </div>
-          <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:5px;margin-top:2px;text-align:center;">
-            <div id="sw-display" style="font-size:20px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;">00:00:00</div>
-          </div>
-        </div>
       </div>
 
       <!-- 行1右：街の様子 -->
@@ -2255,7 +2226,7 @@
   const radarIframe = document.getElementById('radarIframe');
   const radarClose = document.getElementById('radarClose');
 
-  document.querySelector('.tile-weather').addEventListener('click', () => {
+  document.querySelector('.weather-bar').addEventListener('click', () => {
     radarIframe.src = radarSrc;
     radarModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -3831,7 +3802,6 @@
     { id: 'haneda',    label: '羽田空港' },
     { id: 'stand',     label: '街の様子' },
     { id: 'event',     label: 'イベント' },
-    { id: 'weather',   label: '天気', fixed: true },
     { id: 'community', label: 'コミュニティ' },
     { id: 'sales',     label: '売上管理' },
     { id: 'traffic',   label: '道路情報' },
