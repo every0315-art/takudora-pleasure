@@ -2024,6 +2024,18 @@
       <div id="pub-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
     </div>
 
+    <!-- アプリ設定 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:14px;">アプリ設定</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--white);">位置情報</div>
+          <div id="loc-status-text" style="font-size:11px;color:var(--gray);margin-top:2px;">確認中…</div>
+        </div>
+        <button id="loc-perm-btn" onclick="requestLocationPermission()" style="font-size:12px;font-weight:700;padding:6px 16px;border-radius:6px;border:none;cursor:pointer;background:var(--gold);color:#000;">許可する</button>
+      </div>
+    </div>
+
     <!-- ③ 給与・税務設定（非公開固定） -->
     <div class="card" style="margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
@@ -2990,6 +3002,43 @@
       disp.style.color = 'var(--gray)';
     }
   }
+  // 位置情報許可管理
+  function updateLocUI(state) {
+    const btn = document.getElementById('loc-perm-btn');
+    const txt = document.getElementById('loc-status-text');
+    if (!btn || !txt) return;
+    if (state === 'granted') {
+      txt.textContent = '許可済み（乗務開始時に自動取得）';
+      txt.style.color = 'var(--green)';
+      btn.textContent = '許可済み'; btn.style.background = 'rgba(255,255,255,.1)'; btn.style.color = 'var(--gray)'; btn.disabled = true;
+    } else if (state === 'denied') {
+      txt.textContent = 'ブロック中 — iOSの設定 > Safari > 位置情報 から変更してください';
+      txt.style.color = 'var(--red, #e74c3c)';
+      btn.textContent = 'ブロック中'; btn.style.background = 'rgba(255,255,255,.1)'; btn.style.color = 'var(--gray)'; btn.disabled = true;
+    } else {
+      txt.textContent = '未許可 — 乗務開始前に許可してください';
+      txt.style.color = 'var(--gray)';
+      btn.textContent = '許可する'; btn.style.background = 'var(--gold)'; btn.style.color = '#000'; btn.disabled = false;
+    }
+  }
+  function requestLocationPermission() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      () => { updateLocUI('granted'); },
+      err => { updateLocUI(err.code === 1 ? 'denied' : 'prompt'); },
+      { timeout: 10000, maximumAge: 0 }
+    );
+  }
+  // 許可状態を確認してUIを反映
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(r => {
+      updateLocUI(r.state);
+      r.onchange = () => updateLocUI(r.state);
+    }).catch(() => updateLocUI('prompt'));
+  } else {
+    updateLocUI('prompt');
+  }
+
   function swAction() {
     if (swState === 'idle') {
       swStart = Date.now();
