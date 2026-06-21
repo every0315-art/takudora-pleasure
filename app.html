@@ -3261,7 +3261,7 @@
     };
 
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      const tryGet = () => navigator.geolocation.getCurrentPosition(
         async pos => {
           const loc = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
           doPost(loc);
@@ -3269,6 +3269,14 @@
         () => doPost(''),
         { timeout: 5000, maximumAge: 60000 }
       );
+      if (navigator.permissions) {
+        navigator.permissions.query({ name: 'geolocation' }).then(result => {
+          if (result.state === 'granted') tryGet();
+          else doPost('');
+        }).catch(() => tryGet());
+      } else {
+        tryGet();
+      }
     } else {
       doPost('');
     }
