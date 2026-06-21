@@ -3299,6 +3299,24 @@
     switchTab('community');
   }
 
+  const ADMIN_EMAILS = ['every0315@gmail.com'];
+  function isAdmin() {
+    return typeof _sbUser !== 'undefined' && _sbUser && ADMIN_EMAILS.includes(_sbUser.email);
+  }
+
+  function deletePost(ts) {
+    if (!confirm('この投稿を取り消しますか？')) return;
+    const posts = loadCommunityPosts().filter(p => p.ts !== ts);
+    saveCommunityPosts(posts);
+    renderCommunityPosts();
+    updateCommunityTile();
+  }
+
+  function deleteStaticPost(el) {
+    if (!confirm('この投稿を削除しますか？')) return;
+    el.closest('.post').remove();
+  }
+
   function timeAgo(ts) {
     const diff = Math.floor((Date.now() - ts) / 1000);
     if (diff < 60) return 'たった今';
@@ -3328,6 +3346,7 @@
             <div class="post-header" style="margin-bottom:8px;">
               <div class="post-avatar">${p.initial}</div>
               <div><div class="post-name">${p.name}</div><div class="post-time">${timeAgo(p.ts)}</div></div>
+              <button onclick="deletePost(${p.ts})" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;" title="取り消す">✕ 取り消す</button>
             </div>
             <div class="post-body">${p.body}</div>
             ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}
@@ -3363,6 +3382,23 @@
     const sub = tileEl.querySelector('.tile-sub');
     if (sub) sub.textContent = `新着 ${posts.length}件 · タップして投稿`;
   }
+
+  // 管理者の場合、静的投稿に削除ボタンを追加
+  function addAdminDeleteButtons() {
+    if (!isAdmin()) return;
+    document.querySelectorAll('#tab-community .post:not(.my-post)').forEach(post => {
+      const header = post.querySelector('.post-header');
+      if (!header || header.querySelector('.admin-del-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'admin-del-btn';
+      btn.textContent = '✕ 削除';
+      btn.style.cssText = 'margin-left:auto;background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:2px 6px;';
+      btn.onclick = () => deleteStaticPost(btn);
+      header.appendChild(btn);
+    });
+  }
+  // Supabaseログイン後に呼び出せるよう公開
+  const _origSbUpdateUI = typeof sbUpdateUI === 'function' ? sbUpdateUI : null;
 
   // 静的投稿の地図を初期化
   const staticPostMaps = [
@@ -4825,6 +4861,7 @@
       if (inEl)  inEl.style.display  = 'flex';
       if (outEl) outEl.style.display = 'none';
       if (mailEl) mailEl.textContent = user.email;
+      addAdminDeleteButtons();
     } else {
       if (inEl)  inEl.style.display  = 'none';
       if (outEl) outEl.style.display = 'block';
