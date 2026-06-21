@@ -3883,11 +3883,16 @@
         if (payM > 12) { payM = 1; payY = periodY + 1; }
       }
       const key = `${payY}-${String(payM).padStart(2,'0')}`;
-      if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, tax: 0, trips: 0, days: 0 };
-      monthlyMap[key].sales += Number(r.sales) || 0;
-      monthlyMap[key].tax   += Number(r.tax)   || 0;
+      if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, tax: 0, kyuyo: 0, pool: 0, trips: 0, days: 0 };
+      const dailySales = Number(r.sales) || 0;
+      const dailyTax   = Number(r.tax)   || 0;
+      const dailyTaxEx = Math.max(0, dailySales - dailyTax);
+      monthlyMap[key].sales += dailySales;
+      monthlyMap[key].tax   += dailyTax;
+      monthlyMap[key].kyuyo += Math.round(dailyTaxEx * stepRate / 100);
+      monthlyMap[key].pool  += Math.round(dailyTaxEx * poolRate / 100);
       monthlyMap[key].trips += Number(r.trips) || 0;
-      monthlyMap[key].days += 1;
+      monthlyMap[key].days  += 1;
     });
 
     // 今年分（1〜12月度）を集計
@@ -3895,7 +3900,7 @@
     const months = [];
     for (let m = 1; m <= 12; m++) {
       const key = `${thisYear}-${String(m).padStart(2,'0')}`;
-      const v = monthlyMap[key] || { sales: 0, tax: 0, trips: 0, days: 0 };
+      const v = monthlyMap[key] || { sales: 0, tax: 0, kyuyo: 0, pool: 0, trips: 0, days: 0 };
       autoTotal += Math.max(0, v.sales - (v.tax || 0));
       months.push({ m, ...v });
     }
@@ -3909,7 +3914,7 @@
     el.innerHTML = `
       <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（${payday ? `給与支払日${payday===0?'末日':payday+'日'}ベース` : '締め日ベース'}）</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
-        ${months.map(({ m, sales, tax, days }) => {
+        ${months.map(({ m, sales, tax, kyuyo: kyuyo_map, pool: pool_map, days }) => {
           const ov = overrideYear[m];
           const hasOverride = ov !== undefined;
           const ovSales = hasOverride ? (typeof ov === 'object' ? ov.sales : ov) : undefined;
@@ -3917,8 +3922,9 @@
           const dispSales = ovSales != null ? ovSales : sales;
           const dispDays  = ovDays  != null ? ovDays  : days;
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
-          const kyuyo   = Math.round(taxExcluded * stepRate / 100);
-          const pool    = Math.round(taxExcluded * poolRate / 100);
+          // 日別集計値を優先（手入力上書き時は月合計から一括計算）
+          const kyuyo = hasOverride ? Math.round(taxExcluded * stepRate / 100) : (kyuyo_map || 0);
+          const pool  = hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map || 0);
           const takehome = kyuyo + pool;
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
