@@ -264,6 +264,75 @@
       margin-top: 6px;
     }
 
+    /* ピックアップ横スクロールバー */
+    .pickup-bar {
+      display: flex;
+      align-items: center;
+      background: var(--navy-mid);
+      border: 1px solid rgba(201,168,76,.2);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      height: 36px;
+      overflow: hidden;
+    }
+    .pickup-label {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .15em;
+      color: var(--gold);
+      background: rgba(201,168,76,.12);
+      border-right: 1px solid rgba(201,168,76,.2);
+      padding: 0 10px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .pickup-track-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+    }
+    .pickup-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      white-space: nowrap;
+      animation: pickup-scroll 30s linear infinite;
+      will-change: transform;
+    }
+    .pickup-track:hover { animation-play-state: paused; }
+    @keyframes pickup-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .pickup-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      height: 36px;
+      flex-shrink: 0;
+      transition: color .15s;
+    }
+    .pickup-item:hover { color: var(--gold); }
+    .pickup-item .pi-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .pi-news  { background: rgba(63,207,142,.15);  color: var(--green); }
+    .pi-event { background: rgba(201,168,76,.15);  color: var(--gold); }
+    .pi-train { background: rgba(240,96,96,.15);   color: var(--red); }
+    .pi-info  { background: rgba(255,255,255,.1);  color: var(--gray); }
+
     /* 天気バー（TOPページ上部固定・横幅いっぱい） */
     .weather-bar {
       display: flex;
@@ -480,7 +549,17 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
-    <!-- ストップウォッチ操作バー -->
+
+    <!-- ピックアップ横スクロール -->
+    <div class="pickup-bar">
+      <div class="pickup-label">PICKUP</div>
+      <div class="pickup-track-wrap">
+        <div class="pickup-track" id="pickup-track">
+          <!-- JSで動的挿入 -->
+        </div>
+      </div>
+    </div>
+
     <!-- 天気バー（横幅固定・常時表示） -->
     <div class="weather-bar tile-weather" onclick="document.getElementById('radarModal').style.display='flex'">
       <div class="wb-left">
@@ -2349,6 +2428,13 @@
           topList.innerHTML += `<div style="font-size:9px;color:var(--gray);margin-top:2px;">他${data.lines.length - 4}路線に障害</div>`;
         }
       }
+      // ピックアップに運行障害を追加
+      if (data.lines && data.lines.length > 0) {
+        addPickupItems(data.lines.slice(0, 3).map(l => ({
+          badge: '運行障害', badgeClass: 'pi-train',
+          text: `${l.name} ${l.status}`, tab: 'train'
+        })));
+      }
     } catch(e) {
       statusEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
       const topList2 = document.getElementById('top-train-list');
@@ -2749,6 +2835,10 @@
       if (topMain && all.length > 0) {
         topMain.innerHTML = `<span style="font-size:11px;line-height:1.4;">${all[0].title}</span>`;
         if (topSub) topSub.textContent = all[1]?.title?.slice(0, 28) + '…' || '';
+      }
+      // ピックアップに最新ニュースを追加
+      if (all.length > 0) {
+        addPickupItems(all.slice(0, 5).map(n => ({ badge: 'ニュース', badgeClass: 'pi-news', text: n.title, tab: 'news' })));
       }
     } catch(e) {
       const allEl = document.getElementById('news-all');
@@ -3375,26 +3465,29 @@
     const hourlyRate = timeCount && totalMinutes > 0 ? Math.round(total / (totalMinutes / 60)) : null;
 
     mainEl.innerHTML = `
-      <div style="font-size:clamp(14px,4.2vw,24px);font-weight:800;color:var(--gold);line-height:1;white-space:nowrap;">¥${total.toLocaleString()}</div>
-      <div style="font-size:10px;color:rgba(201,168,76,.55);margin-top:1px;">税込</div>
-      <div style="font-size:clamp(12px,3.5vw,18px);font-weight:700;color:rgba(255,255,255,.7);margin-top:4px;white-space:nowrap;">¥${totalExTax.toLocaleString()}</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:1px;margin-bottom:8px;">税抜</div>
-      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">
-        <div style="font-size:9px;color:var(--gray);">時間単価</div>
-        <div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:rgba(255,255,255,.85);margin-top:2px;white-space:nowrap;">${hourlyRate ? '¥'+fmt(Math.round(hourlyRate/100)*100) : '—'}</div>
-      </div>
+      <div style="font-size:clamp(16px,4.5vw,26px);font-weight:800;color:var(--gold);line-height:1;white-space:nowrap;">¥${total.toLocaleString()}</div>
+      <div style="font-size:10px;color:rgba(201,168,76,.55);margin-top:1px;">税込 今月累計</div>
+      <div style="font-size:clamp(11px,3vw,15px);font-weight:600;color:rgba(255,255,255,.6);margin-top:6px;white-space:nowrap;">税抜 ¥${totalExTax.toLocaleString()}</div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:6px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:9px;color:var(--gray);">時間単価</div>
+          <div style="font-size:clamp(11px,3vw,14px);font-weight:700;color:rgba(255,255,255,.85);margin-top:1px;white-space:nowrap;">${hourlyRate ? '¥'+fmt(Math.round(hourlyRate/100)*100) : '—'}</div>
+        </div>
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:6px;">
         <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
-        ${(() => {
-          const TOTAL = 277;
-          const usedH = totalMinutes / 60;
-          const remH = Math.max(0, TOTAL - usedH);
-          const remHH = Math.floor(remH);
-          const remMM = Math.round((remH - remHH) * 60);
-          const pct = Math.min(100, Math.round(usedH / TOTAL * 100));
-          const col = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'var(--green)';
-          return `<div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:${col};margin-top:2px;white-space:nowrap;">${timeCount ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</div>`;
-        })()}
+        <div>
+          <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
+          <div style="font-size:clamp(11px,3vw,14px);font-weight:700;margin-top:1px;white-space:nowrap;">${(() => {
+            const TOTAL = 277;
+            const usedH = totalMinutes / 60;
+            const remH = Math.max(0, TOTAL - usedH);
+            const remHH = Math.floor(remH);
+            const remMM = Math.round((remH - remHH) * 60);
+            const pct = Math.min(100, Math.round(usedH / TOTAL * 100));
+            const col = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'var(--green)';
+            return `<span style="color:${col};">${timeCount ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</span>`;
+          })()}</div>
+        </div>
       </div>`;
     subEl.innerHTML = `${reports.length}日分&nbsp;·&nbsp;${timeCount ? fmtTime(totalMinutes) : '—'}`;
   }
@@ -4171,6 +4264,40 @@
   }
 
   // 初期化
+  // ── PICKUP BAR ────────────────────────────────────────────────────
+  const _pickupItems = [];
+
+  function addPickupItems(items) {
+    items.forEach(item => {
+      if (!_pickupItems.find(p => p.text === item.text)) _pickupItems.push(item);
+    });
+    renderPickup();
+  }
+
+  function renderPickup() {
+    const track = document.getElementById('pickup-track');
+    if (!track || _pickupItems.length === 0) return;
+    const html = _pickupItems.map(p => `
+      <div class="pickup-item" onclick="switchTab('${p.tab || 'top'}')">
+        <span class="pi-badge ${p.badgeClass}">${p.badge}</span>
+        <span>${p.text.length > 35 ? p.text.slice(0, 35) + '…' : p.text}</span>
+      </div>`).join('');
+    // 無限ループ用に2倍複製
+    track.innerHTML = html + html;
+    // アニメーション速度をアイテム数に合わせて調整
+    const duration = Math.max(20, _pickupItems.length * 6);
+    track.style.animationDuration = duration + 's';
+  }
+
+  // イベント情報もピックアップに追加（buildWeekEvents後に呼ばれる想定）
+  function addEventPickups(events) {
+    if (!events || events.length === 0) return;
+    addPickupItems(events.slice(0, 4).map(e => ({
+      badge: 'イベント', badgeClass: 'pi-event',
+      text: e.name || e.title || '', tab: 'event'
+    })));
+  }
+
   (function initProfile() {
     const profile = loadProfile();
     if (profile) {
