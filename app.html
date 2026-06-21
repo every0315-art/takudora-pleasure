@@ -2847,7 +2847,7 @@
       }
     }
 
-    // イベント終演アラート（終演30分前〜30分後 かつ会場5km以内）
+    // イベント終演±15分をピックアップ表示（位置不問）
     const todayM = now.getMonth() + 1, todayD = now.getDate();
     document.querySelectorAll('#tab-event .card').forEach(card => {
       const venueTitle = card.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
@@ -2860,22 +2860,21 @@
         if (!endMatch) return;
         let eMin = parseInt(endMatch[1]) * 60 + parseInt(endMatch[2]);
         if (eMin < 4 * 60) eMin += 24 * 60;
-        const diff = eMin - nowMin; // 正＝まだ終わってない、負＝終了後
-        if (diff < -30 || diff > 30) return;
+        const diff = eMin - nowMin;
+        if (diff < -15 || diff > 15) return;
         const name = item.querySelector('.event-name')?.textContent?.trim() || '';
         const timeStr = `${endMatch[1]}:${endMatch[2]}`;
-        // 位置チェック
+        // 5km以内なら赤点滅、それ以外は通常カード
         const vc = VENUE_COORDS[venueTitle];
         const pos = window._currentPos;
-        let isNearby = false;
-        if (vc && pos) {
-          const km = haversineKm(pos.lat, pos.lon, vc.lat, vc.lon);
-          isNearby = km <= 5;
-        }
-        if (isNearby) {
-          const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
-          cards.push({ type: 'pc-alert', tag: `🚨 終演ピックアップ`, main: venueTitle, sub: `${name.slice(0,14)} ${timeStr} (${label})` });
-        }
+        const isNearby = vc && pos && haversineKm(pos.lat, pos.lon, vc.lat, vc.lon) <= 5;
+        const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
+        cards.push({
+          type: isNearby ? 'pc-alert' : 'pc-urgent',
+          tag: isNearby ? '🚨 終演ピックアップ' : '🎪 終演間近',
+          main: venueTitle,
+          sub: `${name.slice(0,14)} ${timeStr}（${label}）`
+        });
       });
     });
 
