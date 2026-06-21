@@ -299,7 +299,7 @@
       align-items: center;
       gap: 0;
       white-space: nowrap;
-      animation: pickup-scroll 30s linear infinite;
+      animation: pickup-scroll 12s linear infinite;
       will-change: transform;
     }
     .pickup-track:hover { animation-play-state: paused; }
@@ -4285,7 +4285,7 @@
     // 無限ループ用に2倍複製
     track.innerHTML = html + html;
     // アニメーション速度をアイテム数に合わせて調整
-    const duration = Math.max(20, _pickupItems.length * 6);
+    const duration = Math.max(8, _pickupItems.length * 2.5);
     track.style.animationDuration = duration + 's';
   }
 
