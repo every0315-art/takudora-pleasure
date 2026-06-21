@@ -708,7 +708,7 @@
       <div id="report-ocr-area">
       <div id="report-upload-area"
         style="border:2px dashed rgba(201,168,76,.35);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;"
-        onclick="document.getElementById('report-file-input').click()"
+        onclick="(function(){var el=document.getElementById('report-file-input');el.value='';el.click();})()"
         ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
         ondragleave="this.style.borderColor='rgba(201,168,76,.35)'"
         ondrop="handleReportDrop(event)">
@@ -716,7 +716,7 @@
         <div style="font-size:13px;color:var(--text);font-weight:600;">日報をここにドロップ</div>
         <div style="font-size:11px;color:var(--gray);margin-top:4px;">またはタップして選択　JPG / PNG / PDF</div>
       </div>
-      <input type="file" id="report-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleReportFile(this.files[0])">
+      <input type="file" id="report-file-input" accept="image/*,application/pdf" style="display:none" onchange="if(this.files&&this.files[0])handleReportFile(this.files[0])">
 
       <!-- プレビュー＋読み取り結果 -->
       <div id="report-result" style="display:none;margin-top:16px;">
@@ -731,7 +731,7 @@
           <button onclick="retryReport()" style="flex:1;background:none;border:1px solid var(--gold);color:var(--gold);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
             もう一度やり直す
           </button>
-          <button onclick="document.getElementById('report-file-input').click()" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
+          <button onclick="(function(){var el=document.getElementById('report-file-input');el.value='';el.click();})()" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
             別の日報を読み取る
           </button>
         </div>
