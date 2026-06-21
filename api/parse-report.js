@@ -15,22 +15,26 @@ export default async function handler(req, res) {
   const { image, mediaType, corrections } = req.body || {};
   if (!image) return res.status(400).json({ error: 'No image provided' });
 
-  const FIELD_LABELS = { sales:'売上', trips:'営業回数', distance:'全走', tax:'税金', departure:'出庫時間', arrival:'入庫時間' };
+  const FIELD_LABELS = { date:'日付', sales:'売上', trips:'営業回数', distance:'全走', tax:'税金', departure:'出庫時間', arrival:'入庫時間' };
   let correctionsSection = '';
   if (corrections && corrections.length > 0) {
-    const lines = [];
-    const seen = new Set();
+    // 同じパターンの訂正頻度を集計
+    const freqMap = {};
     for (const c of corrections) {
       for (const d of c.diffs) {
-        const key = `${d.field}:${d.ocr}→${d.correct}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const label = FIELD_LABELS[d.field] || d.field;
-        lines.push(`- ${label}: AIが「${d.ocr ?? '未読'}」と読んだが正しくは「${d.correct ?? '未入力'}」`);
+        const key = `${d.field}:${d.ocr ?? ''}→${d.correct ?? ''}`;
+        freqMap[key] = (freqMap[key] || { field: d.field, ocr: d.ocr, correct: d.correct, count: 0 });
+        freqMap[key].count++;
       }
     }
-    if (lines.length > 0) {
-      correctionsSection = `\n\n【過去の訂正履歴（最優先で参考にしてください）】\nこの書式の日報で過去にAIが誤読したケースです。同じ間違いをしないよう注意してください：\n${lines.join('\n')}`;
+    const sorted = Object.values(freqMap).sort((a, b) => b.count - a.count);
+    if (sorted.length > 0) {
+      const lines = sorted.map(d => {
+        const label = FIELD_LABELS[d.field] || d.field;
+        const freq = d.count > 1 ? `（${d.count}回同じ間違い）` : '';
+        return `- ${label}: 「${d.ocr ?? '未読'}」→正しくは「${d.correct ?? '未入力'}」${freq}`;
+      });
+      correctionsSection = `\n\n【過去の訂正履歴・最優先で参照してください】\nこの日報書式でAIが繰り返し誤読したパターンです。必ず修正して返してください：\n${lines.join('\n')}`;
     }
   }
 

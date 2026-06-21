@@ -3285,14 +3285,14 @@
   }
 
   function saveOcrCorrection(ocrVals, savedVals) {
-    const fields = ['sales','trips','distance','tax','departure','arrival'];
+    const fields = ['date','sales','trips','distance','tax','departure','arrival'];
     const diffs = fields
       .filter(f => String(ocrVals[f] ?? '') !== String(savedVals[f] ?? ''))
       .map(f => ({ field: f, ocr: ocrVals[f] ?? null, correct: savedVals[f] ?? null }));
     if (!diffs.length) return;
     const corrections = loadOcrCorrections();
     corrections.unshift({ diffs, savedAt: new Date().toISOString().slice(0,10) });
-    localStorage.setItem(OCR_CORRECTIONS_KEY, JSON.stringify(corrections.slice(0, 8)));
+    localStorage.setItem(OCR_CORRECTIONS_KEY, JSON.stringify(corrections.slice(0, 30)));
   }
 
   function loadReports() {
