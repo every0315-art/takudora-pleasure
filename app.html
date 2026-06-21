@@ -132,6 +132,21 @@
     .s-yellow { color:var(--yellow); }
     .s-white { color:var(--white); }
 
+    /* ── ピックアップスクロール ── */
+    #pickup-scroll-wrap::-webkit-scrollbar { display:none; }
+    .pickup-card {
+      flex-shrink:0; min-width:130px; max-width:180px;
+      background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.1);
+      border-radius:10px; padding:8px 11px; cursor:default;
+      display:flex; flex-direction:column; gap:3px;
+    }
+    .pickup-card.pc-urgent { border-color:rgba(240,96,96,.5); background:rgba(240,96,96,.08); }
+    .pickup-card.pc-warn   { border-color:rgba(240,180,41,.5); background:rgba(240,180,41,.06); }
+    .pickup-card.pc-info   { border-color:rgba(201,168,76,.4); background:rgba(201,168,76,.05); }
+    .pickup-card .pc-tag   { font-size:9px; font-weight:700; letter-spacing:.5px; color:var(--gray); }
+    .pickup-card .pc-main  { font-size:12px; font-weight:700; color:var(--white); line-height:1.3; }
+    .pickup-card .pc-sub   { font-size:10px; color:var(--gray); }
+
     /* ── BADGE ── */
     .badge {
       display:inline-block; font-size:10px; font-weight:700;
@@ -532,6 +547,11 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
+    <!-- ピックアップ横スクロール -->
+    <div id="pickup-scroll-wrap" style="overflow-x:auto;overflow-y:visible;margin-bottom:8px;margin-left:-2px;margin-right:-2px;padding:2px 2px;scrollbar-width:none;">
+      <div id="pickup-scroll-inner" style="display:flex;gap:8px;min-width:max-content;padding:0 2px;"></div>
+    </div>
+
     <!-- ストップウォッチ固定バー -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;">
       <div style="flex:1;">
@@ -2765,6 +2785,75 @@
   }
   updateLastTrains();
   setInterval(updateLastTrains, 60000);
+
+  // ── ピックアップスクロール ──
+  function updatePickupScroll() {
+    const inner = document.getElementById('pickup-scroll-inner');
+    if (!inner) return;
+    const cards = [];
+    const now = new Date();
+    let nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin < 4 * 60) nowMin += 24 * 60;
+
+    // 終電情報（30分以内）
+    for (const t of LAST_TRAINS) {
+      let tMin = t.h * 60 + t.m;
+      if (tMin < 4 * 60) tMin += 24 * 60;
+      const remain = tMin - nowMin;
+      if (remain >= 0 && remain <= 30) {
+        const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
+        const urgent = remain <= 15;
+        cards.push({ type: urgent ? 'pc-urgent' : 'pc-warn', tag: '🚃 終電間近', main: t.line, sub: `${t.from}→${t.to} ${timeStr} (残${remain}分)` });
+      }
+    }
+
+    // 電車遅延
+    if (window._trainDisruptions && window._trainDisruptions.length > 0) {
+      for (const d of window._trainDisruptions.slice(0, 3)) {
+        cards.push({ type: 'pc-urgent', tag: '⚠️ 電車遅延', main: d.line || d, sub: d.status || '運行情報あり' });
+      }
+    }
+
+    // イベント（開演1時間前〜終演後1時間）
+    const evItems = document.querySelectorAll('#event-list .ev-item, #event-list [data-ev]');
+    evItems.forEach(el => {
+      const timeEl = el.querySelector('[data-start]') || el;
+      const startStr = timeEl.dataset?.start || el.dataset?.start;
+      if (!startStr) return;
+      const [hh, mm] = startStr.split(':').map(Number);
+      if (isNaN(hh)) return;
+      let eMin = hh * 60 + mm;
+      if (eMin < 4 * 60) eMin += 24 * 60;
+      const diff = eMin - nowMin;
+      if (diff >= -60 && diff <= 60) {
+        const nameEl = el.querySelector('.ev-name, [class*="name"]');
+        const name = nameEl?.textContent?.trim() || 'イベント';
+        const venueEl = el.querySelector('.ev-venue, [class*="venue"]');
+        const venue = venueEl?.textContent?.trim() || '';
+        cards.push({ type: diff > 0 ? 'pc-warn' : 'pc-info', tag: '🎪 イベント', main: name.slice(0,16), sub: venue ? `${venue} ${startStr}` : startStr });
+      }
+    });
+
+    // 天気（悪天候）
+    const weatherDesc = document.querySelector('.weather-desc')?.textContent || '';
+    if (/雨|雪|嵐|台風|雷/.test(weatherDesc)) {
+      cards.push({ type: 'pc-warn', tag: '🌧 天気', main: weatherDesc, sub: '需要増の可能性' });
+    }
+
+    // カード生成
+    if (cards.length === 0) {
+      inner.innerHTML = '<div style="font-size:11px;color:var(--gray);padding:8px 4px;white-space:nowrap;">新着情報はありません</div>';
+    } else {
+      inner.innerHTML = cards.map(c => `
+        <div class="pickup-card ${c.type}">
+          <div class="pc-tag">${c.tag}</div>
+          <div class="pc-main">${c.main}</div>
+          <div class="pc-sub">${c.sub}</div>
+        </div>`).join('');
+    }
+  }
+  updatePickupScroll();
+  setInterval(updatePickupScroll, 60000);
 
   // ニュース読み込み（Google News RSS経由）
   function fmtPubDate(pub) {
