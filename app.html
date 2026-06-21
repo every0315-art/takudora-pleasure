@@ -3780,6 +3780,17 @@
   async function handleReportFile(file) {
     if (!file) return;
     window._lastReportFile = file;
+
+    // OCRエリアを必ず表示（手動入力モードから来た場合も対応）
+    const ocrArea = document.getElementById('report-ocr-area');
+    const manualForm = document.getElementById('report-manual-form');
+    const btnOcr = document.getElementById('btn-mode-ocr');
+    const btnManual = document.getElementById('btn-mode-manual');
+    if (ocrArea) ocrArea.style.display = 'block';
+    if (manualForm) manualForm.style.display = 'none';
+    if (btnOcr) { btnOcr.style.background = 'var(--gold)'; btnOcr.style.color = '#000'; btnOcr.style.border = 'none'; }
+    if (btnManual) { btnManual.style.background = 'rgba(255,255,255,.08)'; btnManual.style.color = 'var(--gray)'; btnManual.style.border = '1px solid var(--border)'; }
+
     const resultEl  = document.getElementById('report-result');
     const statusEl  = document.getElementById('report-status');
     const fieldsEl  = document.getElementById('report-fields');
