@@ -3903,7 +3903,7 @@
           const startY = periodM === 1 ? periodY2 - 1 : periodY2;
           const periodStartDay = cdDay === 0 ? 1 : cdDay + 1;
           const periodLabel = `${startM}/${periodStartDay}〜${periodM}/${periodEndDay}`;
-          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||''},${dispDays||''})">
+          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'})">
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
