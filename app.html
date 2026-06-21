@@ -1071,10 +1071,13 @@
     </div>
 
     <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-        終電・需要予測 <span id="lasttrain-time" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="(function(el){var c=document.getElementById('lasttrain-body');var open=c.style.display!=='none';c.style.display=open?'none':'block';el.querySelector('#lasttrain-chevron').textContent=open?'▶':'▼';})(this)">
+        <span>終電・需要予測 <span id="lasttrain-time" style="font-size:10px;color:var(--gray);font-weight:400;"></span></span>
+        <span id="lasttrain-chevron" style="font-size:11px;color:var(--gray);">▼</span>
       </div>
+      <div id="lasttrain-body">
       <div id="lasttrain-table"></div>
+      </div>
     </div>
 
     <div class="card">
