@@ -3895,7 +3895,7 @@
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
           const kyuyo   = Math.round(taxExcluded * stepRate / 100);
           const pool    = Math.round(taxExcluded * poolRate / 100);
-          const takehome = kyuyo - pool;
+          const takehome = kyuyo + pool;
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
           annualDays += dispDays || 0;
@@ -3931,7 +3931,7 @@
         </div>
         ${(stepRate || poolRate) ? `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(126,200,160,.08);border:1px solid rgba(126,200,160,.25);border-radius:8px;">
-          <span style="font-size:12px;color:var(--gray);">年間受取額合計<span style="font-size:10px;margin-left:4px;">(歩率${stepRate}%−プール${poolRate}%)</span></span>
+          <span style="font-size:12px;color:var(--gray);">年間受取額合計<span style="font-size:10px;margin-left:4px;">(歩率${stepRate}%＋プール${poolRate}%＝${stepRate+poolRate}%)</span></span>
           <span style="font-size:16px;font-weight:900;color:#7ec8a0;">¥${annualTakehome.toLocaleString()}</span>
         </div>` : ''}
       </div>
