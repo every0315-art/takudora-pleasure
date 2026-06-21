@@ -4,6 +4,15 @@
     { "source": "/qr", "destination": "/qr.html" },
     { "source": "/", "destination": "/index.html" }
   ],
+  "functions": {
+    "api/*.js": {
+      "allowedHosts": [
+        "pleasure.delivery-every.com",
+        "takudora-pleasure.vercel.app",
+        "takudora-pleasure-*.vercel.app"
+      ]
+    }
+  },
   "headers": [
     {
       "source": "/sw.js",
