@@ -3842,10 +3842,16 @@
     reports.forEach(r => {
       if (!r.date || !r.sales) return;
       const [y, m, d] = r.date.split('-').map(Number);
-      // 締め月に属するか判定
+      // 締め日ベースで何月度か判定
+      // 例：締め日10日 → 6/11〜7/10 = 7月度（締め日以降は翌月度）
       let periodY = y, periodM = m;
-      if (closingDay && d <= closingDay) {
-        if (m === 1) { periodY = y - 1; periodM = 12; } else { periodM = m - 1; }
+      if (closingDay) {
+        if (d > closingDay) {
+          // 締め日より後 → 翌月度
+          periodM = m + 1;
+          if (periodM > 12) { periodM = 1; periodY = y + 1; }
+        }
+        // 締め日以前はそのまま当月度
       }
       // 支払い月は締め月の翌月（支払日が設定されている場合）
       let payY = periodY, payM = periodM;
@@ -3894,15 +3900,16 @@
           annualDays += dispDays || 0;
           const label = `${m}月`;
           const future = m > now.getMonth() + 1 || (m === now.getMonth() + 1 && now.getDate() <= (closingDay || 31));
-          // 締め日ベースの集計期間を計算（支払日ベースの場合は1ヶ月前の締め期間）
-          const periodM = payday ? (m === 1 ? 12 : m - 1) : m;
-          const periodY2 = payday && m === 1 ? thisYear - 1 : thisYear;
+          // 締め日ベースの集計期間を計算
+          // 例：7月度（締め日10日）= 前月11日〜当月10日
+          // 支払日ベースの場合はさらに1ヶ月前の締め期間
           const cdDay = Number(closingDay) || 0;
-          const periodEndDay = cdDay === 0 ? new Date(periodY2, periodM, 0).getDate() : cdDay;
-          const startM = periodM === 1 ? 12 : periodM - 1;
-          const startY = periodM === 1 ? periodY2 - 1 : periodY2;
-          const periodStartDay = cdDay === 0 ? 1 : cdDay + 1;
-          const periodLabel = `${startM}/${periodStartDay}〜${periodM}/${periodEndDay}`;
+          const dispM = payday ? (m === 1 ? 12 : m - 1) : m;
+          const dispY = payday && m === 1 ? thisYear - 1 : thisYear;
+          const endDay = cdDay === 0 ? new Date(dispY, dispM, 0).getDate() : cdDay;
+          const startM2 = dispM === 1 ? 12 : dispM - 1;
+          const startDay2 = cdDay === 0 ? 1 : cdDay + 1;
+          const periodLabel = `${startM2}/${startDay2}〜${dispM}/${endDay}`;
           return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'})">
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
