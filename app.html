@@ -646,9 +646,15 @@
       </div>
 
       <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:0;overflow:hidden;position:relative;">
-        <div style="position:absolute;top:6px;left:8px;z-index:2;font-size:9px;font-weight:800;letter-spacing:.05em;color:rgba(255,255,255,.7);text-shadow:0 1px 3px rgba(0,0,0,.8);">羽田 待機所</div>
-        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:100%;height:100%;display:block;object-fit:cover;">
+      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:0;overflow:hidden;gap:0;">
+        <div style="flex:1;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:4px;left:6px;z-index:2;font-size:9px;font-weight:800;color:rgba(255,255,255,.75);text-shadow:0 1px 3px rgba(0,0,0,.9);">第1待機所</div>
+          <img id="top-haneda-img1" src="" alt="第1待機所" style="width:100%;height:100%;display:block;object-fit:cover;">
+        </div>
+        <div style="flex:1;position:relative;overflow:hidden;border-top:1px solid rgba(255,255,255,.08);">
+          <div style="position:absolute;top:4px;left:6px;z-index:2;font-size:9px;font-weight:800;color:rgba(255,255,255,.75);text-shadow:0 1px 3px rgba(0,0,0,.9);">第2待機所</div>
+          <img id="top-haneda-img2" src="" alt="第2待機所" style="width:100%;height:100%;display:block;object-fit:cover;">
+        </div>
       </div>
 
       <!-- 行2右：道路情報 -->
