@@ -662,8 +662,8 @@
       <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
         日報入力
         <div style="display:flex;gap:4px;">
-          <button id="btn-mode-ocr" onclick="switchReportMode('ocr')"
-            style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;background:var(--gold);border:none;color:#000;">写真読み取り</button>
+          <label for="report-file-input" id="btn-mode-ocr" onclick="switchReportModeOcr()"
+            style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;background:var(--gold);border:none;color:#000;display:inline-flex;align-items:center;">写真読み取り</label>
           <button id="btn-mode-manual" onclick="switchReportMode('manual')"
             style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--gray);">手動入力</button>
         </div>
@@ -706,7 +706,7 @@
       </div>
 
       <div id="report-ocr-area">
-      <input type="file" id="report-file-input" accept="image/*" style="display:none" onchange="(function(f){if(f){document.getElementById('report-file-input').value='';handleReportFile(f);}})(this.files&&this.files[0]);">
+      <input type="file" id="report-file-input" accept="image/*" style="display:none" onchange="(function(inp,f){if(f){handleReportFile(f);setTimeout(function(){inp.value='';},200);}})(this,this.files&&this.files[0]);">
 
       <!-- プレビュー＋読み取り結果 -->
       <div id="report-result" style="display:none;margin-top:16px;">
@@ -721,9 +721,9 @@
           <button onclick="retryReport()" style="flex:1;background:none;border:1px solid var(--gold);color:var(--gold);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
             もう一度やり直す
           </button>
-          <button onclick="document.getElementById('report-file-input').value='';document.getElementById('report-file-input').click();" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
+          <label for="report-file-input" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;">
             別の日報を読み取る
-          </button>
+          </label>
         </div>
       </div>
       </div> <!-- /report-ocr-area -->
@@ -3705,6 +3705,18 @@
     mfDate.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   }
 
+  function switchReportModeOcr() {
+    const ocr = document.getElementById('report-ocr-area');
+    const manual = document.getElementById('report-manual-form');
+    const btnOcr = document.getElementById('btn-mode-ocr');
+    const btnManual = document.getElementById('btn-mode-manual');
+    ocr.style.display = 'block';
+    manual.style.display = 'none';
+    btnOcr.style.background = 'var(--gold)'; btnOcr.style.color = '#000'; btnOcr.style.border = 'none';
+    btnManual.style.background = 'rgba(255,255,255,.08)'; btnManual.style.color = 'var(--gray)'; btnManual.style.border = '1px solid var(--border)';
+    // label のクリックでファイル選択が開く（labelのfor属性経由）
+  }
+
   function switchReportMode(mode) {
     const ocr = document.getElementById('report-ocr-area');
     const manual = document.getElementById('report-manual-form');
@@ -3715,13 +3727,6 @@
       manual.style.display = 'block';
       btnManual.style.background = 'var(--gold)'; btnManual.style.color = '#000'; btnManual.style.border = 'none';
       btnOcr.style.background = 'rgba(255,255,255,.08)'; btnOcr.style.color = 'var(--gray)'; btnOcr.style.border = '1px solid var(--border)';
-    } else {
-      ocr.style.display = 'block';
-      manual.style.display = 'none';
-      btnOcr.style.background = 'var(--gold)'; btnOcr.style.color = '#000'; btnOcr.style.border = 'none';
-      btnManual.style.background = 'rgba(255,255,255,.08)'; btnManual.style.color = 'var(--gray)'; btnManual.style.border = '1px solid var(--border)';
-      const inp = document.getElementById('report-file-input');
-      if (inp) { inp.value = ''; inp.click(); }
     }
   }
 
