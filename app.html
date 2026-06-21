@@ -3881,13 +3881,17 @@
       <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（${payday ? `給与支払日${payday===0?'末日':payday+'日'}ベース` : '締め日ベース'}）</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
         ${months.map(({ m, sales, tax, days }) => {
-          const hasOverride = overrideYear[m] !== undefined;
-          const dispSales = hasOverride ? overrideYear[m] : sales;
+          const ov = overrideYear[m];
+          const hasOverride = ov !== undefined;
+          const ovSales = hasOverride ? (typeof ov === 'object' ? ov.sales : ov) : undefined;
+          const ovDays  = hasOverride && typeof ov === 'object' ? ov.days : undefined;
+          const dispSales = ovSales != null ? ovSales : sales;
+          const dispDays  = ovDays  != null ? ovDays  : days;
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
           const takehome = Math.round(taxExcluded * (stepRate - poolRate) / 100);
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
-          annualDays += days || 0;
+          annualDays += dispDays || 0;
           const label = `${m}月`;
           const future = m > now.getMonth() + 1 || (m === now.getMonth() + 1 && now.getDate() <= (closingDay || 31));
           // 締め日ベースの集計期間を計算（支払日ベースの場合は1ヶ月前の締め期間）
@@ -3899,13 +3903,13 @@
           const startY = periodM === 1 ? periodY2 - 1 : periodY2;
           const periodStartDay = cdDay === 0 ? 1 : cdDay + 1;
           const periodLabel = `${startM}/${periodStartDay}〜${periodM}/${periodEndDay}`;
-          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales})">
+          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||''},${dispDays||''})">
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
             ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
             ${takehome ? `<div style="font-size:9px;color:#7ec8a0;">受取¥${takehome.toLocaleString()}</div>` : ''}
-            <div style="font-size:9px;color:var(--gray);">${days ? days+'日稼働' : '—'}</div>
+            <div style="font-size:9px;color:var(--gray);">${dispDays ? dispDays+'日稼働' : '—'}</div>
           </div>`;
         }).join('')}
       </div>
@@ -3915,7 +3919,7 @@
             <div style="font-size:12px;color:var(--gray);">年間売上合計</div>
             <div style="font-size:10px;color:var(--gray);">${annualDays}日稼働</div>
           </div>
-          <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(Number(v)||0),0) || autoTotal).toLocaleString()}</span>
+          <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(typeof v==='object'?Number(v.sales)||0:Number(v)||0),0) || autoTotal).toLocaleString()}</span>
         </div>
         ${(stepRate || poolRate) ? `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(126,200,160,.08);border:1px solid rgba(126,200,160,.25);border-radius:8px;">
@@ -3926,16 +3930,20 @@
       <div id="annual-edit-area"></div>`;
   }
 
-  function editAnnualMonth(m, current) {
+  function editAnnualMonth(m, current, currentDays) {
     const area = document.getElementById('annual-edit-area');
     if (!area) return;
     area.innerHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;border:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">${m}月度の売上を手入力（空欄で日報データに戻す）</div>
-        <div style="display:flex;gap:8px;">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">${m}月度を手入力（空欄で日報データに戻す）</div>
+        <div style="display:grid;grid-template-columns:1fr 80px;gap:6px;margin-bottom:6px;">
           <input type="number" id="annual-input-val" value="${current||''}" placeholder="売上金額"
-            style="flex:1;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
-          <button onclick="saveAnnualMonth(${m})" style="padding:7px 14px;background:var(--gold);border:none;color:#000;font-weight:700;border-radius:6px;cursor:pointer;font-size:13px;">保存</button>
+            style="background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
+          <input type="number" id="annual-input-days" value="${currentDays||''}" placeholder="稼働日数"
+            style="background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;text-align:center;">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="saveAnnualMonth(${m})" style="flex:1;padding:7px 14px;background:var(--gold);border:none;color:#000;font-weight:700;border-radius:6px;cursor:pointer;font-size:13px;">保存</button>
           <button onclick="document.getElementById('annual-edit-area').innerHTML=''" style="padding:7px 10px;background:none;border:1px solid var(--border);color:var(--gray);border-radius:6px;cursor:pointer;">✕</button>
         </div>
       </div>`;
@@ -3943,15 +3951,21 @@
   }
 
   function saveAnnualMonth(m) {
-    const val = document.getElementById('annual-input-val')?.value.trim();
+    const val  = document.getElementById('annual-input-val')?.value.trim();
+    const dval = document.getElementById('annual-input-days')?.value.trim();
     const now = new Date();
     let overrides = {};
     try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
     if (!overrides[now.getFullYear()]) overrides[now.getFullYear()] = {};
-    if (val === '' || val === null) {
+    if (val === '' && dval === '') {
       delete overrides[now.getFullYear()][m];
     } else {
-      overrides[now.getFullYear()][m] = Number(val);
+      const existing = overrides[now.getFullYear()][m];
+      const prev = (existing && typeof existing === 'object') ? existing : { sales: existing ?? null, days: null };
+      overrides[now.getFullYear()][m] = {
+        sales: val !== '' ? Number(val) : prev.sales,
+        days:  dval !== '' ? Number(dval) : prev.days,
+      };
     }
     localStorage.setItem(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
     renderAnnualSales();
