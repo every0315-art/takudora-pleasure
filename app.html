@@ -3872,7 +3872,7 @@
     for (let m = 1; m <= 12; m++) {
       const key = `${thisYear}-${String(m).padStart(2,'0')}`;
       const v = monthlyMap[key] || { sales: 0, tax: 0, trips: 0, days: 0 };
-      autoTotal += v.sales;
+      autoTotal += Math.max(0, v.sales - (v.tax || 0));
       months.push({ m, ...v });
     }
 
@@ -3924,7 +3924,7 @@
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;">
           <div>
-            <div style="font-size:12px;color:var(--gray);">年間売上合計</div>
+            <div style="font-size:12px;color:var(--gray);">年間売上合計（税抜）</div>
             <div style="font-size:10px;color:var(--gray);">${annualDays}日稼働</div>
           </div>
           <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(typeof v==='object'?Number(v.sales)||0:Number(v)||0),0) || autoTotal).toLocaleString()}</span>
