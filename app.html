@@ -2290,26 +2290,6 @@
   </iframe>
 </div>
 
-<!-- Supabase JS SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-<!-- 認証モーダル -->
-<div id="auth-modal">
-  <div class="auth-box">
-    <h2>タクドラPLEASURE</h2>
-    <p>ログインまたは新規登録してください</p>
-    <div class="auth-tab-row">
-      <button class="auth-tab active" id="auth-tab-login" onclick="authSwitchTab('login')">ログイン</button>
-      <button class="auth-tab" id="auth-tab-signup" onclick="authSwitchTab('signup')">新規登録</button>
-    </div>
-    <input type="email" class="auth-input" id="auth-email" placeholder="メールアドレス" autocomplete="email">
-    <input type="password" class="auth-input" id="auth-password" placeholder="パスワード（6文字以上）" autocomplete="current-password">
-    <button class="auth-btn auth-btn-primary" id="auth-submit-btn" onclick="authSubmit()">ログイン</button>
-    <button class="auth-btn auth-btn-secondary" onclick="authContinueGuest()">ゲストとして続ける</button>
-    <div class="auth-msg" id="auth-msg"></div>
-  </div>
-</div>
-
 <script>
   // SW完全無効化・キャッシュ強制削除
   if ('serviceWorker' in navigator) {
@@ -4451,130 +4431,6 @@
     })));
   }
 
-  // ── SUPABASE ──────────────────────────────────────────────────────
-  const _SB_URL  = 'https://oxkzmpigegqaakeyhyrk.supabase.co';
-  const _SB_KEY  = 'sb_publishable_V7mWATT47ffhp45TZ1_DpQ_lgTUiPdF';
-  let _sb = null;
-  let _sbUser = null;
-  try {
-    if (typeof supabase !== 'undefined') {
-      _sb = supabase.createClient(_SB_URL, _SB_KEY);
-    }
-  } catch(e) { console.warn('Supabase init error', e); }
-
-  // クラウドからデータ取得してlocalStorageへ反映
-  async function sbPullData(userId) {
-    if (!_sb) return;
-    try {
-      const { data } = await _sb.from('user_data').select('key,value').eq('user_id', userId);
-      if (!data) return;
-      data.forEach(row => localStorage.setItem(row.key, row.value));
-    } catch(e) { console.warn('sbPull error', e); }
-  }
-
-  // localStorageのキーをSupabaseへ保存
-  async function sbPushKey(key, value) {
-    if (!_sb || !_sbUser) return;
-    try {
-      await _sb.from('user_data').upsert(
-        { user_id: _sbUser.id, key, value },
-        { onConflict: 'user_id,key' }
-      );
-    } catch(e) { console.warn('sbPush error', e); }
-  }
-
-  // プロフィール/設定保存時にクラウドへも書く
-  const _origSaveProfile = saveProfile;
-  saveProfile = function() {
-    _origSaveProfile();
-    sbPushKey(PROFILE_KEY, localStorage.getItem(PROFILE_KEY));
-  };
-  const _origSavePublic = savePublicSettings;
-  savePublicSettings = function() {
-    _origSavePublic();
-    sbPushKey(PUB_KEY, localStorage.getItem(PUB_KEY));
-  };
-  const _origSaveSalary = saveSalarySettings;
-  saveSalarySettings = function() {
-    _origSaveSalary();
-    sbPushKey(SALARY_KEY, localStorage.getItem(SALARY_KEY));
-  };
-
-  function authUpdateStatusBar(user) {
-    const bar = document.getElementById('auth-status-bar');
-    const emailEl = document.getElementById('auth-status-email');
-    if (user) {
-      if (bar) bar.style.display = 'flex';
-      if (emailEl) emailEl.textContent = user.email;
-    } else {
-      if (bar) bar.style.display = 'none';
-    }
-  }
-
-  // 認証モーダル操作
-  let _authMode = 'login';
-  function authSwitchTab(mode) {
-    _authMode = mode;
-    document.getElementById('auth-tab-login').classList.toggle('active', mode === 'login');
-    document.getElementById('auth-tab-signup').classList.toggle('active', mode === 'signup');
-    document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'ログイン' : '新規登録';
-    document.getElementById('auth-msg').textContent = '';
-  }
-
-  async function authSubmit() {
-    const email    = document.getElementById('auth-email').value.trim();
-    const password = document.getElementById('auth-password').value;
-    const msgEl    = document.getElementById('auth-msg');
-    if (!email || !password) { msgEl.style.color = '#ff6b6b'; msgEl.textContent = 'メールとパスワードを入力してください'; return; }
-    msgEl.style.color = 'var(--gray)'; msgEl.textContent = '処理中…';
-    try {
-      let result;
-      if (_authMode === 'login') {
-        result = await _sb.auth.signInWithPassword({ email, password });
-      } else {
-        result = await _sb.auth.signUp({ email, password });
-      }
-      if (result.error) throw result.error;
-      if (_authMode === 'signup' && !result.data.session) {
-        msgEl.style.color = 'var(--gold)';
-        msgEl.textContent = '確認メールを送信しました。メールを確認してください。';
-        return;
-      }
-      document.getElementById('auth-modal').classList.remove('open');
-    } catch(e) {
-      msgEl.style.color = '#ff6b6b';
-      msgEl.textContent = e.message || 'エラーが発生しました';
-    }
-  }
-
-  function authContinueGuest() {
-    document.getElementById('auth-modal').classList.remove('open');
-    const profile = loadProfile();
-    if (!profile) document.getElementById('setup-modal').style.display = 'flex';
-  }
-
-  async function authSignOut() {
-    await _sb.auth.signOut();
-    _sbUser = null;
-    authUpdateStatusBar(null);
-    showMsg('acc-save-msg', 'ログアウトしました');
-  }
-
-  // 認証状態を監視
-  if (_sb) _sb.auth.onAuthStateChange(async (event, session) => {
-    _sbUser = session?.user || null;
-    authUpdateStatusBar(_sbUser);
-    if (_sbUser) {
-      await sbPullData(_sbUser.id);
-      const profile = loadProfile();
-      if (profile) {
-        applyProfileToUI(profile);
-        applyPublicSettingsToUI(loadPublicSettings());
-        applySalarySettingsToUI(loadSalarySettings());
-      }
-    }
-  });
-
   // 初期化
   (function initProfile() {
     const profile = loadProfile();
@@ -4582,20 +4438,10 @@
       applyProfileToUI(profile);
       applyPublicSettingsToUI(loadPublicSettings());
       applySalarySettingsToUI(loadSalarySettings());
-      applyTopLayout();
-      // セッション確認（非同期、バックグラウンド）
-      if (_sb) {
-        _sb.auth.getSession().then(({ data }) => {
-          if (!data.session) {
-            document.getElementById('auth-modal').classList.add('open');
-          }
-        });
-      }
     } else {
-      // プロフィール未設定 → セットアップモーダル表示
       document.getElementById('setup-modal').style.display = 'flex';
-      applyTopLayout();
     }
+    applyTopLayout();
   })();
 </script>
 </body>
