@@ -480,7 +480,27 @@
     }
     .toggle-sw input:checked + .toggle-track { background:rgba(201,168,76,.35); }
     .toggle-sw input:checked + .toggle-track:before { transform:translateX(18px); background:var(--gold); }
+    /* Supabase ログインUI */
+    #sb-login-card { margin-bottom: 16px; }
+    .sb-input {
+      width: 100%; background: rgba(255,255,255,.07); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--white); font-size: 15px; padding: 10px 12px;
+      margin-bottom: 10px; box-sizing: border-box;
+    }
+    .sb-btn {
+      width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 15px; font-weight: 700; margin-bottom: 8px;
+    }
+    .sb-btn-primary  { background: var(--gold); color: #000; }
+    .sb-btn-secondary{ background: rgba(255,255,255,.08); color: var(--white); }
+    .sb-tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .sb-tab { flex:1; padding:8px; border-radius:8px; border:1px solid var(--border);
+      background:transparent; color:var(--gray); font-size:13px; font-weight:600; cursor:pointer; }
+    .sb-tab.active { background:rgba(201,168,76,.15); border-color:var(--gold); color:var(--gold); }
+    #sb-logged-in { display:none; align-items:center; gap:10px; }
+    #sb-logged-out { display:block; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -1859,6 +1879,31 @@
 
   <!-- アカウント -->
   <div class="tab-pane" id="tab-account">
+
+    <!-- クラウド同期（Supabase） -->
+    <div class="card" id="sb-login-card">
+      <div class="card-title" style="margin-bottom:12px;">☁️ クラウド同期</div>
+
+      <!-- ログイン済み -->
+      <div id="sb-logged-in">
+        <div style="font-size:13px;color:var(--green);font-weight:700;">✓ 同期中</div>
+        <div id="sb-user-email" style="font-size:11px;color:var(--gray);margin-top:2px;flex:1;"></div>
+        <button class="sb-btn sb-btn-secondary" style="width:auto;padding:6px 14px;font-size:12px;" onclick="sbSignOut()">ログアウト</button>
+      </div>
+
+      <!-- 未ログイン -->
+      <div id="sb-logged-out">
+        <p style="font-size:12px;color:var(--gray);margin:0 0 14px;">ログインするとデータがクラウドに保存され、機種変更や複数端末でも引き継げます。</p>
+        <div class="sb-tab-row">
+          <button class="sb-tab active" id="sb-tab-login" onclick="sbSwitchTab('login')">ログイン</button>
+          <button class="sb-tab" id="sb-tab-signup" onclick="sbSwitchTab('signup')">新規登録</button>
+        </div>
+        <input type="email" class="sb-input" id="sb-email" placeholder="メールアドレス" autocomplete="email">
+        <input type="password" class="sb-input" id="sb-password" placeholder="パスワード（6文字以上）" autocomplete="current-password">
+        <button class="sb-btn sb-btn-primary" id="sb-submit-btn" onclick="sbSubmit()">ログイン</button>
+        <div id="sb-msg" style="font-size:12px;min-height:18px;text-align:center;margin-top:4px;"></div>
+      </div>
+    </div>
 
     <!-- アバター＋名前ヘッダー -->
     <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:16px;">
@@ -3923,6 +3968,7 @@
       carPlate:   document.getElementById('acc-car-plate').value.trim(),
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    sbPush(PROFILE_KEY, JSON.stringify(profile));
     applyProfileToUI(profile);
     showMsg('acc-save-msg', '保存しました ✓');
   }
@@ -3935,6 +3981,7 @@
       experience: document.getElementById('pub-experience').checked,
     };
     localStorage.setItem(PUB_KEY, JSON.stringify(pub));
+    sbPush(PUB_KEY, JSON.stringify(pub));
     showMsg('pub-save-msg', '保存しました ✓');
   }
 
@@ -3947,6 +3994,7 @@
       deduction:  document.getElementById('acc-deduction').value,
     };
     localStorage.setItem(SALARY_KEY, JSON.stringify(s));
+    sbPush(SALARY_KEY, JSON.stringify(s));
     // 売上管理の締め日とも同期
     const closingSel = document.getElementById('closing-day-select');
     if (closingSel) { closingSel.value = s.closingDay; saveClosingDay(s.closingDay); }
@@ -4048,6 +4096,105 @@
     renderReportHistory();
     renderMonthlySummary();
     alert('日報データを削除しました。');
+  }
+
+  // ── SUPABASE ──────────────────────────────────────────────────────
+  let _sb = null;
+  let _sbUser = null;
+  try {
+    if (typeof supabase !== 'undefined') {
+      _sb = supabase.createClient(
+        'https://oxkzmpigegqaakeyhyrk.supabase.co',
+        'sb_publishable_V7mWATT47ffhp45TZ1_DpQ_lgTUiPdF'
+      );
+    }
+  } catch(e) { console.warn('Supabase init:', e); }
+
+  async function sbPush(key, value) {
+    if (!_sb || !_sbUser) return;
+    try {
+      await _sb.from('user_data').upsert(
+        { user_id: _sbUser.id, key, value },
+        { onConflict: 'user_id,key' }
+      );
+    } catch(e) { console.warn('sbPush:', e); }
+  }
+
+  async function sbPull() {
+    if (!_sb || !_sbUser) return;
+    try {
+      const { data } = await _sb.from('user_data').select('key,value').eq('user_id', _sbUser.id);
+      if (!data) return;
+      data.forEach(r => localStorage.setItem(r.key, r.value));
+      applyProfileToUI(loadProfile());
+      applyPublicSettingsToUI(loadPublicSettings());
+      applySalarySettingsToUI(loadSalarySettings());
+    } catch(e) { console.warn('sbPull:', e); }
+  }
+
+  function sbUpdateUI(user) {
+    _sbUser = user;
+    const inEl  = document.getElementById('sb-logged-in');
+    const outEl = document.getElementById('sb-logged-out');
+    const mailEl= document.getElementById('sb-user-email');
+    if (user) {
+      if (inEl)  inEl.style.display  = 'flex';
+      if (outEl) outEl.style.display = 'none';
+      if (mailEl) mailEl.textContent = user.email;
+    } else {
+      if (inEl)  inEl.style.display  = 'none';
+      if (outEl) outEl.style.display = 'block';
+    }
+  }
+
+  let _sbTab = 'login';
+  function sbSwitchTab(mode) {
+    _sbTab = mode;
+    document.getElementById('sb-tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('sb-tab-signup').classList.toggle('active', mode === 'signup');
+    document.getElementById('sb-submit-btn').textContent = mode === 'login' ? 'ログイン' : '新規登録';
+    document.getElementById('sb-msg').textContent = '';
+  }
+
+  async function sbSubmit() {
+    if (!_sb) { document.getElementById('sb-msg').textContent = 'Supabase未接続'; return; }
+    const email    = document.getElementById('sb-email').value.trim();
+    const password = document.getElementById('sb-password').value;
+    const msgEl    = document.getElementById('sb-msg');
+    if (!email || !password) { msgEl.style.color='#ff6b6b'; msgEl.textContent='メールとパスワードを入力してください'; return; }
+    msgEl.style.color='var(--gray)'; msgEl.textContent='処理中…';
+    try {
+      const fn = _sbTab === 'login'
+        ? _sb.auth.signInWithPassword({ email, password })
+        : _sb.auth.signUp({ email, password });
+      const { data, error } = await fn;
+      if (error) throw error;
+      if (_sbTab === 'signup' && !data.session) {
+        msgEl.style.color='var(--gold)';
+        msgEl.textContent='確認メールを送信しました';
+        return;
+      }
+      msgEl.textContent = '';
+    } catch(e) {
+      msgEl.style.color='#ff6b6b';
+      msgEl.textContent = e.message || 'エラーが発生しました';
+    }
+  }
+
+  async function sbSignOut() {
+    if (!_sb) return;
+    await _sb.auth.signOut();
+    sbUpdateUI(null);
+  }
+
+  if (_sb) {
+    _sb.auth.onAuthStateChange(async (event, session) => {
+      sbUpdateUI(session?.user || null);
+      if (session?.user) await sbPull();
+    });
+    _sb.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) sbUpdateUI(data.session.user);
+    });
   }
 
   // 初期化
