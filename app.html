@@ -3399,6 +3399,8 @@
       const name = item.querySelector('.event-name')?.textContent || '';
       const meta = item.querySelector('.event-meta')?.innerHTML || '';
       const badge = item.querySelector('.badge')?.outerHTML || '';
+      const timeMatch = (item.querySelector('.event-meta')?.textContent || '').match(/(?:開演|開始)\s*(\d{1,2}):(\d{2})/);
+      const startMin = timeMatch ? parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]) : 9999;
       // （X日間）から日数を取得
       const dayMatch = meta.match(/（(\d+)日間）/);
       const days = dayMatch ? parseInt(dayMatch[1]) : 1;
@@ -3410,12 +3412,12 @@
         const dd = itemDate.getDate();
         const dayNum = i + 1;
         const dayMeta = days > 1 ? meta.replace(/（(\d+)日間）/, `（${dayNum}日目/${days}日間）`) : meta;
-        collected.push({ itemDate, m: dm, d: dd, venue, name, meta: dayMeta, badge });
+        collected.push({ itemDate, m: dm, d: dd, venue, name, meta: dayMeta, badge, startMin });
       }
     });
 
     if (collected.length === 0) return;
-    collected.sort((a, b) => a.itemDate - b.itemDate);
+    collected.sort((a, b) => a.itemDate - b.itemDate || a.startMin - b.startMin);
 
     // 日付ごとにグループ化
     const byDate = [];
