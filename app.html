@@ -4454,11 +4454,17 @@
   // ── SUPABASE ──────────────────────────────────────────────────────
   const _SB_URL  = 'https://oxkzmpigegqaakeyhyrk.supabase.co';
   const _SB_KEY  = 'sb_publishable_V7mWATT47ffhp45TZ1_DpQ_lgTUiPdF';
-  const _sb = supabase.createClient(_SB_URL, _SB_KEY);
+  let _sb = null;
   let _sbUser = null;
+  try {
+    if (typeof supabase !== 'undefined') {
+      _sb = supabase.createClient(_SB_URL, _SB_KEY);
+    }
+  } catch(e) { console.warn('Supabase init error', e); }
 
   // クラウドからデータ取得してlocalStorageへ反映
   async function sbPullData(userId) {
+    if (!_sb) return;
     try {
       const { data } = await _sb.from('user_data').select('key,value').eq('user_id', userId);
       if (!data) return;
@@ -4468,7 +4474,7 @@
 
   // localStorageのキーをSupabaseへ保存
   async function sbPushKey(key, value) {
-    if (!_sbUser) return;
+    if (!_sb || !_sbUser) return;
     try {
       await _sb.from('user_data').upsert(
         { user_id: _sbUser.id, key, value },
@@ -4555,7 +4561,7 @@
   }
 
   // 認証状態を監視
-  _sb.auth.onAuthStateChange(async (event, session) => {
+  if (_sb) _sb.auth.onAuthStateChange(async (event, session) => {
     _sbUser = session?.user || null;
     authUpdateStatusBar(_sbUser);
     if (_sbUser) {
@@ -4578,15 +4584,16 @@
       applySalarySettingsToUI(loadSalarySettings());
       applyTopLayout();
       // セッション確認（非同期、バックグラウンド）
-      _sb.auth.getSession().then(({ data }) => {
-        if (!data.session) {
-          // 未ログイン → モーダル表示
-          document.getElementById('auth-modal').classList.add('open');
-        }
-      });
+      if (_sb) {
+        _sb.auth.getSession().then(({ data }) => {
+          if (!data.session) {
+            document.getElementById('auth-modal').classList.add('open');
+          }
+        });
+      }
     } else {
-      // プロフィール未設定 → ログインモーダル表示
-      document.getElementById('auth-modal').classList.add('open');
+      // プロフィール未設定 → セットアップモーダル表示
+      document.getElementById('setup-modal').style.display = 'flex';
       applyTopLayout();
     }
   })();
