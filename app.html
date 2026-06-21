@@ -3876,7 +3876,7 @@
     try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
     const overrideYear = overrides[thisYear] || {};
 
-    let annualTaxExcluded = 0, annualTakehome = 0;
+    let annualTaxExcluded = 0, annualTakehome = 0, annualDays = 0;
     el.innerHTML = `
       <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（${payday ? `給与支払日${payday===0?'末日':payday+'日'}ベース` : '締め日ベース'}）</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
@@ -3887,6 +3887,7 @@
           const takehome = Math.round(taxExcluded * (stepRate - poolRate) / 100);
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
+          annualDays += days || 0;
           const label = `${m}月`;
           const future = m > now.getMonth() + 1 || (m === now.getMonth() + 1 && now.getDate() <= (closingDay || 31));
           return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales})">
@@ -3894,13 +3895,16 @@
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
             ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
             ${takehome ? `<div style="font-size:9px;color:#7ec8a0;">受取¥${takehome.toLocaleString()}</div>` : ''}
-            <div style="font-size:9px;color:var(--gray);">${days}日分</div>
+            <div style="font-size:9px;color:var(--gray);">${days ? days+'日稼働' : '—'}</div>
           </div>`;
         }).join('')}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;">
-          <span style="font-size:12px;color:var(--gray);">年間売上合計</span>
+          <div>
+            <div style="font-size:12px;color:var(--gray);">年間売上合計</div>
+            <div style="font-size:10px;color:var(--gray);">${annualDays}日稼働</div>
+          </div>
           <span style="font-size:18px;font-weight:900;color:var(--gold);">¥${(Object.values(overrideYear).reduce((a,v)=>a+(Number(v)||0),0) || autoTotal).toLocaleString()}</span>
         </div>
         ${(stepRate || poolRate) ? `
