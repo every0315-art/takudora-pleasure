@@ -3229,6 +3229,15 @@
     btn.style.borderColor = sel ? 'rgba(255,255,255,.2)' : 'var(--gold)';
     btn.style.color = sel ? 'var(--text)' : 'var(--gold)';
   }
+  async function reverseGeocode(lat, lng) {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ja`);
+      const d = await r.json();
+      const addr = d.address || {};
+      return addr.city_district || addr.suburb || addr.neighbourhood || addr.quarter || addr.county || addr.city || '';
+    } catch { return ''; }
+  }
+
   function submitReport() {
     const tags = [...document.querySelectorAll('.report-tag[data-selected="1"]')].map(b => b.dataset.tag);
     const comment = document.getElementById('report-comment').value.trim();
@@ -3238,18 +3247,31 @@
     const name = profile.nickname || 'ドライバー';
     const initial = name.charAt(0).toUpperCase();
     const now = new Date();
-    const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
     const tagStr = tags.join(' · ');
     const body = [tagStr, comment].filter(Boolean).join(' — ');
 
-    const post = { initial, name, timeStr, body, ts: now.getTime() };
-    const posts = [post, ...loadCommunityPosts()].slice(0, 50);
-    saveCommunityPosts(posts);
-    renderCommunityPosts();
-    updateCommunityTile();
-    closeReportModal();
-    // コミュニティタブへ移動
-    switchTab('community');
+    const doPost = (location) => {
+      const post = { initial, name, body, location, ts: now.getTime() };
+      const posts = [post, ...loadCommunityPosts()].slice(0, 50);
+      saveCommunityPosts(posts);
+      renderCommunityPosts();
+      updateCommunityTile();
+      closeReportModal();
+      switchTab('community');
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          const loc = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          doPost(loc);
+        },
+        () => doPost(''),
+        { timeout: 5000, maximumAge: 60000 }
+      );
+    } else {
+      doPost('');
+    }
   }
 
   function timeAgo(ts) {
@@ -3278,7 +3300,8 @@
           <div class="post-avatar">${p.initial}</div>
           <div><div class="post-name">${p.name}</div><div class="post-time">${timeAgo(p.ts)}</div></div>
         </div>
-        <div class="post-body">${p.body}</div>`;
+        <div class="post-body">${p.body}</div>
+        ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}`;
       frag.appendChild(div);
     });
     title.after(frag);
