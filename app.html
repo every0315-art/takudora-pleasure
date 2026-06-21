@@ -225,7 +225,6 @@
     .top-layout {
       display: grid;
       grid-template-columns: 1fr 1.6fr 1fr;
-      grid-template-rows: 240px 160px 240px;
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -320,7 +319,7 @@
     .tile-haneda     { }
     .tile-stand      { }
     .tile-train      { }
-    .tile-weather    { grid-column:2; grid-row:2; }
+    .tile-weather    { }
     .tile-traffic    { }
     .tile-sales      { }
     .tile-community  { }
@@ -357,7 +356,6 @@
       .tab-pane { padding: 12px 10px; }
       .top-layout {
         grid-template-columns: 1fr 1.4fr 1fr;
-        grid-template-rows: repeat(3, 250px);
         gap: 8px;
       }
       .tile { padding: 10px 10px; border-radius: 8px; }
@@ -3857,25 +3855,29 @@
 
   function applyTopLayout() {
     const layout = loadTopLayout();
-    // grid: 3列固定、非表示タイルはスキップして詰める
+    const topGrid = document.querySelector('.top-layout');
+    if (!topGrid) return;
+
+    const visible = layout.filter(t => t.visible);
+    const count   = visible.length;
+    const rows    = Math.max(1, Math.ceil(count / 3));
+
+    // 行の高さをタイル数に応じて最適化
+    const rowH = rows === 1 ? '300px' : rows === 2 ? '240px' : '210px';
+    topGrid.style.gridTemplateRows = `repeat(${rows}, ${rowH})`;
+
+    // 各タイルに順番にgrid位置を割り当て
     let col = 1, row = 1;
     layout.forEach(({ id, visible }) => {
       const el = document.querySelector(`[data-tile="${id}"]`);
       if (!el) return;
-      if (!visible) { el.style.display = 'none'; return; }
-      // 天気タイルは常にcol2/row2固定
-      if (id === 'weather') {
-        el.style.display = '';
-        el.style.gridColumn = '2';
-        el.style.gridRow = '2';
+      if (!visible) {
+        el.style.display = 'none';
+        el.style.gridColumn = '';
+        el.style.gridRow    = '';
         return;
       }
-      // col2/row2 は天気用にスキップ
-      if (col === 2 && row === 2) {
-        col++;
-        if (col > 3) { col = 1; row++; }
-      }
-      el.style.display = '';
+      el.style.display    = '';
       el.style.gridColumn = String(col);
       el.style.gridRow    = String(row);
       col++;
