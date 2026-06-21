@@ -2919,6 +2919,20 @@
   }
 
   // ── ピックアップアラート ──
+  // 鉄道運行障害情報（キャッシュ）
+  let _trainAlerts = [];
+  async function fetchTrainStatus() {
+    try {
+      const r = await fetch('/api/train-info');
+      if (!r.ok) return;
+      const data = await r.json();
+      _trainAlerts = (data.lines || []).filter(l => l.status && l.status !== '平常運転');
+      updatePickupAlerts();
+    } catch {}
+  }
+  fetchTrainStatus();
+  setInterval(fetchTrainStatus, 3 * 60 * 1000); // 3分ごとに更新
+
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
     if (!area) return;
@@ -2927,6 +2941,17 @@
     let nowMin = now.getHours() * 60 + now.getMinutes();
     if (nowMin < 4 * 60) nowMin += 24 * 60;
     const pos = window._currentPos;
+
+    // 鉄道遅延・運転見合わせ
+    for (const l of _trainAlerts) {
+      const isSerious = l.status.includes('見合わせ') || l.status.includes('運休') || l.status.includes('中止');
+      alerts.push({
+        tag: isSerious ? '🚨 運転見合わせ' : '⚠️ 遅延情報',
+        main: l.name,
+        sub: l.status + (l.message ? `：${l.message.slice(0,30)}` : ''),
+        serious: isSerious,
+      });
+    }
 
     // 終電±15分 かつ 出発駅1km以内
     for (const t of LAST_TRAINS) {
@@ -2940,7 +2965,7 @@
       if (km > 1) continue;
       const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
       const label = diff >= 0 ? `終電${diff}分前` : `終電${Math.abs(diff)}分後`;
-      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）` });
+      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）`, serious: true });
     }
 
     // イベント終演±15分 かつ 会場5km以内
@@ -2964,7 +2989,7 @@
         const name = item.querySelector('.event-name')?.textContent?.trim() || '';
         const timeStr = `${endMatch[1]}:${endMatch[2]}`;
         const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
-        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）` });
+        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）`, serious: true });
       });
     });
 
@@ -2976,7 +3001,7 @@
       area.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px;';
       area.className = 'has-alert';
       area.innerHTML = alerts.map(a => `
-        <div class="pickup-card pc-alert" style="max-width:100%;width:100%;">
+        <div class="pickup-card${a.serious ? ' pc-alert' : ''}" style="max-width:100%;width:100%;">
           <div class="pc-tag">${a.tag}</div>
           <div class="pc-main">${a.main}</div>
           <div class="pc-sub">${a.sub}</div>
