@@ -146,6 +146,9 @@
     .pickup-card .pc-tag   { font-size:9px; font-weight:700; letter-spacing:.5px; color:var(--gray); }
     .pickup-card .pc-main  { font-size:12px; font-weight:700; color:var(--white); line-height:1.3; }
     .pickup-card .pc-sub   { font-size:10px; color:var(--gray); }
+    @keyframes pc-blink { 0%,100%{background:rgba(240,96,96,.18);border-color:rgba(240,96,96,.9);} 50%{background:rgba(240,96,96,.05);border-color:rgba(240,96,96,.3);} }
+    .pickup-card.pc-alert { animation:pc-blink 1s ease-in-out infinite; border-color:rgba(240,96,96,.9); }
+    .pickup-card.pc-alert .pc-tag { color:#ff8080; }
 
     /* ── BADGE ── */
     .badge {
@@ -2783,6 +2786,39 @@
   updateLastTrains();
   setInterval(updateLastTrains, 60000);
 
+  // ── 会場座標マップ ──
+  const VENUE_COORDS = {
+    '国立競技場':           { lat: 35.6782, lon: 139.7142 },
+    '東京ドーム':           { lat: 35.7056, lon: 139.7519 },
+    '神宮球場':             { lat: 35.6757, lon: 139.7185 },
+    '有明アリーナ':         { lat: 35.6296, lon: 139.7859 },
+    '東京ガーデンシアター': { lat: 35.6302, lon: 139.7971 },
+    '日本武道館':           { lat: 35.6934, lon: 139.7498 },
+    '東京ビッグサイト':     { lat: 35.6298, lon: 139.7942 },
+    '代々木第一体育館':     { lat: 35.6680, lon: 139.6973 },
+    '両国国技館':           { lat: 35.6963, lon: 139.7934 },
+    'さいたまスーパーアリーナ': { lat: 35.8952, lon: 139.6306 },
+    '横浜スタジアム':       { lat: 35.4439, lon: 139.6383 },
+  };
+
+  // Haversine距離計算（km）
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // 現在位置を定期取得
+  window._currentPos = null;
+  if (navigator.geolocation) {
+    const posOpts = { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 };
+    const onPos = pos => { window._currentPos = { lat: pos.coords.latitude, lon: pos.coords.longitude }; };
+    navigator.geolocation.getCurrentPosition(onPos, () => {}, posOpts);
+    setInterval(() => navigator.geolocation.getCurrentPosition(onPos, () => {}, posOpts), 120000);
+  }
+
   // ── ピックアップスクロール ──
   function updatePickupScroll() {
     const inner = document.getElementById('pickup-scroll-inner');
@@ -2811,24 +2847,36 @@
       }
     }
 
-    // イベント（開演1時間前〜終演後1時間）
-    const evItems = document.querySelectorAll('#event-list .ev-item, #event-list [data-ev]');
-    evItems.forEach(el => {
-      const timeEl = el.querySelector('[data-start]') || el;
-      const startStr = timeEl.dataset?.start || el.dataset?.start;
-      if (!startStr) return;
-      const [hh, mm] = startStr.split(':').map(Number);
-      if (isNaN(hh)) return;
-      let eMin = hh * 60 + mm;
-      if (eMin < 4 * 60) eMin += 24 * 60;
-      const diff = eMin - nowMin;
-      if (diff >= -60 && diff <= 60) {
-        const nameEl = el.querySelector('.ev-name, [class*="name"]');
-        const name = nameEl?.textContent?.trim() || 'イベント';
-        const venueEl = el.querySelector('.ev-venue, [class*="venue"]');
-        const venue = venueEl?.textContent?.trim() || '';
-        cards.push({ type: diff > 0 ? 'pc-warn' : 'pc-info', tag: '🎪 イベント', main: name.slice(0,16), sub: venue ? `${venue} ${startStr}` : startStr });
-      }
+    // イベント終演アラート（終演30分前〜30分後 かつ会場5km以内）
+    const todayM = now.getMonth() + 1, todayD = now.getDate();
+    document.querySelectorAll('#tab-event .card').forEach(card => {
+      const venueTitle = card.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
+      card.querySelectorAll('.event-item').forEach(item => {
+        const evM = parseInt(item.querySelector('.event-month')?.textContent || '0');
+        const evD = parseInt(item.querySelector('.event-day')?.textContent || '0');
+        if (evM !== todayM || evD !== todayD) return;
+        const meta = item.querySelector('.event-meta')?.textContent || '';
+        const endMatch = meta.match(/終[演了]\s*(\d{1,2}):(\d{2})/);
+        if (!endMatch) return;
+        let eMin = parseInt(endMatch[1]) * 60 + parseInt(endMatch[2]);
+        if (eMin < 4 * 60) eMin += 24 * 60;
+        const diff = eMin - nowMin; // 正＝まだ終わってない、負＝終了後
+        if (diff < -30 || diff > 30) return;
+        const name = item.querySelector('.event-name')?.textContent?.trim() || '';
+        const timeStr = `${endMatch[1]}:${endMatch[2]}`;
+        // 位置チェック
+        const vc = VENUE_COORDS[venueTitle];
+        const pos = window._currentPos;
+        let isNearby = false;
+        if (vc && pos) {
+          const km = haversineKm(pos.lat, pos.lon, vc.lat, vc.lon);
+          isNearby = km <= 5;
+        }
+        if (isNearby) {
+          const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
+          cards.push({ type: 'pc-alert', tag: `🚨 終演ピックアップ`, main: venueTitle, sub: `${name.slice(0,14)} ${timeStr} (${label})` });
+        }
+      });
     });
 
     // 天気（悪天候）
