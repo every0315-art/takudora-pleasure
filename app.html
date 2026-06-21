@@ -224,7 +224,8 @@
     /* ── TOP LAYOUT ── */
     .top-layout {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: 1fr 1.6fr 1fr;
+      grid-template-rows: 240px 160px 240px;
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -264,120 +265,28 @@
       margin-top: 6px;
     }
 
-    /* アラートバー */
-    #alert-bar {
-      display: none;
-      align-items: center;
+    /* 天気タイル */
+    .tile-weather {
+      grid-column: 2;
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
       gap: 6px;
-      flex-wrap: wrap;
-      background: rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 8px;
-      padding: 5px 10px;
-      margin-bottom: 8px;
-    }
-    .alert-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 14px;
-      white-space: nowrap;
-    }
-    .alert-chip.ac-last-train { background: rgba(192,57,43,.25); border: 1px solid #c0392b; color: #ff6b6b; }
-    .alert-chip.ac-event      { background: rgba(201,168,76,.18); border: 1px solid rgba(201,168,76,.5); color: var(--gold); }
-    .alert-chip.ac-disruption { background: rgba(230,126,34,.2);  border: 1px solid #e67e22; color: #ffa54f; }
-    .alert-chip .ac-badge     { font-size: 9px; font-weight: 800; letter-spacing: .05em; }
-
-    /* ピックアップ横スクロールバー */
-    .pickup-bar {
-      display: flex;
-      align-items: center;
-      background: var(--navy-mid);
-      border: 1px solid rgba(201,168,76,.2);
-      border-radius: 8px;
-      margin-bottom: 10px;
-      height: 36px;
-      overflow: hidden;
-    }
-    .pickup-label {
-      flex-shrink: 0;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: .15em;
-      color: var(--gold);
-      background: rgba(201,168,76,.12);
-      border-right: 1px solid rgba(201,168,76,.2);
-      padding: 0 10px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-    }
-    .pickup-track-wrap {
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-      height: 100%;
-    }
-    .pickup-track {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      white-space: nowrap;
-      animation: pickup-scroll 12s linear infinite;
-      will-change: transform;
-    }
-    .pickup-track:hover { animation-play-state: paused; }
-    @keyframes pickup-scroll {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .pickup-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 0 16px;
-      font-size: 12px;
-      color: var(--text);
-      cursor: pointer;
-      border-right: 1px solid var(--border);
-      height: 36px;
-      flex-shrink: 0;
-      transition: color .15s;
-    }
-    .pickup-item:hover { color: var(--gold); }
-    .pickup-item .pi-badge {
-      font-size: 9px;
-      font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-    .pi-news  { background: rgba(63,207,142,.15);  color: var(--green); }
-    .pi-event { background: rgba(201,168,76,.15);  color: var(--gold); }
-    .pi-train { background: rgba(240,96,96,.15);   color: var(--red); }
-    .pi-info  { background: rgba(255,255,255,.1);  color: var(--gray); }
-
-    /* 天気バー（TOPページ上部固定・横幅いっぱい） */
-    .weather-bar {
-      display: flex;
-      align-items: center;
       background: linear-gradient(160deg, #112240 0%, #1a3560 100%);
-      border: 1px solid rgba(201,168,76,.25);
-      border-radius: 10px;
-      padding: 10px 16px;
-      margin-bottom: 14px;
+      border-color: rgba(201,168,76,.25);
+      padding: 12px 16px;
       cursor: pointer;
-      gap: 0;
-      min-height: 70px;
+      overflow: hidden;
     }
-    .weather-bar:hover { border-color: rgba(201,168,76,.45); }
-    .wb-left { display:flex; flex-direction:column; justify-content:center; flex-shrink:0; }
+    .tile-weather:hover { transform: none; border-color: rgba(201,168,76,.25); }
     .weather-dt {
       font-size: 11px; color: var(--white); font-weight: 700;
-      flex-shrink: 0; line-height: 1.2;
+      text-align: center; flex-shrink: 0; line-height: 1.2;
+    }
+    .weather-body {
+      display: flex; flex-direction: column; flex: 1;
+      gap: 8px; overflow: hidden;
     }
 
     /* 雨雲レーダーモーダル */
@@ -407,15 +316,15 @@
        行2: イベント / 天気 / コミュニティ
        行3: 売上    / 道路 / ニュース
     */
-    .tile-event      { }
-    .tile-haneda     { }
-    .tile-stand      { }
-    .tile-train      { }
-    .tile-weather    { }
-    .tile-traffic    { }
-    .tile-sales      { }
-    .tile-community  { }
-    .tile-news       { }
+    .tile-event      { grid-column:1; grid-row:2; }
+    .tile-haneda     { grid-column:2; grid-row:1; }
+    .tile-stand      { grid-column:3; grid-row:1; }
+    .tile-train      { grid-column:1; grid-row:1; }
+    .tile-weather    { grid-column:2; grid-row:2; }
+    .tile-traffic    { grid-column:2; grid-row:3; }
+    .tile-sales      { grid-column:1; grid-row:3; }
+    .tile-community  { grid-column:3; grid-row:2; }
+    .tile-news       { grid-column:3; grid-row:3; }
 
     .weather-main { display:flex; flex-direction:row; align-items:center; gap:10px; flex-shrink:0; justify-content:center; }
     .weather-location { font-size: 10px; color: var(--gray); letter-spacing: .1em; }
@@ -447,7 +356,8 @@
     @media(max-width:700px) {
       .tab-pane { padding: 12px 10px; }
       .top-layout {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr 1.4fr 1fr;
+        grid-template-rows: repeat(3, 250px);
         gap: 8px;
       }
       .tile { padding: 10px 10px; border-radius: 8px; }
@@ -455,14 +365,40 @@
       .tile-main { font-size: 14px; }
       .tile-sub { font-size: 10px; }
 
-      /* 天気バー — mobile */
-      .weather-bar { padding: 8px 10px; min-height: 60px; margin-bottom: 10px; }
-      .wb-forecast { padding-left: 8px; margin-left: 8px; }
-      .wb-sw { padding-left: 8px; margin-left: 8px; }
-      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 1px; }
-      .fc-time { font-size: 9px; }
-      .fc-icon { font-size: 15px; }
-      .fc-tmp { font-size: 9px; }
+      /* 天気タイル — mobile: 縦積み */
+      .tile-weather {
+        flex-direction: column;
+        align-items: center;
+        padding: 6px 8px;
+        gap: 0;
+        overflow: visible;
+      }
+      .weather-dt { font-size: 10px; margin-bottom: 2px; }
+      .weather-body {
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        flex: 1;
+        width: 100%;
+        overflow: visible;
+      }
+      .weather-main { gap: 6px; flex-wrap: wrap; justify-content: center; }
+      .weather-icon-wrap { font-size: 22px !important; }
+      .weather-temp { font-size: 20px; }
+      .weather-temp span { font-size: 11px; }
+      .weather-desc { font-size: 10px; }
+      .weather-demand { font-size: 8px; padding: 2px 5px; margin-top: 0; }
+      .weather-forecast {
+        width: 100%; flex-direction: row; gap: 0;
+        justify-content: space-around;
+        border-top: 1px solid rgba(255,255,255,.08);
+        padding-top: 3px; margin-top: 3px;
+      }
+      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 1px; border-right: 1px solid rgba(255,255,255,.05); }
+      .fc-item:last-child { border-right: none; }
+      .fc-time { font-size: 9px; width: auto; }
+      .fc-icon { font-size: 18px; width: auto; }
+      .fc-tmp { font-size: 10px; width: auto; }
       .fc-rain { font-size: 8px; }
 
       /* 売上タイル — 縦中央寄せ */
@@ -544,40 +480,6 @@
     }
     .toggle-sw input:checked + .toggle-track { background:rgba(201,168,76,.35); }
     .toggle-sw input:checked + .toggle-track:before { transform:translateX(18px); background:var(--gold); }
-
-    /* Supabase 認証モーダル */
-    #auth-modal {
-      display: none; position: fixed; inset: 0; z-index: 9999;
-      background: rgba(0,0,0,.75); align-items: center; justify-content: center;
-    }
-    #auth-modal.open { display: flex; }
-    .auth-box {
-      background: var(--navy-mid); border: 1px solid var(--border);
-      border-radius: 16px; padding: 28px 24px; width: 90%; max-width: 360px;
-    }
-    .auth-box h2 { font-size: 18px; font-weight: 800; color: var(--white); margin: 0 0 6px; }
-    .auth-box p  { font-size: 12px; color: var(--gray); margin: 0 0 20px; }
-    .auth-input {
-      width: 100%; background: rgba(255,255,255,.07); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--white); font-size: 15px; padding: 10px 12px;
-      margin-bottom: 10px; box-sizing: border-box;
-    }
-    .auth-btn {
-      width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
-      font-size: 15px; font-weight: 700; margin-bottom: 8px;
-    }
-    .auth-btn-primary { background: var(--gold); color: #000; }
-    .auth-btn-secondary { background: rgba(255,255,255,.08); color: var(--white); }
-    .auth-msg { font-size: 12px; text-align: center; min-height: 18px; margin-top: 4px; }
-    .auth-tab-row { display: flex; gap: 8px; margin-bottom: 20px; }
-    .auth-tab { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
-      background: transparent; color: var(--gray); font-size: 13px; font-weight: 600; cursor: pointer; }
-    .auth-tab.active { background: rgba(201,168,76,.15); border-color: var(--gold); color: var(--gold); }
-    #auth-status-bar {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(201,168,76,.08); border: 1px solid rgba(201,168,76,.2);
-      border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px;
-    }
   </style>
 </head>
 <body>
@@ -594,7 +496,7 @@
 <!-- TAB NAV -->
 <div class="tab-nav">
   <button class="tab-btn active" data-tab="top">TOP</button>
-  <button class="tab-btn" data-tab="sales">今月度の売上</button>
+  <button class="tab-btn" data-tab="sales">売上管理</button>
   <button class="tab-btn" data-tab="haneda">羽田空港</button>
   <button class="tab-btn" data-tab="news">業界ニュース</button>
   <button class="tab-btn" data-tab="traffic">道路情報</button>
@@ -610,69 +512,53 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
-
-    <!-- ピックアップ横スクロール -->
-    <div class="pickup-bar">
-      <div class="pickup-label">PICKUP</div>
-      <div class="pickup-track-wrap">
-        <div class="pickup-track" id="pickup-track">
-          <!-- JSで動的挿入 -->
-        </div>
-      </div>
+    <!-- ストップウォッチ操作バー -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:0 2px;justify-content:flex-end;">
+      <button id="sw-start" onclick="swToggle()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
+      <button onclick="swReset()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">RESET</button>
     </div>
-
-    <!-- アラートバー -->
-    <div id="alert-bar"></div>
-
-    <!-- 天気バー（横幅固定・常時表示） -->
-    <div class="weather-bar tile-weather" onclick="document.getElementById('radarModal').style.display='flex'">
-      <div class="wb-left">
-        <div id="weather-datetime" class="weather-dt" style="font-size:10px;color:var(--gray);margin-bottom:2px;"></div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="weather-icon-wrap" style="font-size:28px;line-height:1;">…</div>
-          <div>
-            <div class="weather-temp" style="font-size:22px;font-weight:900;color:var(--white);line-height:1;">28<span style="font-size:12px;font-weight:400;color:var(--gray);">℃</span></div>
-            <div class="weather-desc" style="font-size:10px;color:var(--gray);">晴れ</div>
-          </div>
-          <div class="weather-demand" style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(240,180,41,.12);color:var(--yellow);border:1px solid rgba(240,180,41,.2);">
-            需要：<strong>やや低め</strong>
-          </div>
-        </div>
-      </div>
-      <div class="wb-forecast weather-forecast" style="flex:1;display:flex;justify-content:space-around;align-items:center;border-left:1px solid rgba(255,255,255,.07);padding-left:12px;margin-left:12px;">
-        <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-        <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-        <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
-        <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
-      </div>
-    </div>
-
-    <!-- ストップウォッチバー（天気バー直下） -->
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:14px;gap:12px;">
-      <div id="sw-display" style="font-size:20px;font-weight:900;color:var(--white);letter-spacing:.06em;font-variant-numeric:tabular-nums;flex-shrink:0;">00:00:00</div>
-      <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;">
-        <button id="sw-start" onclick="swToggle()" style="font-size:13px;font-weight:700;padding:6px 20px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">業務開始</button>
-        <button onclick="swReset()" style="font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">リセット</button>
-      </div>
-    </div>
-
     <div class="top-layout">
 
-      <!-- イベント -->
-      <div class="tile tile-event" data-tab="event" data-tile="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
+      <!-- 行1左：イベント -->
+      <div class="tile tile-event" data-tab="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
         <div class="tile-label">イベント</div>
         <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
       </div>
 
+      <!-- 行1中央：天気（横長） -->
+      <div class="tile tile-weather">
+        <div id="weather-datetime" class="weather-dt"></div>
+        <div class="weather-body">
+          <div class="weather-main">
+            <div class="weather-icon-wrap">…</div>
+            <div class="weather-temp">28<span>℃</span></div>
+            <div class="weather-desc">晴れ</div>
+            <div class="weather-demand">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
+              需要：<strong style="color:var(--yellow);">やや低め</strong>
+            </div>
+          </div>
+          <div class="weather-forecast">
+            <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+            <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
+            <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
+            <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:5px;margin-top:2px;text-align:center;">
+            <div id="sw-display" style="font-size:20px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;">00:00:00</div>
+          </div>
+        </div>
+      </div>
+
       <!-- 行1右：街の様子 -->
-      <div class="tile tile-stand" data-tab="stand" data-tile="stand">
+      <div class="tile tile-stand" data-tab="stand">
         <div class="tile-label">街の様子</div>
         <div class="tile-main s-green">新宿西口<br><span style="font-size:13px;">待ち約5分</span></div>
         <div class="tile-sub">渋谷 22分 / 東京 45分</div>
       </div>
 
       <!-- 行2左：電車・交通 -->
-      <div class="tile tile-train" data-tab="train" data-tile="train">
+      <div class="tile tile-train" data-tab="train">
         <div class="tile-label">電車・交通</div>
         <div id="top-train-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
@@ -680,30 +566,30 @@
       </div>
 
       <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
+      <div class="tile tile-haneda" data-tab="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
         <div class="tile-label" style="padding:0 0 0;">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
         <div id="top-haneda-summary" style="margin-top:6px;">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
         </div>
-        <img id="top-haneda-img1" src="" alt="" style="width:calc(100% + 20px);margin:8px -10px 0;display:block;object-fit:cover;min-height:0;">
+        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:calc(100% + 20px);margin:8px -10px 0;display:block;object-fit:cover;">
       </div>
 
       <!-- 行2右：道路情報 -->
-      <div class="tile tile-traffic" data-tab="traffic" data-tile="traffic">
+      <div class="tile tile-traffic" data-tab="traffic">
         <div class="tile-label">道路情報</div>
         <img id="top-shutoko-img" alt="首都高交通規制マップ"
           style="width:100%;border-radius:4px;display:block;margin-top:6px;">
       </div>
 
       <!-- 行3左：売上 -->
-      <div class="tile tile-sales" data-tab="sales" data-tile="sales">
-        <div class="tile-label">今月度の売上</div>
+      <div class="tile tile-sales" data-tab="sales">
+        <div class="tile-label">売上管理</div>
         <div id="top-sales-main">—</div>
         <div id="top-sales-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
 
       <!-- 行3中央：コミュニティ -->
-      <div class="tile tile-community" data-tab="community" data-tile="community">
+      <div class="tile tile-community" data-tab="community">
         <div class="tile-label">コミュニティ</div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
           <div style="font-size:12px; color:var(--text);">「六本木で3万超えのロング出た」<span style="color:var(--gray); font-size:11px; margin-left:6px;">3分前</span></div>
@@ -714,7 +600,7 @@
       </div>
 
       <!-- 行3右：ニュース -->
-      <div class="tile tile-news" data-tab="news" data-tile="news">
+      <div class="tile tile-news" data-tab="news">
         <div class="tile-label">業界ニュース</div>
         <div id="top-news-main" style="margin-top:6px;display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text);line-height:1.4;">読込中…</div>
         <div id="top-news-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
@@ -800,10 +686,16 @@
       </div>
 
       <div id="report-ocr-area">
-      <button onclick="document.getElementById('report-file-input').click()"
-        style="width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-        📷 写真を選択して読み取る
-      </button>
+      <div id="report-upload-area"
+        style="border:2px dashed rgba(201,168,76,.35);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;"
+        onclick="document.getElementById('report-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+        ondragleave="this.style.borderColor='rgba(201,168,76,.35)'"
+        ondrop="handleReportDrop(event)">
+        <div style="font-size:28px;margin-bottom:8px;">📋</div>
+        <div style="font-size:13px;color:var(--text);font-weight:600;">日報をここにドロップ</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px;">またはタップして選択　JPG / PNG / PDF</div>
+      </div>
       <input type="file" id="report-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleReportFile(this.files[0])">
 
       <!-- プレビュー＋読み取り結果 -->
@@ -1968,16 +1860,6 @@
   <!-- アカウント -->
   <div class="tab-pane" id="tab-account">
 
-    <!-- ログイン状態バー -->
-    <div id="auth-status-bar" style="display:none;">
-      <span style="font-size:16px;">👤</span>
-      <div style="flex:1;">
-        <div id="auth-status-email" style="font-weight:700;color:var(--white);font-size:12px;"></div>
-        <div style="color:var(--gray);font-size:10px;">クラウド同期中</div>
-      </div>
-      <button onclick="authSignOut()" style="background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--gray);font-size:11px;padding:4px 10px;cursor:pointer;">ログアウト</button>
-    </div>
-
     <!-- アバター＋名前ヘッダー -->
     <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:16px;">
       <div id="acc-avatar-display" onclick="openAvatarPicker()"
@@ -2157,23 +2039,7 @@
       <div id="salary-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
     </div>
 
-    <!-- ④ TOPカスタマイズ -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-title" style="margin-bottom:4px;">TOPカスタマイズ</div>
-      <div style="font-size:11px;color:var(--gray);margin-bottom:14px;">タイルの表示・非表示と並び順を変更できます（天気は固定）</div>
-      <div id="top-customize-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      <button onclick="saveTopLayout()"
-        style="width:100%;margin-top:14px;padding:11px;background:var(--gold);color:#000;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">
-        TOPレイアウトを保存
-      </button>
-      <button onclick="resetTopLayout()"
-        style="width:100%;margin-top:8px;padding:9px;background:none;border:1px solid var(--border);color:var(--gray);font-size:12px;border-radius:6px;cursor:pointer;">
-        デフォルトに戻す
-      </button>
-      <div id="top-layout-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
-    </div>
-
-    <!-- ⑤ データ管理 -->
+    <!-- ④ データ管理 -->
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title" style="margin-bottom:12px;">データ管理</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
@@ -2375,7 +2241,7 @@
   const radarIframe = document.getElementById('radarIframe');
   const radarClose = document.getElementById('radarClose');
 
-  document.querySelector('.weather-bar').addEventListener('click', () => {
+  document.querySelector('.tile-weather').addEventListener('click', () => {
     radarIframe.src = radarSrc;
     radarModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -2450,61 +2316,6 @@
   updateShutokoMap();
   setInterval(updateShutokoMap, 60000);
 
-  // アラートバー用グローバル状態
-  let _trainDisruptions = [];
-  let _userCoords = null;
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      _userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    }, () => {});
-  }
-
-  function updateAlertBar() {
-    const bar = document.getElementById('alert-bar');
-    if (!bar) return;
-    const now = new Date();
-    let nowMin = now.getHours() * 60 + now.getMinutes();
-    if (nowMin < 4 * 60) nowMin += 24 * 60;
-    const chips = [];
-
-    // 終電アラート（30分以内）
-    LAST_TRAINS.forEach(t => {
-      let tMin = t.h * 60 + t.m;
-      if (tMin < 4 * 60) tMin += 24 * 60;
-      const remain = tMin - nowMin;
-      if (remain >= 0 && remain <= 30) {
-        const label = remain === 0 ? '間もなく終電' : `終電まで${remain}分`;
-        chips.push(`<span class="alert-chip ac-last-train"><span class="ac-badge">終電</span>${t.line} ${t.from}→${t.to} ${label}</span>`);
-      }
-    });
-
-    // 運行障害アラート
-    _trainDisruptions.forEach(l => {
-      chips.push(`<span class="alert-chip ac-disruption"><span class="ac-badge">障害</span>${l.name} ${l.status}</span>`);
-    });
-
-    // イベント終演予測（開演時刻＋3時間以内）
-    document.querySelectorAll('#tab-event .event-card, #tab-event .news-item').forEach(card => {
-      const meta = card.querySelector('.event-meta, .news-meta');
-      if (!meta) return;
-      const m = meta.textContent.match(/開演\s*(\d{1,2}):(\d{2})/);
-      if (!m) return;
-      let startMin = parseInt(m[1]) * 60 + parseInt(m[2]);
-      const endMin = startMin + 180;
-      if (nowMin >= startMin && nowMin <= endMin) {
-        const title = (card.querySelector('.event-title, .news-title') || card).textContent.trim().slice(0, 20);
-        chips.push(`<span class="alert-chip ac-event"><span class="ac-badge">終演</span>${title} まもなく終演予測</span>`);
-      }
-    });
-
-    if (chips.length === 0) {
-      bar.style.display = 'none';
-    } else {
-      bar.style.display = 'flex';
-      bar.innerHTML = chips.join('');
-    }
-  }
-
   // 電車運行障害情報（Yahoo路線情報より）
   async function loadTrainInfo() {
     const statusEl = document.getElementById('train-status');
@@ -2551,17 +2362,6 @@
           topList.innerHTML += `<div style="font-size:9px;color:var(--gray);margin-top:2px;">他${data.lines.length - 4}路線に障害</div>`;
         }
       }
-      // ピックアップに運行障害を追加
-      if (data.lines && data.lines.length > 0) {
-        addPickupItems(data.lines.slice(0, 3).map(l => ({
-          badge: '運行障害', badgeClass: 'pi-train',
-          text: `${l.name} ${l.status}`, tab: 'train'
-        })));
-        _trainDisruptions = data.lines;
-      } else {
-        _trainDisruptions = [];
-      }
-      updateAlertBar();
     } catch(e) {
       statusEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
       const topList2 = document.getElementById('top-train-list');
@@ -2570,8 +2370,6 @@
   }
   loadTrainInfo();
   setInterval(loadTrainInfo, 60000);
-  updateAlertBar();
-  setInterval(updateAlertBar, 60000);
 
   // 新幹線運行状況（JR東日本・JR東海 運行情報を取得）
   async function loadShinkansenInfo() {
@@ -2965,10 +2763,6 @@
         topMain.innerHTML = `<span style="font-size:11px;line-height:1.4;">${all[0].title}</span>`;
         if (topSub) topSub.textContent = all[1]?.title?.slice(0, 28) + '…' || '';
       }
-      // ピックアップに最新ニュースを追加
-      if (all.length > 0) {
-        addPickupItems(all.slice(0, 5).map(n => ({ badge: 'ニュース', badgeClass: 'pi-news', text: n.title, tab: 'news' })));
-      }
     } catch(e) {
       const allEl = document.getElementById('news-all');
       if (allEl) allEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
@@ -3111,13 +2905,9 @@
         : `<span style="color:var(--gray);">${g.key}</span>`;
       const evHtml = g.events.map(ev => {
         const shortName = ev.name.length > 12 ? ev.name.slice(0, 12) + '…' : ev.name;
-        const shortVenue = ev.venue ? (ev.venue.length > 10 ? ev.venue.slice(0, 10) + '…' : ev.venue) : '';
-        return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
-          <div style="flex:1;overflow:hidden;">
-            <div style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortName}</div>
-            ${shortVenue ? `<div style="font-size:9px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍${shortVenue}</div>` : ''}
-          </div>
-          <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;flex-shrink:0;">${ev.badgeText.replace('需要 ', '')}</span>
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+          <span style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${shortName}</span>
+          <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;">${ev.badgeText.replace('需要 ', '')}</span>
         </div>`;
       }).join('');
       return `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
@@ -3151,12 +2941,12 @@
     if (!swRunning) {
       swStart = Date.now() - swElapsed;
       swTimer = setInterval(() => { swTick(); swSave(); }, 100);
-      btn.textContent = '業務終了';
+      btn.textContent = 'STOP';
       btn.style.background = 'var(--red)';
       btn.style.color = '#fff';
     } else {
       clearInterval(swTimer);
-      btn.textContent = '業務開始';
+      btn.textContent = 'START';
       btn.style.background = 'var(--green)';
       btn.style.color = '#000';
     }
@@ -3168,7 +2958,7 @@
     swRunning = false; swElapsed = 0;
     document.getElementById('sw-display').textContent = '00:00:00';
     const btn = document.getElementById('sw-start');
-    btn.textContent = '業務開始';
+    btn.textContent = 'START';
     btn.style.background = 'var(--green)';
     btn.style.color = '#000';
     swSave();
@@ -3185,7 +2975,7 @@
         swTimer   = setInterval(() => { swTick(); swSave(); }, 100);
         swTick();
         const btn = document.getElementById('sw-start');
-        if (btn) { btn.textContent = '業務終了'; btn.style.background = 'var(--red)'; btn.style.color = '#fff'; }
+        if (btn) { btn.textContent = 'STOP'; btn.style.background = 'var(--red)'; btn.style.color = '#fff'; }
       } else if (saved.elapsed) {
         swElapsed = saved.elapsed;
         const s   = Math.floor(swElapsed / 1000) % 60;
@@ -3598,29 +3388,26 @@
     const hourlyRate = timeCount && totalMinutes > 0 ? Math.round(total / (totalMinutes / 60)) : null;
 
     mainEl.innerHTML = `
-      <div style="font-size:clamp(16px,4.5vw,26px);font-weight:800;color:var(--gold);line-height:1;white-space:nowrap;">¥${total.toLocaleString()}</div>
-      <div style="font-size:10px;color:rgba(201,168,76,.55);margin-top:1px;">税込 今月累計</div>
-      <div style="font-size:clamp(11px,3vw,15px);font-weight:600;color:rgba(255,255,255,.6);margin-top:6px;white-space:nowrap;">税抜 ¥${totalExTax.toLocaleString()}</div>
-      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:6px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:9px;color:var(--gray);">時間単価</div>
-          <div style="font-size:clamp(11px,3vw,14px);font-weight:700;color:rgba(255,255,255,.85);margin-top:1px;white-space:nowrap;">${hourlyRate ? '¥'+fmt(Math.round(hourlyRate/100)*100) : '—'}</div>
-        </div>
+      <div style="font-size:clamp(14px,4.2vw,24px);font-weight:800;color:var(--gold);line-height:1;white-space:nowrap;">¥${total.toLocaleString()}</div>
+      <div style="font-size:10px;color:rgba(201,168,76,.55);margin-top:1px;">税込</div>
+      <div style="font-size:clamp(12px,3.5vw,18px);font-weight:700;color:rgba(255,255,255,.7);margin-top:4px;white-space:nowrap;">¥${totalExTax.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:1px;margin-bottom:8px;">税抜</div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">
+        <div style="font-size:9px;color:var(--gray);">時間単価</div>
+        <div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:rgba(255,255,255,.85);margin-top:2px;white-space:nowrap;">${hourlyRate ? '¥'+fmt(Math.round(hourlyRate/100)*100) : '—'}</div>
+      </div>
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:6px;">
         <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
-        <div>
-          <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
-          <div style="font-size:clamp(11px,3vw,14px);font-weight:700;margin-top:1px;white-space:nowrap;">${(() => {
-            const TOTAL = 277;
-            const usedH = totalMinutes / 60;
-            const remH = Math.max(0, TOTAL - usedH);
-            const remHH = Math.floor(remH);
-            const remMM = Math.round((remH - remHH) * 60);
-            const pct = Math.min(100, Math.round(usedH / TOTAL * 100));
-            const col = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'var(--green)';
-            return `<span style="color:${col};">${timeCount ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</span>`;
-          })()}</div>
-        </div>
+        ${(() => {
+          const TOTAL = 277;
+          const usedH = totalMinutes / 60;
+          const remH = Math.max(0, TOTAL - usedH);
+          const remHH = Math.floor(remH);
+          const remMM = Math.round((remH - remHH) * 60);
+          const pct = Math.min(100, Math.round(usedH / TOTAL * 100));
+          const col = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'var(--green)';
+          return `<div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:${col};margin-top:2px;white-space:nowrap;">${timeCount ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</div>`;
+        })()}
       </div>`;
     subEl.innerHTML = `${reports.length}日分&nbsp;·&nbsp;${timeCount ? fmtTime(totalMinutes) : '—'}`;
   }
@@ -4022,139 +3809,6 @@
   const PROFILE_KEY    = 'userProfile';
   const PUB_KEY        = 'userPublicSettings';
   const SALARY_KEY     = 'userSalarySettings';
-  const TOP_LAYOUT_KEY = 'topLayout';
-
-  // タイル定義（順序 = デフォルトのgrid位置: 左→右、上→下）
-  const TILE_DEFS = [
-    { id: 'train',     label: '電車・交通' },
-    { id: 'haneda',    label: '羽田空港' },
-    { id: 'stand',     label: '街の様子' },
-    { id: 'event',     label: 'イベント' },
-    { id: 'community', label: 'コミュニティ' },
-    { id: 'sales',     label: '今月度の売上' },
-    { id: 'traffic',   label: '道路情報' },
-    { id: 'news',      label: '業界ニュース' },
-  ];
-
-  function defaultTopLayout() {
-    return TILE_DEFS.map(t => ({ id: t.id, visible: true }));
-  }
-
-  function loadTopLayout() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(TOP_LAYOUT_KEY) || 'null');
-      if (!saved) return defaultTopLayout();
-      // 新タイルが増えた場合に補完
-      const ids = saved.map(t => t.id);
-      TILE_DEFS.forEach(def => { if (!ids.includes(def.id)) saved.push({ id: def.id, visible: true }); });
-      return saved;
-    } catch { return defaultTopLayout(); }
-  }
-
-  function applyTopLayout() {
-    const layout = loadTopLayout();
-    const topGrid = document.querySelector('.top-layout');
-    if (!topGrid) return;
-
-    const visible = layout.filter(t => t.visible);
-    const count   = visible.length;
-
-    // タイル数に応じてカラム数を決定
-    // 1→1列, 2→2列, 3→3列, 4→2列×2行, 5〜6→3列×2行, 7〜8→3列×3行
-    let cols;
-    if      (count === 1) cols = 1;
-    else if (count === 2) cols = 2;
-    else if (count === 4) cols = 2;
-    else                  cols = 3;
-
-    const rows = Math.max(1, Math.ceil(count / cols));
-
-    // カラム幅: 等分
-    topGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-
-    // 行の高さをカラム数・行数に応じて最適化
-    const rowH = rows === 1
-      ? (cols === 1 ? '320px' : cols === 2 ? '280px' : '240px')
-      : rows === 2 ? '220px'
-      : '190px';
-    topGrid.style.gridTemplateRows = `repeat(${rows}, ${rowH})`;
-
-    // 各タイルに順番にgrid位置を割り当て
-    let col = 1, row = 1;
-    layout.forEach(({ id, visible }) => {
-      const el = document.querySelector(`[data-tile="${id}"]`);
-      if (!el) return;
-      if (!visible) {
-        el.style.display = 'none';
-        el.style.gridColumn = '';
-        el.style.gridRow    = '';
-        return;
-      }
-      el.style.display    = '';
-      el.style.gridColumn = String(col);
-      el.style.gridRow    = String(row);
-      col++;
-      if (col > cols) { col = 1; row++; }
-    });
-  }
-
-  function renderTopCustomizeList() {
-    const layout = loadTopLayout();
-    const list = document.getElementById('top-customize-list');
-    if (!list) return;
-    list.innerHTML = layout.map((item, idx) => {
-      const def = TILE_DEFS.find(t => t.id === item.id) || { label: item.id };
-      const isFixed = def.fixed;
-      return `
-      <div id="tlrow-${idx}" data-tile-idx="${idx}"
-        style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
-        <span style="font-size:13px;font-weight:600;color:${isFixed?'var(--gold)':'var(--text)'};flex:1;">${def.label}${isFixed?' 🔒':''}</span>
-        ${isFixed ? `<span style="font-size:11px;color:var(--gray);">固定</span>` : `
-          <label class="toggle-sw"><input type="checkbox" id="tlvis-${idx}" ${item.visible?'checked':''}><span class="toggle-track"></span></label>
-          <button onclick="moveTile(${idx},-1)" ${idx===0?'disabled':''} style="background:none;border:1px solid var(--border);color:var(--gray);font-size:14px;width:28px;height:28px;border-radius:5px;cursor:pointer;">↑</button>
-          <button onclick="moveTile(${idx},+1)" ${idx===layout.length-1?'disabled':''} style="background:none;border:1px solid var(--border);color:var(--gray);font-size:14px;width:28px;height:28px;border-radius:5px;cursor:pointer;">↓</button>
-        `}
-      </div>`;
-    }).join('');
-  }
-
-  function moveTile(idx, dir) {
-    const layout = loadTopLayout();
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= layout.length) return;
-    // 天気タイル（固定）はスキップ
-    if (layout[newIdx].id === 'weather' || layout[idx].id === 'weather') return;
-    [layout[idx], layout[newIdx]] = [layout[newIdx], layout[idx]];
-    localStorage.setItem(TOP_LAYOUT_KEY, JSON.stringify(layout));
-    renderTopCustomizeList();
-  }
-
-  function saveTopLayout() {
-    const layout = loadTopLayout();
-    layout.forEach((item, idx) => {
-      const chk = document.getElementById(`tlvis-${idx}`);
-      if (chk) item.visible = chk.checked;
-    });
-    localStorage.setItem(TOP_LAYOUT_KEY, JSON.stringify(layout));
-    applyTopLayout();
-    showMsg('top-layout-save-msg', '保存しました ✓');
-  }
-
-  function resetTopLayout() {
-    localStorage.removeItem(TOP_LAYOUT_KEY);
-    applyTopLayout();
-    renderTopCustomizeList();
-    showMsg('top-layout-save-msg', 'デフォルトに戻しました');
-  }
-
-  // アカウントタブを開いたときにリストを描画
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.tab === 'account') renderTopCustomizeList();
-      });
-    });
-  });
 
   const AVATARS = ['🚕','🚗','🚙','🏎️','🚐','⭐','🌟','💫','🔥','⚡','🎯','👑','🦊','🐯','🦁','🐸','🦅','🌙','☀️','🌊'];
 
@@ -4397,41 +4051,6 @@
   }
 
   // 初期化
-  // ── PICKUP BAR ────────────────────────────────────────────────────
-  const _pickupItems = [];
-
-  function addPickupItems(items) {
-    items.forEach(item => {
-      if (!_pickupItems.find(p => p.text === item.text)) _pickupItems.push(item);
-    });
-    renderPickup();
-  }
-
-  function renderPickup() {
-    const track = document.getElementById('pickup-track');
-    if (!track || _pickupItems.length === 0) return;
-    const html = _pickupItems.map(p => `
-      <div class="pickup-item" onclick="switchTab('${p.tab || 'top'}')">
-        <span class="pi-badge ${p.badgeClass}">${p.badge}</span>
-        <span>${p.text.length > 35 ? p.text.slice(0, 35) + '…' : p.text}</span>
-      </div>`).join('');
-    // 無限ループ用に2倍複製
-    track.innerHTML = html + html;
-    // アニメーション速度をアイテム数に合わせて調整
-    const duration = Math.max(8, _pickupItems.length * 2.5);
-    track.style.animationDuration = duration + 's';
-  }
-
-  // イベント情報もピックアップに追加（buildWeekEvents後に呼ばれる想定）
-  function addEventPickups(events) {
-    if (!events || events.length === 0) return;
-    addPickupItems(events.slice(0, 4).map(e => ({
-      badge: 'イベント', badgeClass: 'pi-event',
-      text: e.name || e.title || '', tab: 'event'
-    })));
-  }
-
-  // 初期化
   (function initProfile() {
     const profile = loadProfile();
     if (profile) {
@@ -4441,7 +4060,6 @@
     } else {
       document.getElementById('setup-modal').style.display = 'flex';
     }
-    applyTopLayout();
   })();
 </script>
 </body>
