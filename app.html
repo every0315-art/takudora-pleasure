@@ -4897,6 +4897,21 @@
     });
   }
 
+  function sbErrorMsg(msg) {
+    if (!msg) return '不明なエラーが発生しました';
+    if (msg.includes('Invalid login credentials')) return 'メールアドレスまたはパスワードが間違っています';
+    if (msg.includes('Email not confirmed')) return 'メールアドレスの確認が完了していません。確認メールをご確認ください';
+    if (msg.includes('User already registered')) return 'このメールアドレスはすでに登録されています';
+    if (msg.includes('Password should be at least')) return 'パスワードは6文字以上にしてください';
+    if (msg.includes('rate limit') || msg.includes('Rate limit') || msg.includes('email rate')) return 'メール送信の上限に達しました。しばらく時間をおいてから再試行してください';
+    if (msg.includes('For security purposes')) return 'セキュリティのため、しばらく時間をおいてから再試行してください';
+    if (msg.includes('Unable to validate email')) return 'メールアドレスの形式が正しくありません';
+    if (msg.includes('Signup is disabled')) return '新規登録は現在無効になっています';
+    if (msg.includes('invalid email')) return 'メールアドレスの形式が正しくありません';
+    if (msg.includes('Network') || msg.includes('fetch')) return 'ネットワークエラーが発生しました。接続を確認してください';
+    return msg;
+  }
+
   async function sbResetPassword() {
     if (!_sb) return;
     const email = document.getElementById('sb-email').value.trim() || prompt('メールアドレスを入力してください');
@@ -4907,7 +4922,7 @@
     const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://pleasure.delivery-every.com/app.html' });
     if (error) {
       msgEl.style.color = '#ff6b6b';
-      msgEl.textContent = error.message;
+      msgEl.textContent = sbErrorMsg(error.message);
     } else {
       msgEl.style.color = 'var(--gold)';
       msgEl.textContent = `${email} にリセットメールを送信しました`;
@@ -4935,7 +4950,7 @@
       msgEl.textContent = '';
     } catch(e) {
       msgEl.style.color='#ff6b6b';
-      msgEl.textContent = e.message || 'エラーが発生しました';
+      msgEl.textContent = sbErrorMsg(e.message) || 'エラーが発生しました';
     }
   }
 
