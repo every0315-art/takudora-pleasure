@@ -1912,6 +1912,9 @@
         <input type="email" class="sb-input" id="sb-email" placeholder="メールアドレス" autocomplete="email">
         <input type="password" class="sb-input" id="sb-password" placeholder="パスワード（6文字以上）" autocomplete="current-password">
         <button class="sb-btn sb-btn-primary" id="sb-submit-btn" onclick="sbSubmit()">ログイン</button>
+        <div style="text-align:center;margin-top:8px;">
+          <button onclick="sbResetPassword()" style="background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;text-decoration:underline;">パスワードをお忘れの方</button>
+        </div>
         <div id="sb-msg" style="font-size:12px;min-height:18px;text-align:center;margin-top:4px;"></div>
       </div>
     </div>
@@ -4875,6 +4878,25 @@
     document.getElementById('sb-tab-signup').classList.toggle('active', mode === 'signup');
     document.getElementById('sb-submit-btn').textContent = mode === 'login' ? 'ログイン' : '新規登録';
     document.getElementById('sb-msg').textContent = '';
+  }
+
+  async function sbResetPassword() {
+    if (!_sb) return;
+    const email = document.getElementById('sb-email').value.trim() || prompt('メールアドレスを入力してください');
+    if (!email) return;
+    const msgEl = document.getElementById('sb-msg');
+    msgEl.style.color = 'var(--gray)';
+    msgEl.textContent = '送信中…';
+    const { error } = await _sb.auth.resetPasswordForEmail(email, {
+      redirectTo: location.origin + '/app'
+    });
+    if (error) {
+      msgEl.style.color = '#ff6b6b';
+      msgEl.textContent = error.message;
+    } else {
+      msgEl.style.color = 'var(--gold)';
+      msgEl.textContent = `${email} にリセットメールを送信しました`;
+    }
   }
 
   async function sbSubmit() {
