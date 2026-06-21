@@ -2064,29 +2064,29 @@
       </div>
       <div style="font-size:11px;color:var(--gray);margin-bottom:14px;">この情報は常に非公開です</div>
       <div style="display:grid;gap:12px;">
+        <div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">給与締日</div>
+          <input type="hidden" id="acc-closing-day" value="0">
+          <div id="closing-day-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div>
-            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">給与締日</div>
-            <select id="acc-closing-day"
-              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
-              <option value="0">末日</option>
-              <option value="5">5日</option>
-              <option value="10">10日</option>
-              <option value="15">15日</option>
-              <option value="20">20日</option>
-              <option value="25">25日</option>
-            </select>
-          </div>
           <div>
             <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">歩率（%）</div>
             <input type="number" id="acc-step-rate" placeholder="60" min="0" max="100"
               style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
           </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">プール金 歩率（%）</div>
+            <input type="number" id="acc-pool-rate" placeholder="5" min="0" max="100" step="0.1"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+          </div>
         </div>
         <div>
-          <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">プール金（月額 ¥）</div>
-          <input type="number" id="acc-pool" placeholder="30000"
-            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:6px;">プール金 支払い月</div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
+            <input type="hidden" id="acc-pool-months" value="">
+          </div>
+          <div id="pool-month-calendar" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;"></div>
         </div>
         <div>
           <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">扶養家族数（人）</div>
@@ -4158,9 +4158,15 @@
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     set('acc-closing-day', s.closingDay);
     set('acc-step-rate',   s.stepRate);
-    set('acc-pool',        s.pool);
+    set('acc-pool-rate',   s.poolRate ?? s.pool ?? '');
     set('acc-dependents',  s.dependents);
     set('acc-deduction',   s.deduction);
+    // 締め日カレンダー選択状態を反映
+    renderClosingDayCalendar(s.closingDay);
+    // プール金支払い月を反映
+    const months = s.poolMonths ? s.poolMonths.split(',').filter(Boolean) : [];
+    set('acc-pool-months', s.poolMonths ?? '');
+    renderPoolMonthCalendar(months);
     // 売上管理の締め日とも同期
     const closingSel = document.getElementById('closing-day-select');
     if (closingSel && s.closingDay !== undefined) {
@@ -4222,11 +4228,13 @@
 
   function saveSalarySettings() {
     const s = {
-      closingDay: document.getElementById('acc-closing-day').value,
-      stepRate:   document.getElementById('acc-step-rate').value,
-      pool:       document.getElementById('acc-pool').value,
-      dependents: document.getElementById('acc-dependents').value,
-      deduction:  document.getElementById('acc-deduction').value,
+      closingDay:  document.getElementById('acc-closing-day').value,
+      stepRate:    document.getElementById('acc-step-rate').value,
+      poolRate:    document.getElementById('acc-pool-rate').value,
+      poolMonths:  document.getElementById('acc-pool-months').value,
+      pool:        document.getElementById('acc-pool-rate').value, // 後方互換
+      dependents:  document.getElementById('acc-dependents').value,
+      deduction:   document.getElementById('acc-deduction').value,
     };
     localStorage.setItem(SALARY_KEY, JSON.stringify(s));
     sbPush(SALARY_KEY, JSON.stringify(s));
@@ -4431,6 +4439,51 @@
       if (data?.session?.user) sbUpdateUI(data.session.user);
     });
   }
+
+  // ── 締め日カレンダー ──
+  function renderClosingDayCalendar(selected) {
+    const wrap = document.getElementById('closing-day-calendar');
+    if (!wrap) return;
+    const sel = String(selected ?? '');
+    const btnStyle = (v) => {
+      const active = String(v) === sel;
+      return `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;`;
+    };
+    const days = Array.from({length:31},(_,i)=>i+1);
+    wrap.innerHTML = days.map(d=>`<button type="button" style="${btnStyle(d)}" onclick="selectClosingDay(${d})">${d}</button>`).join('')
+      + `<button type="button" style="${btnStyle(0)};grid-column:span 2;" onclick="selectClosingDay(0)">末日</button>`;
+  }
+  function selectClosingDay(v) {
+    const inp = document.getElementById('acc-closing-day');
+    if (inp) inp.value = v;
+    renderClosingDayCalendar(v);
+  }
+
+  // ── プール金支払い月カレンダー ──
+  function renderPoolMonthCalendar(selected) {
+    const wrap = document.getElementById('pool-month-calendar');
+    if (!wrap) return;
+    const sel = selected.map(String);
+    wrap.innerHTML = Array.from({length:12},(_,i)=>i+1).map(m=>{
+      const active = sel.includes(String(m));
+      const st = `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;`;
+      return `<button type="button" style="${st}" onclick="togglePoolMonth(${m})">${m}月</button>`;
+    }).join('');
+  }
+  function togglePoolMonth(m) {
+    const inp = document.getElementById('acc-pool-months');
+    if (!inp) return;
+    let months = inp.value ? inp.value.split(',').filter(Boolean) : [];
+    const idx = months.indexOf(String(m));
+    if (idx >= 0) months.splice(idx,1); else months.push(String(m));
+    months.sort((a,b)=>Number(a)-Number(b));
+    inp.value = months.join(',');
+    renderPoolMonthCalendar(months);
+  }
+
+  // カレンダー初期描画
+  renderClosingDayCalendar(0);
+  renderPoolMonthCalendar([]);
 
   // 初期化
   (function initProfile() {
