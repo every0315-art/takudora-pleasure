@@ -550,6 +550,9 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
+    <!-- ピックアップアラートエリア -->
+    <div id="pickup-alert-area" style="display:none;margin-bottom:8px;"></div>
+
     <!-- ストップウォッチ固定バー -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;">
       <div style="flex:1;">
@@ -2805,6 +2808,64 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
+  // 終電駅座標マップ
+  const STATION_COORDS = {
+    '新宿':       { lat: 35.6896, lon: 139.7006 },
+    '新宿三丁目': { lat: 35.6889, lon: 139.7066 },
+    '大崎':       { lat: 35.6197, lon: 139.7284 },
+    '池袋':       { lat: 35.7295, lon: 139.7109 },
+    '東京':       { lat: 35.6812, lon: 139.7671 },
+    '荻窪':       { lat: 35.7059, lon: 139.6200 },
+    '渋谷':       { lat: 35.6580, lon: 139.7016 },
+    '品川':       { lat: 35.6284, lon: 139.7387 },
+    '上野':       { lat: 35.7141, lon: 139.7774 },
+    '秋葉原':     { lat: 35.6984, lon: 139.7731 },
+    '新橋':       { lat: 35.6665, lon: 139.7585 },
+    '有楽町':     { lat: 35.6752, lon: 139.7637 },
+    '浜松町':     { lat: 35.6551, lon: 139.7566 },
+    '田町':       { lat: 35.6453, lon: 139.7474 },
+    '五反田':     { lat: 35.6262, lon: 139.7233 },
+    '目黒':       { lat: 35.6334, lon: 139.7159 },
+    '恵比寿':     { lat: 35.6467, lon: 139.7101 },
+    '原宿':       { lat: 35.6702, lon: 139.7027 },
+    '代々木':     { lat: 35.6833, lon: 139.7022 },
+    '高田馬場':   { lat: 35.7127, lon: 139.7038 },
+    '目白':       { lat: 35.7213, lon: 139.7068 },
+    '駒込':       { lat: 35.7362, lon: 139.7479 },
+    '巣鴨':       { lat: 35.7335, lon: 139.7394 },
+    '大塚':       { lat: 35.7299, lon: 139.7284 },
+    '鶯谷':       { lat: 35.7218, lon: 139.7785 },
+    '日暮里':     { lat: 35.7278, lon: 139.7709 },
+    '西日暮里':   { lat: 35.7320, lon: 139.7664 },
+    '田端':       { lat: 35.7379, lon: 139.7608 },
+    '王子':       { lat: 35.7518, lon: 139.7374 },
+    '赤羽':       { lat: 35.7778, lon: 139.7210 },
+    '浅草':       { lat: 35.7116, lon: 139.7966 },
+    '錦糸町':     { lat: 35.6964, lon: 139.8138 },
+    '亀戸':       { lat: 35.7019, lon: 139.8266 },
+    '小岩':       { lat: 35.7343, lon: 139.8689 },
+    '市川':       { lat: 35.7213, lon: 139.9246 },
+    '本八幡':     { lat: 35.7279, lon: 139.9302 },
+    '新木場':     { lat: 35.6441, lon: 139.8229 },
+    '辰巳':       { lat: 35.6493, lon: 139.8131 },
+    '豊洲':       { lat: 35.6551, lon: 139.7953 },
+    '月島':       { lat: 35.6697, lon: 139.7843 },
+    '門前仲町':   { lat: 35.6709, lon: 139.7967 },
+    '清澄白河':   { lat: 35.6797, lon: 139.7951 },
+    '住吉':       { lat: 35.6953, lon: 139.8175 },
+    '中野':       { lat: 35.7058, lon: 139.6649 },
+    '三鷹':       { lat: 35.7023, lon: 139.5604 },
+    '吉祥寺':     { lat: 35.7031, lon: 139.5796 },
+    '浦和':       { lat: 35.8580, lon: 139.6555 },
+    '大宮':       { lat: 35.9063, lon: 139.6236 },
+    '立川':       { lat: 35.6977, lon: 139.4131 },
+    '八王子':     { lat: 35.6553, lon: 139.3386 },
+    '川崎':       { lat: 35.5310, lon: 139.6992 },
+    '横浜':       { lat: 35.4658, lon: 139.6222 },
+    '二俣川':     { lat: 35.4720, lon: 139.5429 },
+    '海老名':     { lat: 35.4472, lon: 139.3924 },
+  };
+
   // 現在位置を定期取得
   window._currentPos = null;
   if (navigator.geolocation) {
@@ -2814,35 +2875,32 @@
     setInterval(() => navigator.geolocation.getCurrentPosition(onPos, () => {}, posOpts), 120000);
   }
 
-  // ── ピックアップスクロール ──
-  function updatePickupScroll() {
-    const inner = document.getElementById('pickup-scroll-inner');
-    if (!inner) return;
-    const cards = [];
+  // ── ピックアップアラート ──
+  function updatePickupAlerts() {
+    const area = document.getElementById('pickup-alert-area');
+    if (!area) return;
+    const alerts = [];
     const now = new Date();
     let nowMin = now.getHours() * 60 + now.getMinutes();
     if (nowMin < 4 * 60) nowMin += 24 * 60;
+    const pos = window._currentPos;
 
-    // 終電情報（30分以内）
+    // 終電±15分 かつ 出発駅1km以内
     for (const t of LAST_TRAINS) {
       let tMin = t.h * 60 + t.m;
       if (tMin < 4 * 60) tMin += 24 * 60;
-      const remain = tMin - nowMin;
-      if (remain >= 0 && remain <= 30) {
-        const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
-        const urgent = remain <= 15;
-        cards.push({ type: urgent ? 'pc-urgent' : 'pc-warn', tag: '🚃 終電間近', main: t.line, sub: `${t.from}→${t.to} ${timeStr} (残${remain}分)` });
-      }
+      const diff = tMin - nowMin;
+      if (diff < -15 || diff > 15) continue;
+      const sc = STATION_COORDS[t.from];
+      if (!sc || !pos) continue;
+      const km = haversineKm(pos.lat, pos.lon, sc.lat, sc.lon);
+      if (km > 1) continue;
+      const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
+      const label = diff >= 0 ? `終電${diff}分前` : `終電${Math.abs(diff)}分後`;
+      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）` });
     }
 
-    // 電車遅延
-    if (window._trainDisruptions && window._trainDisruptions.length > 0) {
-      for (const d of window._trainDisruptions.slice(0, 3)) {
-        cards.push({ type: 'pc-urgent', tag: '⚠️ 電車遅延', main: d.line || d, sub: d.status || '運行情報あり' });
-      }
-    }
-
-    // イベント終演±15分をピックアップ表示（位置不問）
+    // イベント終演±15分 かつ 会場5km以内
     const todayM = now.getMonth() + 1, todayD = now.getDate();
     document.querySelectorAll('#tab-event .card').forEach(card => {
       const venueTitle = card.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
@@ -2857,42 +2915,32 @@
         if (eMin < 4 * 60) eMin += 24 * 60;
         const diff = eMin - nowMin;
         if (diff < -15 || diff > 15) return;
+        const vc = VENUE_COORDS[venueTitle];
+        const isNearby = vc && pos && haversineKm(pos.lat, pos.lon, vc.lat, vc.lon) <= 5;
+        if (!isNearby) return;
         const name = item.querySelector('.event-name')?.textContent?.trim() || '';
         const timeStr = `${endMatch[1]}:${endMatch[2]}`;
-        // 5km以内なら赤点滅、それ以外は通常カード
-        const vc = VENUE_COORDS[venueTitle];
-        const pos = window._currentPos;
-        const isNearby = vc && pos && haversineKm(pos.lat, pos.lon, vc.lat, vc.lon) <= 5;
         const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
-        cards.push({
-          type: isNearby ? 'pc-alert' : 'pc-urgent',
-          tag: isNearby ? '🚨 終演ピックアップ' : '🎪 終演間近',
-          main: venueTitle,
-          sub: `${name.slice(0,14)} ${timeStr}（${label}）`
-        });
+        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）` });
       });
     });
 
-    // 天気（悪天候）
-    const weatherDesc = document.querySelector('.weather-desc')?.textContent || '';
-    if (/雨|雪|嵐|台風|雷/.test(weatherDesc)) {
-      cards.push({ type: 'pc-warn', tag: '🌧 天気', main: weatherDesc, sub: '需要増の可能性' });
-    }
-
-    // カード生成
-    if (cards.length === 0) {
-      inner.innerHTML = '<div style="font-size:11px;color:var(--gray);padding:8px 4px;white-space:nowrap;">新着情報はありません</div>';
+    if (alerts.length === 0) {
+      area.style.display = 'none';
+      area.innerHTML = '';
     } else {
-      inner.innerHTML = cards.map(c => `
-        <div class="pickup-card ${c.type}">
-          <div class="pc-tag">${c.tag}</div>
-          <div class="pc-main">${c.main}</div>
-          <div class="pc-sub">${c.sub}</div>
+      area.style.display = 'flex';
+      area.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px;';
+      area.innerHTML = alerts.map(a => `
+        <div class="pickup-card pc-alert" style="max-width:100%;width:100%;">
+          <div class="pc-tag">${a.tag}</div>
+          <div class="pc-main">${a.main}</div>
+          <div class="pc-sub">${a.sub}</div>
         </div>`).join('');
     }
   }
-  updatePickupScroll();
-  setInterval(updatePickupScroll, 60000);
+  updatePickupAlerts();
+  setInterval(updatePickupAlerts, 60000);
 
   // ニュース読み込み（Google News RSS経由）
   function fmtPubDate(pub) {
