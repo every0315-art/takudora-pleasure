@@ -3830,7 +3830,7 @@
     const now = new Date();
     const thisYear = now.getFullYear();
 
-    const sal = (loadSalarySettings ? loadSalarySettings() : null) || {};
+    const sal = JSON.parse(localStorage.getItem('userSalarySettings') || '{}');
     // 締め日はsalary settingsを優先、なければ独立キー
     const closingDay = Number(sal.closingDay) || loadClosingDay() || 0;
     const stepRate = parseFloat(sal.stepRate) || 0;
