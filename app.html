@@ -532,10 +532,13 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
-    <!-- ストップウォッチ操作バー -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:0 2px;justify-content:flex-end;">
-      <button id="sw-start" onclick="swToggle()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
-      <button onclick="swReset()" style="font-size:12px;font-weight:700;padding:5px 18px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">RESET</button>
+    <!-- ストップウォッチ固定バー -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;">
+      <div style="flex:1;">
+        <div id="sw-display" style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;">00:00:00</div>
+        <div id="sw-label" style="font-size:10px;color:var(--gray);margin-top:2px;">乗務開始前</div>
+      </div>
+      <button id="sw-btn" onclick="swAction()" style="font-size:13px;font-weight:700;padding:8px 22px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;">乗務開始</button>
     </div>
     <div class="top-layout">
 
@@ -2956,49 +2959,54 @@
   }
   updateTopEventTile();
 
-  // ストップウォッチ
-  let swRunning = false, swStart = 0, swElapsed = 0, swTimer = null;
+  // ストップウォッチ（idle→running→stopped→idle）
+  let swState = 'idle', swStart = 0, swElapsed = 0, swTimer = null;
+  const pad = n => String(n).padStart(2, '0');
   function swTick() {
     swElapsed = Date.now() - swStart;
-    const s   = Math.floor(swElapsed / 1000) % 60;
-    const m   = Math.floor(swElapsed / 60000) % 60;
-    const h   = Math.floor(swElapsed / 3600000);
-    const pad = n => String(n).padStart(2, '0');
-    document.getElementById('sw-display').textContent =
-      `${pad(h)}:${pad(m)}:${pad(s)}`;
+    const s = Math.floor(swElapsed / 1000) % 60;
+    const m = Math.floor(swElapsed / 60000) % 60;
+    const h = Math.floor(swElapsed / 3600000);
+    document.getElementById('sw-display').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
   }
   function swSave() {
-    localStorage.setItem('sw', JSON.stringify({
-      running: swRunning,
-      startAt: swRunning ? swStart : null,
-      elapsed: swElapsed
-    }));
+    localStorage.setItem('sw', JSON.stringify({ state: swState, startAt: swStart, elapsed: swElapsed }));
   }
-  function swToggle() {
-    const btn = document.getElementById('sw-start');
-    if (!swRunning) {
-      swStart = Date.now() - swElapsed;
-      swTimer = setInterval(() => { swTick(); swSave(); }, 100);
-      btn.textContent = 'STOP';
-      btn.style.background = 'var(--red)';
-      btn.style.color = '#fff';
+  function swUpdateUI() {
+    const btn = document.getElementById('sw-btn');
+    const lbl = document.getElementById('sw-label');
+    const disp = document.getElementById('sw-display');
+    if (swState === 'idle') {
+      btn.textContent = '乗務開始'; btn.style.background = 'var(--green)'; btn.style.color = '#000';
+      lbl.textContent = '乗務開始前';
+      disp.style.color = 'var(--white)';
+    } else if (swState === 'running') {
+      btn.textContent = '乗務終了'; btn.style.background = 'var(--red)'; btn.style.color = '#fff';
+      lbl.textContent = '乗務中';
+      disp.style.color = 'var(--green)';
+    } else {
+      btn.textContent = 'リセット'; btn.style.background = 'rgba(255,255,255,.15)'; btn.style.color = 'var(--white)';
+      lbl.textContent = '乗務終了';
+      disp.style.color = 'var(--gray)';
+    }
+  }
+  function swAction() {
+    if (swState === 'idle') {
+      swStart = Date.now();
+      swElapsed = 0;
+      swState = 'running';
+      swTimer = setInterval(() => { swTick(); swSave(); }, 500);
+    } else if (swState === 'running') {
+      clearInterval(swTimer);
+      swElapsed = Date.now() - swStart;
+      swTick();
+      swState = 'stopped';
     } else {
       clearInterval(swTimer);
-      btn.textContent = 'START';
-      btn.style.background = 'var(--green)';
-      btn.style.color = '#000';
+      swState = 'idle'; swElapsed = 0;
+      document.getElementById('sw-display').textContent = '00:00:00';
     }
-    swRunning = !swRunning;
-    swSave();
-  }
-  function swReset() {
-    clearInterval(swTimer);
-    swRunning = false; swElapsed = 0;
-    document.getElementById('sw-display').textContent = '00:00:00';
-    const btn = document.getElementById('sw-start');
-    btn.textContent = 'START';
-    btn.style.background = 'var(--green)';
-    btn.style.color = '#000';
+    swUpdateUI();
     swSave();
   }
   // 起動時に復元
@@ -3006,23 +3014,21 @@
     try {
       const saved = JSON.parse(localStorage.getItem('sw') || 'null');
       if (!saved) return;
-      if (saved.running && saved.startAt) {
-        swStart   = saved.startAt;
+      swState = saved.state || 'idle';
+      swElapsed = saved.elapsed || 0;
+      swStart = saved.startAt || 0;
+      if (swState === 'running' && swStart) {
         swElapsed = Date.now() - swStart;
-        swRunning = true;
-        swTimer   = setInterval(() => { swTick(); swSave(); }, 100);
+        swTimer = setInterval(() => { swTick(); swSave(); }, 500);
         swTick();
-        const btn = document.getElementById('sw-start');
-        if (btn) { btn.textContent = 'STOP'; btn.style.background = 'var(--red)'; btn.style.color = '#fff'; }
-      } else if (saved.elapsed) {
-        swElapsed = saved.elapsed;
-        const s   = Math.floor(swElapsed / 1000) % 60;
-        const m   = Math.floor(swElapsed / 60000) % 60;
-        const h   = Math.floor(swElapsed / 3600000);
-        const pad = n => String(n).padStart(2, '0');
-        const el  = document.getElementById('sw-display');
+      } else if (swElapsed) {
+        const s = Math.floor(swElapsed / 1000) % 60;
+        const m = Math.floor(swElapsed / 60000) % 60;
+        const h = Math.floor(swElapsed / 3600000);
+        const el = document.getElementById('sw-display');
         if (el) el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
       }
+      swUpdateUI();
     } catch(e) {}
   })();
 
