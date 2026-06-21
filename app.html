@@ -706,7 +706,7 @@
       </div>
 
       <div id="report-ocr-area">
-      <input type="file" id="report-file-input" accept="image/*" style="display:none" onchange="if(this.files&&this.files[0])handleReportFile(this.files[0]);this.value='';">
+      <input type="file" id="report-file-input" accept="image/*" style="display:none" onchange="(function(f){if(f){document.getElementById('report-file-input').value='';handleReportFile(f);}})(this.files&&this.files[0]);">
 
       <!-- プレビュー＋読み取り結果 -->
       <div id="report-result" style="display:none;margin-top:16px;">
@@ -3763,9 +3763,6 @@
 
   async function handleReportFile(file) {
     if (!file) return;
-    // 同じファイルを再選択できるようinputをリセット
-    const inp = document.getElementById('report-file-input');
-    if (inp) inp.value = '';
     window._lastReportFile = file;
     const resultEl  = document.getElementById('report-result');
     const statusEl  = document.getElementById('report-status');
