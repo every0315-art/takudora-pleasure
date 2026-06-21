@@ -316,15 +316,15 @@
        行2: イベント / 天気 / コミュニティ
        行3: 売上    / 道路 / ニュース
     */
-    .tile-event      { grid-column:1; grid-row:2; }
-    .tile-haneda     { grid-column:2; grid-row:1; }
-    .tile-stand      { grid-column:3; grid-row:1; }
-    .tile-train      { grid-column:1; grid-row:1; }
+    .tile-event      { }
+    .tile-haneda     { }
+    .tile-stand      { }
+    .tile-train      { }
     .tile-weather    { grid-column:2; grid-row:2; }
-    .tile-traffic    { grid-column:2; grid-row:3; }
-    .tile-sales      { grid-column:1; grid-row:3; }
-    .tile-community  { grid-column:3; grid-row:2; }
-    .tile-news       { grid-column:3; grid-row:3; }
+    .tile-traffic    { }
+    .tile-sales      { }
+    .tile-community  { }
+    .tile-news       { }
 
     .weather-main { display:flex; flex-direction:row; align-items:center; gap:10px; flex-shrink:0; justify-content:center; }
     .weather-location { font-size: 10px; color: var(--gray); letter-spacing: .1em; }
@@ -520,13 +520,13 @@
     <div class="top-layout">
 
       <!-- 行1左：イベント -->
-      <div class="tile tile-event" data-tab="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
+      <div class="tile tile-event" data-tab="event" data-tile="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
         <div class="tile-label">イベント</div>
         <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
       </div>
 
       <!-- 行1中央：天気（横長） -->
-      <div class="tile tile-weather">
+      <div class="tile tile-weather" data-tile="weather">
         <div id="weather-datetime" class="weather-dt"></div>
         <div class="weather-body">
           <div class="weather-main">
@@ -551,14 +551,14 @@
       </div>
 
       <!-- 行1右：街の様子 -->
-      <div class="tile tile-stand" data-tab="stand">
+      <div class="tile tile-stand" data-tab="stand" data-tile="stand">
         <div class="tile-label">街の様子</div>
         <div class="tile-main s-green">新宿西口<br><span style="font-size:13px;">待ち約5分</span></div>
         <div class="tile-sub">渋谷 22分 / 東京 45分</div>
       </div>
 
       <!-- 行2左：電車・交通 -->
-      <div class="tile tile-train" data-tab="train">
+      <div class="tile tile-train" data-tab="train" data-tile="train">
         <div class="tile-label">電車・交通</div>
         <div id="top-train-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
@@ -566,7 +566,7 @@
       </div>
 
       <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
+      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
         <div class="tile-label" style="padding:0 0 0;">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
         <div id="top-haneda-summary" style="margin-top:6px;">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
@@ -575,21 +575,21 @@
       </div>
 
       <!-- 行2右：道路情報 -->
-      <div class="tile tile-traffic" data-tab="traffic">
+      <div class="tile tile-traffic" data-tab="traffic" data-tile="traffic">
         <div class="tile-label">道路情報</div>
         <img id="top-shutoko-img" alt="首都高交通規制マップ"
           style="width:100%;border-radius:4px;display:block;margin-top:6px;">
       </div>
 
       <!-- 行3左：売上 -->
-      <div class="tile tile-sales" data-tab="sales">
+      <div class="tile tile-sales" data-tab="sales" data-tile="sales">
         <div class="tile-label">売上管理</div>
         <div id="top-sales-main">—</div>
         <div id="top-sales-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
 
       <!-- 行3中央：コミュニティ -->
-      <div class="tile tile-community" data-tab="community">
+      <div class="tile tile-community" data-tab="community" data-tile="community">
         <div class="tile-label">コミュニティ</div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
           <div style="font-size:12px; color:var(--text);">「六本木で3万超えのロング出た」<span style="color:var(--gray); font-size:11px; margin-left:6px;">3分前</span></div>
@@ -600,7 +600,7 @@
       </div>
 
       <!-- 行3右：ニュース -->
-      <div class="tile tile-news" data-tab="news">
+      <div class="tile tile-news" data-tab="news" data-tile="news">
         <div class="tile-label">業界ニュース</div>
         <div id="top-news-main" style="margin-top:6px;display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text);line-height:1.4;">読込中…</div>
         <div id="top-news-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
@@ -2039,7 +2039,23 @@
       <div id="salary-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
     </div>
 
-    <!-- ④ データ管理 -->
+    <!-- ④ TOPカスタマイズ -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:4px;">TOPカスタマイズ</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:14px;">タイルの表示・非表示と並び順を変更できます（天気は固定）</div>
+      <div id="top-customize-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="saveTopLayout()"
+        style="width:100%;margin-top:14px;padding:11px;background:var(--gold);color:#000;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">
+        TOPレイアウトを保存
+      </button>
+      <button onclick="resetTopLayout()"
+        style="width:100%;margin-top:8px;padding:9px;background:none;border:1px solid var(--border);color:var(--gray);font-size:12px;border-radius:6px;cursor:pointer;">
+        デフォルトに戻す
+      </button>
+      <div id="top-layout-save-msg" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-top:8px;"></div>
+    </div>
+
+    <!-- ⑤ データ管理 -->
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title" style="margin-bottom:12px;">データ管理</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
@@ -3809,6 +3825,121 @@
   const PROFILE_KEY    = 'userProfile';
   const PUB_KEY        = 'userPublicSettings';
   const SALARY_KEY     = 'userSalarySettings';
+  const TOP_LAYOUT_KEY = 'topLayout';
+
+  // タイル定義（順序 = デフォルトのgrid位置: 左→右、上→下）
+  const TILE_DEFS = [
+    { id: 'train',     label: '電車・交通' },
+    { id: 'haneda',    label: '羽田空港' },
+    { id: 'stand',     label: '街の様子' },
+    { id: 'event',     label: 'イベント' },
+    { id: 'weather',   label: '天気', fixed: true },
+    { id: 'community', label: 'コミュニティ' },
+    { id: 'sales',     label: '売上管理' },
+    { id: 'traffic',   label: '道路情報' },
+    { id: 'news',      label: '業界ニュース' },
+  ];
+
+  function defaultTopLayout() {
+    return TILE_DEFS.map(t => ({ id: t.id, visible: true }));
+  }
+
+  function loadTopLayout() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TOP_LAYOUT_KEY) || 'null');
+      if (!saved) return defaultTopLayout();
+      // 新タイルが増えた場合に補完
+      const ids = saved.map(t => t.id);
+      TILE_DEFS.forEach(def => { if (!ids.includes(def.id)) saved.push({ id: def.id, visible: true }); });
+      return saved;
+    } catch { return defaultTopLayout(); }
+  }
+
+  function applyTopLayout() {
+    const layout = loadTopLayout();
+    // grid: 3列固定、非表示タイルはスキップして詰める
+    let col = 1, row = 1;
+    layout.forEach(({ id, visible }) => {
+      const el = document.querySelector(`[data-tile="${id}"]`);
+      if (!el) return;
+      if (!visible) { el.style.display = 'none'; return; }
+      // 天気タイルは常にcol2/row2固定
+      if (id === 'weather') {
+        el.style.display = '';
+        el.style.gridColumn = '2';
+        el.style.gridRow = '2';
+        return;
+      }
+      // col2/row2 は天気用にスキップ
+      if (col === 2 && row === 2) {
+        col++;
+        if (col > 3) { col = 1; row++; }
+      }
+      el.style.display = '';
+      el.style.gridColumn = String(col);
+      el.style.gridRow    = String(row);
+      col++;
+      if (col > 3) { col = 1; row++; }
+    });
+  }
+
+  function renderTopCustomizeList() {
+    const layout = loadTopLayout();
+    const list = document.getElementById('top-customize-list');
+    if (!list) return;
+    list.innerHTML = layout.map((item, idx) => {
+      const def = TILE_DEFS.find(t => t.id === item.id) || { label: item.id };
+      const isFixed = def.fixed;
+      return `
+      <div id="tlrow-${idx}" data-tile-idx="${idx}"
+        style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+        <span style="font-size:13px;font-weight:600;color:${isFixed?'var(--gold)':'var(--text)'};flex:1;">${def.label}${isFixed?' 🔒':''}</span>
+        ${isFixed ? `<span style="font-size:11px;color:var(--gray);">固定</span>` : `
+          <label class="toggle-sw"><input type="checkbox" id="tlvis-${idx}" ${item.visible?'checked':''}><span class="toggle-track"></span></label>
+          <button onclick="moveTile(${idx},-1)" ${idx===0?'disabled':''} style="background:none;border:1px solid var(--border);color:var(--gray);font-size:14px;width:28px;height:28px;border-radius:5px;cursor:pointer;">↑</button>
+          <button onclick="moveTile(${idx},+1)" ${idx===layout.length-1?'disabled':''} style="background:none;border:1px solid var(--border);color:var(--gray);font-size:14px;width:28px;height:28px;border-radius:5px;cursor:pointer;">↓</button>
+        `}
+      </div>`;
+    }).join('');
+  }
+
+  function moveTile(idx, dir) {
+    const layout = loadTopLayout();
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= layout.length) return;
+    // 天気タイル（固定）はスキップ
+    if (layout[newIdx].id === 'weather' || layout[idx].id === 'weather') return;
+    [layout[idx], layout[newIdx]] = [layout[newIdx], layout[idx]];
+    localStorage.setItem(TOP_LAYOUT_KEY, JSON.stringify(layout));
+    renderTopCustomizeList();
+  }
+
+  function saveTopLayout() {
+    const layout = loadTopLayout();
+    layout.forEach((item, idx) => {
+      const chk = document.getElementById(`tlvis-${idx}`);
+      if (chk) item.visible = chk.checked;
+    });
+    localStorage.setItem(TOP_LAYOUT_KEY, JSON.stringify(layout));
+    applyTopLayout();
+    showMsg('top-layout-save-msg', '保存しました ✓');
+  }
+
+  function resetTopLayout() {
+    localStorage.removeItem(TOP_LAYOUT_KEY);
+    applyTopLayout();
+    renderTopCustomizeList();
+    showMsg('top-layout-save-msg', 'デフォルトに戻しました');
+  }
+
+  // アカウントタブを開いたときにリストを描画
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.tab === 'account') renderTopCustomizeList();
+      });
+    });
+  });
 
   const AVATARS = ['🚕','🚗','🚙','🏎️','🚐','⭐','🌟','💫','🔥','⚡','🎯','👑','🦊','🐯','🦁','🐸','🦅','🌙','☀️','🌊'];
 
@@ -4060,6 +4191,7 @@
     } else {
       document.getElementById('setup-modal').style.display = 'flex';
     }
+    applyTopLayout();
   })();
 </script>
 </body>
