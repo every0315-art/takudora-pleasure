@@ -3796,6 +3796,8 @@
     const fieldsEl  = document.getElementById('report-fields');
     const previewEl = document.getElementById('report-preview');
 
+    // iOSでライブラリから戻った直後にDOMが更新されないことがあるため遅延
+    await new Promise(r => setTimeout(r, 100));
     resultEl.style.display = 'block';
     fieldsEl.innerHTML = '';
     statusEl.textContent = '読み取り中…';
