@@ -3297,7 +3297,7 @@
       return;
     }
 
-    const post = { initial, name, body, location: _reportLocation, ts: now.getTime() };
+    const post = { initial, name, body, location: _reportLocation, lat: _reportCoords.lat, lng: _reportCoords.lng, ts: now.getTime() };
     const posts = [post, ...loadCommunityPosts()].slice(0, 50);
     saveCommunityPosts(posts);
     renderCommunityPosts();
@@ -3324,7 +3324,9 @@
     // 先頭に挿入（card-titleの直後）
     const title = container.querySelector('.card-title');
     const frag = document.createDocumentFragment();
-    posts.forEach(p => {
+    const mapIds = [];
+    posts.forEach((p, i) => {
+      const mapId = `post-map-${p.ts}`;
       const div = document.createElement('div');
       div.className = 'post my-post';
       div.innerHTML = `
@@ -3333,10 +3335,23 @@
           <div><div class="post-name">${p.name}</div><div class="post-time">${timeAgo(p.ts)}</div></div>
         </div>
         <div class="post-body">${p.body}</div>
-        ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}`;
+        ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}
+        ${p.lat ? `<div id="${mapId}" style="width:100%;height:120px;border-radius:8px;margin-top:8px;"></div>` : ''}`;
       frag.appendChild(div);
+      if (p.lat) mapIds.push({ mapId, lat: p.lat, lng: p.lng });
     });
     title.after(frag);
+    // 地図を非同期で初期化
+    mapIds.forEach(({ mapId, lat, lng }) => {
+      setTimeout(() => {
+        const el = document.getElementById(mapId);
+        if (!el || el.dataset.mapInit) return;
+        el.dataset.mapInit = '1';
+        const m = L.map(mapId, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+        L.circleMarker([lat, lng], { radius: 7, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
+      }, 100);
+    });
   }
 
   function updateCommunityTile() {
