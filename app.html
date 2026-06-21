@@ -1076,19 +1076,6 @@
     </div>
 
     <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-        東京着発 新幹線 <span style="font-size:10px;color:var(--gray);font-weight:400;" id="shinkansen-updated"></span>
-      </div>
-      <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">東京駅 発着の新幹線運行状況</div>
-      <div id="shinkansen-status">読み込み中…</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
-        <a href="https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html" target="_blank" rel="noopener" style="color:var(--gold);">東海道新幹線（JR東海）</a>
-        <a href="https://traininfo.jreast.co.jp/train_info/shinkansen.aspx" target="_blank" rel="noopener" style="color:var(--gold);">東北・上越・北陸新幹線（JR東日本）</a>
-        <a href="https://jr-central.co.jp/info.html" target="_blank" rel="noopener" style="color:var(--gold);">JR東海 運行情報</a>
-      </div>
-    </div>
-
-    <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="(function(el){var c=document.getElementById('lasttrain-body');var open=c.style.display!=='none';c.style.display=open?'none':'block';el.querySelector('#lasttrain-chevron').textContent=open?'▶':'▼';})(this)">
         <span>終電・需要予測 <span id="lasttrain-time" style="font-size:10px;color:var(--gray);font-weight:400;"></span></span>
         <span id="lasttrain-chevron" style="font-size:11px;color:var(--gray);">▼</span>
@@ -1111,6 +1098,19 @@
         <a href="https://www.tokaikisen.co.jp/timetable/" target="_blank" style="color:var(--gold);">東海汽船 時刻表</a>
         <a href="https://www.ogasawarakaiun.co.jp/ship/" target="_blank" style="color:var(--gold);">小笠原海運</a>
         <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">晴海ふ頭 入港情報</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        東京着発 新幹線 <span style="font-size:10px;color:var(--gray);font-weight:400;" id="shinkansen-updated"></span>
+      </div>
+      <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">東京駅 発着の新幹線運行状況</div>
+      <div id="shinkansen-status">読み込み中…</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+        <a href="https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html" target="_blank" rel="noopener" style="color:var(--gold);">東海道新幹線（JR東海）</a>
+        <a href="https://traininfo.jreast.co.jp/train_info/shinkansen.aspx" target="_blank" rel="noopener" style="color:var(--gold);">東北・上越・北陸新幹線（JR東日本）</a>
+        <a href="https://jr-central.co.jp/info.html" target="_blank" rel="noopener" style="color:var(--gold);">JR東海 運行情報</a>
       </div>
     </div>
 
