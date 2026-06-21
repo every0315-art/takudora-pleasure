@@ -3200,13 +3200,13 @@
   updateTopEventTile();
 
   // ── 報告モーダル ──
-  const REPORT_KEY = 'takudora_community_posts';
+  const COMMUNITY_POST_KEY = 'takudora_community_posts';
 
   function loadCommunityPosts() {
-    try { return JSON.parse(localStorage.getItem(REPORT_KEY) || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(COMMUNITY_POST_KEY) || '[]'); } catch { return []; }
   }
   function saveCommunityPosts(posts) {
-    localStorage.setItem(REPORT_KEY, JSON.stringify(posts));
+    localStorage.setItem(COMMUNITY_POST_KEY, JSON.stringify(posts));
   }
 
   function openReportModal() {
