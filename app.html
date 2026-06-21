@@ -3883,7 +3883,7 @@
 
     let annualTaxExcluded = 0, annualTakehome = 0, annualDays = 0;
     el.innerHTML = `
-      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（${payday ? `給与支払日${payday===0?'末日':payday+'日'}ベース` : '締め日ベース'}）</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${thisYear}年（${payday ? `給与支払日${payday===0?'末日':payday+'日'}ベース` : '締め日ベース'}）　歩率:${stepRate}% プール:${poolRate}%</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
         ${months.map(({ m, sales, tax, days }) => {
           const ov = overrideYear[m];
