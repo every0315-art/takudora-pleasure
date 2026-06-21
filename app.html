@@ -2945,7 +2945,7 @@
     swRunning = false; swElapsed = 0;
     document.getElementById('sw-display').textContent = '00:00:00';
     const btn = document.getElementById('sw-start');
-    btn.textContent = 'START';
+    btn.textContent = '業務開始';
     btn.style.background = 'var(--green)';
     btn.style.color = '#000';
     swSave();
@@ -2962,7 +2962,7 @@
         swTimer   = setInterval(() => { swTick(); swSave(); }, 100);
         swTick();
         const btn = document.getElementById('sw-start');
-        if (btn) { btn.textContent = 'STOP'; btn.style.background = 'var(--red)'; btn.style.color = '#fff'; }
+        if (btn) { btn.textContent = '業務終了'; btn.style.background = 'var(--red)'; btn.style.color = '#fff'; }
       } else if (saved.elapsed) {
         swElapsed = saved.elapsed;
         const s   = Math.floor(swElapsed / 1000) % 60;
