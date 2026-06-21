@@ -2448,8 +2448,12 @@
         statusEl.innerHTML = '<div style="color:var(--green);font-size:13px;padding:8px 0;">現在、都内主要路線に障害情報はありません</div>';
         const topList = document.getElementById('top-train-list');
         if (topList) topList.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--green);padding:4px 0;">平常運転</div><div style="font-size:10px;color:var(--gray);">都内主要路線 異常なし</div>';
+        _trainAlerts = [];
+        updatePickupAlerts();
         return;
       }
+      _trainAlerts = data.lines.filter(l => l.status && l.status !== '平常運転');
+      updatePickupAlerts();
       statusEl.innerHTML = data.lines.map(l => `
         <a href="${l.url}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:8px 0;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -2919,19 +2923,8 @@
   }
 
   // ── ピックアップアラート ──
-  // 鉄道運行障害情報（キャッシュ）
+  // 鉄道運行障害情報（loadTrainInfoから更新される）
   let _trainAlerts = [];
-  async function fetchTrainStatus() {
-    try {
-      const r = await fetch('/api/train-info');
-      if (!r.ok) return;
-      const data = await r.json();
-      _trainAlerts = (data.lines || []).filter(l => l.status && l.status !== '平常運転');
-      updatePickupAlerts();
-    } catch {}
-  }
-  fetchTrainStatus();
-  setInterval(fetchTrainStatus, 3 * 60 * 1000); // 3分ごとに更新
 
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
