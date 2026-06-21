@@ -224,7 +224,7 @@
     /* ── TOP LAYOUT ── */
     .top-layout {
       display: grid;
-      grid-template-columns: 1fr 1.6fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -351,7 +351,7 @@
     @media(max-width:700px) {
       .tab-pane { padding: 12px 10px; }
       .top-layout {
-        grid-template-columns: 1fr 1.4fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
       .tile { padding: 10px 10px; border-radius: 8px; }
@@ -3832,10 +3832,25 @@
 
     const visible = layout.filter(t => t.visible);
     const count   = visible.length;
-    const rows    = Math.max(1, Math.ceil(count / 3));
 
-    // 行の高さをタイル数に応じて最適化
-    const rowH = rows === 1 ? '300px' : rows === 2 ? '240px' : '210px';
+    // タイル数に応じてカラム数を決定
+    // 1→1列, 2→2列, 3→3列, 4→2列×2行, 5〜6→3列×2行, 7〜8→3列×3行
+    let cols;
+    if      (count === 1) cols = 1;
+    else if (count === 2) cols = 2;
+    else if (count === 4) cols = 2;
+    else                  cols = 3;
+
+    const rows = Math.max(1, Math.ceil(count / cols));
+
+    // カラム幅: 等分
+    topGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+    // 行の高さをカラム数・行数に応じて最適化
+    const rowH = rows === 1
+      ? (cols === 1 ? '320px' : cols === 2 ? '280px' : '240px')
+      : rows === 2 ? '220px'
+      : '190px';
     topGrid.style.gridTemplateRows = `repeat(${rows}, ${rowH})`;
 
     // 各タイルに順番にgrid位置を割り当て
@@ -3853,7 +3868,7 @@
       el.style.gridColumn = String(col);
       el.style.gridRow    = String(row);
       col++;
-      if (col > 3) { col = 1; row++; }
+      if (col > cols) { col = 1; row++; }
     });
   }
 
