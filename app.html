@@ -3833,7 +3833,7 @@
 
     // 締め日ベースで「今年度」の範囲を決定（4月締め日翌日〜翌3月締め日まで的な考え方ではなく、カレンダー年）
     // 各月の締め日期間を12ヶ月分集計
-    const sal = loadSalarySettings ? loadSalarySettings() : {};
+    const sal = (loadSalarySettings ? loadSalarySettings() : null) || {};
     const stepRate = parseFloat(sal.stepRate) || 0;
     const poolRate = parseFloat(sal.poolRate) || 0;
     const payday = Number(sal.payday) || 0; // 支払日（0=末日）
