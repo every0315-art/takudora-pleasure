@@ -645,8 +645,16 @@
         </div>
       </div>
 
-      <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:0;overflow:hidden;gap:0;">
+      <!-- 羽田空港：到着便 -->
+      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
+        <div class="tile-label">羽田 到着便 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
+        <div id="top-haneda-summary" style="margin-top:6px;flex:1;overflow:hidden;">
+          <div style="font-size:11px;color:var(--gray);">読込中…</div>
+        </div>
+      </div>
+
+      <!-- 羽田空港：待機所カメラ -->
+      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda-cam" style="display:flex;flex-direction:column;padding:0;overflow:hidden;gap:0;">
         <div style="flex:1;position:relative;overflow:hidden;">
           <div style="position:absolute;top:4px;left:6px;z-index:2;font-size:9px;font-weight:800;color:rgba(255,255,255,.75);text-shadow:0 1px 3px rgba(0,0,0,.9);">第1待機所</div>
           <img id="top-haneda-img1" src="" alt="第1待機所" style="width:100%;height:100%;display:block;object-fit:cover;">
@@ -3985,14 +3993,15 @@
 
   // タイル定義（順序 = デフォルトのgrid位置: 左→右、上→下）
   const TILE_DEFS = [
-    { id: 'train',     label: '電車・交通' },
-    { id: 'haneda',    label: '羽田空港' },
-    { id: 'stand',     label: '街の様子' },
-    { id: 'event',     label: 'イベント' },
-    { id: 'community', label: 'コミュニティ' },
-    { id: 'sales',     label: '今月度の売上' },
-    { id: 'traffic',   label: '道路情報' },
-    { id: 'news',      label: '業界ニュース' },
+    { id: 'train',      label: '電車・交通' },
+    { id: 'haneda',     label: '羽田 到着便' },
+    { id: 'haneda-cam', label: '羽田 待機所' },
+    { id: 'stand',      label: '街の様子' },
+    { id: 'event',      label: 'イベント' },
+    { id: 'community',  label: 'コミュニティ' },
+    { id: 'sales',      label: '今月度の売上' },
+    { id: 'traffic',    label: '道路情報' },
+    { id: 'news',       label: '業界ニュース' },
   ];
 
   function defaultTopLayout() {
