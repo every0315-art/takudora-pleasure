@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/*.js": {
-      "allowedHosts": ["pleasure.delivery-every.com", "takudora-pleasure.vercel.app", "localhost"]
-    }
-  },
   "rewrites": [
     { "source": "/app", "destination": "/app.html" },
     { "source": "/qr", "destination": "/qr.html" },
