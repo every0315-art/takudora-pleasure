@@ -4919,7 +4919,7 @@
     const msgEl = document.getElementById('sb-msg');
     msgEl.style.color = 'var(--gray)';
     msgEl.textContent = '送信中…';
-    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://pleasure.delivery-every.com/app.html' });
+    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://pleasure.delivery-every.com/app' });
     if (error) {
       msgEl.style.color = '#ff6b6b';
       msgEl.textContent = sbErrorMsg(error.message);
