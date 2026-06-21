@@ -3894,7 +3894,9 @@
           const dispSales = ovSales != null ? ovSales : sales;
           const dispDays  = ovDays  != null ? ovDays  : days;
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
-          const takehome = Math.round(taxExcluded * (stepRate - poolRate) / 100);
+          const kyuyo   = Math.round(taxExcluded * stepRate / 100);
+          const pool    = Math.round(taxExcluded * poolRate / 100);
+          const takehome = kyuyo - pool;
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
           annualDays += dispDays || 0;
@@ -3915,7 +3917,9 @@
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${dispSales?'¥'+Number(dispSales).toLocaleString():'—'}</div>
             ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
-            ${takehome ? `<div style="font-size:9px;color:#7ec8a0;">受取¥${takehome.toLocaleString()}</div>` : ''}
+            ${kyuyo ? `<div style="font-size:9px;color:#7ec8a0;">給与¥${kyuyo.toLocaleString()}</div>` : ''}
+            ${pool ? `<div style="font-size:9px;color:#e08080;">プール¥${pool.toLocaleString()}</div>` : ''}
+            ${takehome ? `<div style="font-size:9px;font-weight:700;color:#7ec8a0;">受取¥${takehome.toLocaleString()}</div>` : ''}
             <div style="font-size:9px;color:var(--gray);">${dispDays ? dispDays+'日稼働' : '—'}</div>
           </div>`;
         }).join('')}
