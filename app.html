@@ -2996,6 +2996,21 @@
       swElapsed = 0;
       swState = 'running';
       swTimer = setInterval(() => { swTick(); swSave(); }, 500);
+      // 位置情報取得
+      if (navigator.geolocation) {
+        const lbl = document.getElementById('sw-label');
+        lbl.textContent = '位置取得中…';
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const lat = pos.coords.latitude.toFixed(4);
+            const lon = pos.coords.longitude.toFixed(4);
+            lbl.textContent = `乗務中 📍${lat}, ${lon}`;
+            swSave();
+          },
+          () => { lbl.textContent = '乗務中（位置取得失敗）'; },
+          { timeout: 10000, maximumAge: 0 }
+        );
+      }
     } else if (swState === 'running') {
       clearInterval(swTimer);
       swElapsed = Date.now() - swStart;
