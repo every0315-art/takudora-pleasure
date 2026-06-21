@@ -721,9 +721,9 @@
           <button onclick="retryReport()" style="flex:1;background:none;border:1px solid var(--gold);color:var(--gold);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
             もう一度やり直す
           </button>
-          <label for="report-file-input" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;">
+          <button onclick="document.getElementById('report-file-input').value='';document.getElementById('report-file-input').click();" style="flex:1;background:none;border:1px solid var(--border);color:var(--gray);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;">
             別の日報を読み取る
-          </label>
+          </button>
         </div>
       </div>
       </div> <!-- /report-ocr-area -->
@@ -3757,7 +3757,6 @@
   // ── 日報読み取り ──
   function handleReportDrop(e) {
     e.preventDefault();
-    document.getElementById('report-upload-area').style.borderColor = 'rgba(201,168,76,.35)';
     const file = e.dataTransfer.files[0];
     if (file) handleReportFile(file);
   }
