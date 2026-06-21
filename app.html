@@ -4955,8 +4955,7 @@
   }
 
   async function sbSignOut() {
-    if (!_sb) return;
-    await _sb.auth.signOut();
+    if (_sb) await _sb.auth.signOut();
     sbUpdateUI(null);
   }
 
