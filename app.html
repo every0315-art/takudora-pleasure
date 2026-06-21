@@ -3919,7 +3919,6 @@
             ${!hasOverride && taxExcluded ? `<div style="font-size:9px;color:var(--gray);">税抜¥${taxExcluded.toLocaleString()}</div>` : ''}
             ${kyuyo ? `<div style="font-size:9px;color:#7ec8a0;">給与¥${kyuyo.toLocaleString()}</div>` : ''}
             ${pool ? `<div style="font-size:9px;color:#e08080;">プール¥${pool.toLocaleString()}</div>` : ''}
-            ${takehome ? `<div style="font-size:9px;font-weight:700;color:#7ec8a0;">受取¥${takehome.toLocaleString()}</div>` : ''}
             <div style="font-size:9px;color:var(--gray);">${dispDays ? dispDays+'日稼働' : '—'}</div>
           </div>`;
         }).join('')}
