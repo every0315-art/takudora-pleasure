@@ -4050,6 +4050,21 @@
     alert('日報データを削除しました。');
   }
 
+  // スクリーンセーバー無効化（Wake Lock API）
+  (async function initWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    let wakeLock = null;
+    async function requestWakeLock() {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+      } catch (e) {}
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    });
+    await requestWakeLock();
+  })();
+
   // 初期化
   (function initProfile() {
     const profile = loadProfile();
