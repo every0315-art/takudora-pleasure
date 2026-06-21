@@ -3917,14 +3917,17 @@
         ${months.map(({ m, sales, tax, kyuyo: kyuyo_map, pool: pool_map, days }) => {
           const ov = overrideYear[m];
           const hasOverride = ov !== undefined;
-          const ovSales = hasOverride ? (typeof ov === 'object' ? ov.sales : ov) : undefined;
-          const ovDays  = hasOverride && typeof ov === 'object' ? ov.days : undefined;
+          const ovObj   = hasOverride && typeof ov === 'object' ? ov : null;
+          const ovSales = ovObj ? ovObj.sales : (hasOverride ? ov : undefined);
+          const ovDays  = ovObj?.days;
+          const ovKyuyo = ovObj?.kyuyo;
+          const ovPool  = ovObj?.pool;
           const dispSales = ovSales != null ? ovSales : sales;
           const dispDays  = ovDays  != null ? ovDays  : days;
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
-          // 日別集計値を優先（手入力上書き時は月合計から一括計算）
-          const kyuyo = hasOverride ? Math.round(taxExcluded * stepRate / 100) : (kyuyo_map || 0);
-          const pool  = hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map || 0);
+          // override に給与/プール金が入力されていればそれを使用、なければ計算
+          const kyuyo = ovKyuyo != null ? ovKyuyo : (hasOverride ? Math.round(taxExcluded * stepRate / 100) : (kyuyo_map || 0));
+          const pool  = ovPool  != null ? ovPool  : (hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map  || 0));
           const takehome = kyuyo + pool;
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
@@ -3941,7 +3944,7 @@
           const startM2 = dispM === 1 ? 12 : dispM - 1;
           const startDay2 = cdDay === 0 ? 1 : cdDay + 1;
           const periodLabel = `${startM2}/${startDay2}〜${dispM}/${endDay}`;
-          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'})">
+          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'},${ovKyuyo||'null'},${ovPool||'null'})">
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${taxExcluded?'¥'+taxExcluded.toLocaleString():(dispSales?'¥'+Number(dispSales).toLocaleString():'—')}</div>
@@ -3968,17 +3971,33 @@
       <div id="annual-edit-area"></div>`;
   }
 
-  function editAnnualMonth(m, current, currentDays) {
+  function editAnnualMonth(m, current, currentDays, currentKyuyo, currentPool) {
     const area = document.getElementById('annual-edit-area');
     if (!area) return;
     area.innerHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;border:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">${m}月度を手入力（空欄で日報データに戻す）</div>
-        <div style="display:grid;grid-template-columns:1fr 80px;gap:6px;margin-bottom:6px;">
-          <input type="number" id="annual-input-val" value="${current||''}" placeholder="売上金額"
-            style="background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;">
-          <input type="number" id="annual-input-days" value="${currentDays||''}" placeholder="稼働日数"
-            style="background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:7px 10px;text-align:center;">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">${m}月度を手入力（空欄で日報データに戻す）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+          <div>
+            <div style="font-size:9px;color:var(--gray);margin-bottom:3px;">税抜売上（¥）</div>
+            <input type="number" id="annual-input-val" value="${current||''}" placeholder="税抜売上"
+              style="width:100%;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--gray);margin-bottom:3px;">稼働日数</div>
+            <input type="number" id="annual-input-days" value="${currentDays||''}" placeholder="日数"
+              style="width:100%;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;text-align:center;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:#7ec8a0;margin-bottom:3px;">給与（¥）</div>
+            <input type="number" id="annual-input-kyuyo" value="${currentKyuyo||''}" placeholder="給与額"
+              style="width:100%;background:rgba(126,200,160,.06);border:1px solid rgba(126,200,160,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:#e08080;margin-bottom:3px;">プール金（¥）</div>
+            <input type="number" id="annual-input-pool" value="${currentPool||''}" placeholder="プール金額"
+              style="width:100%;background:rgba(224,128,128,.06);border:1px solid rgba(224,128,128,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
         </div>
         <div style="display:flex;gap:8px;">
           <button onclick="saveAnnualMonth(${m})" style="flex:1;padding:7px 14px;background:var(--gold);border:none;color:#000;font-weight:700;border-radius:6px;cursor:pointer;font-size:13px;">保存</button>
@@ -3989,20 +4008,24 @@
   }
 
   function saveAnnualMonth(m) {
-    const val  = document.getElementById('annual-input-val')?.value.trim();
-    const dval = document.getElementById('annual-input-days')?.value.trim();
+    const val   = document.getElementById('annual-input-val')?.value.trim();
+    const dval  = document.getElementById('annual-input-days')?.value.trim();
+    const kval  = document.getElementById('annual-input-kyuyo')?.value.trim();
+    const pval  = document.getElementById('annual-input-pool')?.value.trim();
     const now = new Date();
     let overrides = {};
     try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
     if (!overrides[now.getFullYear()]) overrides[now.getFullYear()] = {};
-    if (val === '' && dval === '') {
+    if (val === '' && dval === '' && kval === '' && pval === '') {
       delete overrides[now.getFullYear()][m];
     } else {
       const existing = overrides[now.getFullYear()][m];
-      const prev = (existing && typeof existing === 'object') ? existing : { sales: existing ?? null, days: null };
+      const prev = (existing && typeof existing === 'object') ? existing : { sales: existing ?? null, days: null, kyuyo: null, pool: null };
       overrides[now.getFullYear()][m] = {
-        sales: val !== '' ? Number(val) : prev.sales,
+        sales: val  !== '' ? Number(val)  : prev.sales,
         days:  dval !== '' ? Number(dval) : prev.days,
+        kyuyo: kval !== '' ? Number(kval) : prev.kyuyo,
+        pool:  pval !== '' ? Number(pval) : prev.pool,
       };
     }
     localStorage.setItem(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
