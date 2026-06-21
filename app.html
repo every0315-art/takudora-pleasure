@@ -264,6 +264,33 @@
       margin-top: 6px;
     }
 
+    /* アラートバー */
+    #alert-bar {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
+      padding: 5px 10px;
+      margin-bottom: 8px;
+    }
+    .alert-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 14px;
+      white-space: nowrap;
+    }
+    .alert-chip.ac-last-train { background: rgba(192,57,43,.25); border: 1px solid #c0392b; color: #ff6b6b; }
+    .alert-chip.ac-event      { background: rgba(201,168,76,.18); border: 1px solid rgba(201,168,76,.5); color: var(--gold); }
+    .alert-chip.ac-disruption { background: rgba(230,126,34,.2);  border: 1px solid #e67e22; color: #ffa54f; }
+    .alert-chip .ac-badge     { font-size: 9px; font-weight: 800; letter-spacing: .05em; }
+
     /* ピックアップ横スクロールバー */
     .pickup-bar {
       display: flex;
@@ -560,6 +587,9 @@
       </div>
     </div>
 
+    <!-- アラートバー -->
+    <div id="alert-bar"></div>
+
     <!-- 天気バー（横幅固定・常時表示） -->
     <div class="weather-bar tile-weather" onclick="document.getElementById('radarModal').style.display='flex'">
       <div class="wb-left">
@@ -616,12 +646,9 @@
       </div>
 
       <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
-        <div class="tile-label" style="padding:0 0 0;">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
-        <div id="top-haneda-summary" style="margin-top:6px;">
-          <div style="font-size:11px;color:var(--gray);">読込中…</div>
-        </div>
-        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:calc(100% + 20px);margin:8px -10px 0;display:block;object-fit:cover;">
+      <div class="tile tile-haneda" data-tab="haneda" data-tile="haneda" style="display:flex;flex-direction:column;padding:0;overflow:hidden;position:relative;">
+        <div style="position:absolute;top:6px;left:8px;z-index:2;font-size:9px;font-weight:800;letter-spacing:.05em;color:rgba(255,255,255,.7);text-shadow:0 1px 3px rgba(0,0,0,.8);">羽田 待機所</div>
+        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:100%;height:100%;display:block;object-fit:cover;">
       </div>
 
       <!-- 行2右：道路情報 -->
@@ -2376,6 +2403,61 @@
   updateShutokoMap();
   setInterval(updateShutokoMap, 60000);
 
+  // アラートバー用グローバル状態
+  let _trainDisruptions = [];
+  let _userCoords = null;
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      _userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    }, () => {});
+  }
+
+  function updateAlertBar() {
+    const bar = document.getElementById('alert-bar');
+    if (!bar) return;
+    const now = new Date();
+    let nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin < 4 * 60) nowMin += 24 * 60;
+    const chips = [];
+
+    // 終電アラート（30分以内）
+    LAST_TRAINS.forEach(t => {
+      let tMin = t.h * 60 + t.m;
+      if (tMin < 4 * 60) tMin += 24 * 60;
+      const remain = tMin - nowMin;
+      if (remain >= 0 && remain <= 30) {
+        const label = remain === 0 ? '間もなく終電' : `終電まで${remain}分`;
+        chips.push(`<span class="alert-chip ac-last-train"><span class="ac-badge">終電</span>${t.line} ${t.from}→${t.to} ${label}</span>`);
+      }
+    });
+
+    // 運行障害アラート
+    _trainDisruptions.forEach(l => {
+      chips.push(`<span class="alert-chip ac-disruption"><span class="ac-badge">障害</span>${l.name} ${l.status}</span>`);
+    });
+
+    // イベント終演予測（開演時刻＋3時間以内）
+    document.querySelectorAll('#tab-event .event-card, #tab-event .news-item').forEach(card => {
+      const meta = card.querySelector('.event-meta, .news-meta');
+      if (!meta) return;
+      const m = meta.textContent.match(/開演\s*(\d{1,2}):(\d{2})/);
+      if (!m) return;
+      let startMin = parseInt(m[1]) * 60 + parseInt(m[2]);
+      const endMin = startMin + 180;
+      if (nowMin >= startMin && nowMin <= endMin) {
+        const title = (card.querySelector('.event-title, .news-title') || card).textContent.trim().slice(0, 20);
+        chips.push(`<span class="alert-chip ac-event"><span class="ac-badge">終演</span>${title} まもなく終演予測</span>`);
+      }
+    });
+
+    if (chips.length === 0) {
+      bar.style.display = 'none';
+    } else {
+      bar.style.display = 'flex';
+      bar.innerHTML = chips.join('');
+    }
+  }
+
   // 電車運行障害情報（Yahoo路線情報より）
   async function loadTrainInfo() {
     const statusEl = document.getElementById('train-status');
@@ -2428,7 +2510,11 @@
           badge: '運行障害', badgeClass: 'pi-train',
           text: `${l.name} ${l.status}`, tab: 'train'
         })));
+        _trainDisruptions = data.lines;
+      } else {
+        _trainDisruptions = [];
       }
+      updateAlertBar();
     } catch(e) {
       statusEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
       const topList2 = document.getElementById('top-train-list');
@@ -2437,6 +2523,8 @@
   }
   loadTrainInfo();
   setInterval(loadTrainInfo, 60000);
+  updateAlertBar();
+  setInterval(updateAlertBar, 60000);
 
   // 新幹線運行状況（JR東日本・JR東海 運行情報を取得）
   async function loadShinkansenInfo() {
@@ -2976,9 +3064,13 @@
         : `<span style="color:var(--gray);">${g.key}</span>`;
       const evHtml = g.events.map(ev => {
         const shortName = ev.name.length > 12 ? ev.name.slice(0, 12) + '…' : ev.name;
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-          <span style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${shortName}</span>
-          <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;">${ev.badgeText.replace('需要 ', '')}</span>
+        const shortVenue = ev.venue ? (ev.venue.length > 10 ? ev.venue.slice(0, 10) + '…' : ev.venue) : '';
+        return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
+          <div style="flex:1;overflow:hidden;">
+            <div style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortName}</div>
+            ${shortVenue ? `<div style="font-size:9px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍${shortVenue}</div>` : ''}
+          </div>
+          <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;flex-shrink:0;">${ev.badgeText.replace('需要 ', '')}</span>
         </div>`;
       }).join('');
       return `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
