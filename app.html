@@ -502,12 +502,14 @@
         <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
         <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
       </div>
-      <div class="wb-sw" style="border-left:1px solid rgba(255,255,255,.07);padding-left:12px;margin-left:12px;display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <div id="sw-display" style="font-size:18px;font-weight:900;color:var(--white);letter-spacing:.04em;font-variant-numeric:tabular-nums;">00:00:00</div>
-        <div style="display:flex;gap:6px;">
-          <button id="sw-start" onclick="event.stopPropagation();swToggle()" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">START</button>
-          <button onclick="event.stopPropagation();swReset()" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">RESET</button>
-        </div>
+    </div>
+
+    <!-- ストップウォッチバー（天気バー直下） -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;padding:8px 16px;margin-bottom:14px;gap:12px;">
+      <div id="sw-display" style="font-size:20px;font-weight:900;color:var(--white);letter-spacing:.06em;font-variant-numeric:tabular-nums;flex-shrink:0;">00:00:00</div>
+      <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;">
+        <button id="sw-start" onclick="swToggle()" style="font-size:13px;font-weight:700;padding:6px 20px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;">業務開始</button>
+        <button onclick="swReset()" style="font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;border:none;background:rgba(255,255,255,.12);color:var(--gray);cursor:pointer;">リセット</button>
       </div>
     </div>
 
@@ -2926,12 +2928,12 @@
     if (!swRunning) {
       swStart = Date.now() - swElapsed;
       swTimer = setInterval(() => { swTick(); swSave(); }, 100);
-      btn.textContent = 'STOP';
+      btn.textContent = '業務終了';
       btn.style.background = 'var(--red)';
       btn.style.color = '#fff';
     } else {
       clearInterval(swTimer);
-      btn.textContent = 'START';
+      btn.textContent = '業務開始';
       btn.style.background = 'var(--green)';
       btn.style.color = '#000';
     }
