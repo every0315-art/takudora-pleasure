@@ -4963,10 +4963,43 @@
     _sb.auth.onAuthStateChange(async (event, session) => {
       sbUpdateUI(session?.user || null);
       if (session?.user) await sbPull();
+      if (event === 'PASSWORD_RECOVERY') {
+        showPasswordResetModal();
+      }
     });
     _sb.auth.getSession().then(({ data }) => {
       if (data?.session?.user) sbUpdateUI(data.session.user);
     });
+  }
+
+  function showPasswordResetModal() {
+    const html = `
+      <div id="pw-reset-modal" style="position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--navy-mid);border-radius:16px;padding:24px;width:100%;max-width:360px;">
+          <div style="font-size:18px;font-weight:700;color:var(--gold);margin-bottom:16px;">🔑 新しいパスワードを設定</div>
+          <input id="pw-reset-new" type="password" placeholder="新しいパスワード（6文字以上）" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
+          <input id="pw-reset-confirm" type="password" placeholder="パスワードを再入力" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px;">
+          <div id="pw-reset-msg" style="font-size:12px;min-height:18px;margin-bottom:10px;"></div>
+          <button onclick="submitNewPassword()" style="width:100%;padding:12px;background:var(--gold);color:#000;font-weight:700;border:none;border-radius:10px;font-size:15px;cursor:pointer;">パスワードを変更する</button>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
+
+  async function submitNewPassword() {
+    const pw = document.getElementById('pw-reset-new').value;
+    const pw2 = document.getElementById('pw-reset-confirm').value;
+    const msg = document.getElementById('pw-reset-msg');
+    if (pw.length < 6) { msg.style.color='#ff6b6b'; msg.textContent='6文字以上で入力してください'; return; }
+    if (pw !== pw2) { msg.style.color='#ff6b6b'; msg.textContent='パスワードが一致しません'; return; }
+    msg.style.color='var(--gray)'; msg.textContent='変更中…';
+    const { error } = await _sb.auth.updateUser({ password: pw });
+    if (error) {
+      msg.style.color='#ff6b6b'; msg.textContent=sbErrorMsg(error.message);
+    } else {
+      msg.style.color='var(--gold)'; msg.textContent='パスワードを変更しました！';
+      setTimeout(() => document.getElementById('pw-reset-modal')?.remove(), 1500);
+    }
   }
 
   // ── 締め日カレンダー ──
