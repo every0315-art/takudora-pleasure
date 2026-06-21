@@ -3772,6 +3772,9 @@
 
   async function handleReportFile(file) {
     if (!file) return;
+    // 同じファイルを再選択できるようinputをリセット
+    const inp = document.getElementById('report-file-input');
+    if (inp) inp.value = '';
     window._lastReportFile = file;
     const resultEl  = document.getElementById('report-result');
     const statusEl  = document.getElementById('report-status');
