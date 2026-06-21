@@ -3272,13 +3272,13 @@
       if (navigator.permissions) {
         navigator.permissions.query({ name: 'geolocation' }).then(result => {
           if (result.state === 'granted') tryGet();
-          else doPost('');
+          else { closeReportModal(); alert('位置情報の許可が必要です。\nブラウザの設定から位置情報を許可してください。'); }
         }).catch(() => tryGet());
       } else {
         tryGet();
       }
     } else {
-      doPost('');
+      closeReportModal(); alert('位置情報がサポートされていません。');
     }
   }
 
