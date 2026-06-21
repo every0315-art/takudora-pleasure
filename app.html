@@ -3879,9 +3879,9 @@
         }
         // 締め日以前はそのまま当月度
       }
-      // 支払い月は締め月の翌月（支払日が設定されている場合）
+      // 支払日が締め日以下（翌月払い）なら+1、それ以外（当月払い）はそのまま
       let payY = periodY, payM = periodM;
-      if (payday) {
+      if (payday && closingDay && payday <= closingDay) {
         payM = periodM + 1;
         if (payM > 12) { payM = 1; payY = periodY + 1; }
       }
