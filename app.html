@@ -3166,11 +3166,13 @@
         const badgeColor = badge?.classList.contains('badge-red') ? 'var(--red)' : badge?.classList.contains('badge-yellow') ? 'var(--yellow)' : 'var(--gray)';
         const venue = item.closest('.card')?.querySelector('.card-title')?.childNodes[0]?.textContent?.trim() || '';
         const isToday = itemDate.getTime() === today.getTime();
-        upcoming.push({ itemDate, m, d, name, badgeText, badgeColor, venue, isToday });
+        const endMatch = (item.querySelector('.event-meta')?.textContent || '').match(/(?:終演|終了)\s*(\d{1,2}):(\d{2})/);
+        const endMin = endMatch ? parseInt(endMatch[1]) * 60 + parseInt(endMatch[2]) : 9999;
+        upcoming.push({ itemDate, m, d, name, badgeText, badgeColor, venue, isToday, endMin });
       }
     });
 
-    upcoming.sort((a, b) => a.itemDate - b.itemDate);
+    upcoming.sort((a, b) => a.itemDate - b.itemDate || a.endMin - b.endMin);
     const show = upcoming.slice(0, 8);
 
     if (show.length === 0) {
