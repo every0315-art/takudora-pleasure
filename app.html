@@ -3220,16 +3220,22 @@
     closeReportModal();
     switchTab('community');
 
-    if (_sb && _sbUser) {
-      const { error } = await _sb.from('community_posts').insert({
-        user_id: _sbUser.id,
-        name, initial, body,
-        tags: tagStr,
-        location: _reportLocation,
-        lat: _reportCoords.lat,
-        lng: _reportCoords.lng
-      });
-      if (!error) await refreshCommunityPosts();
+    if (!_sb || !_sbUser) {
+      alert('投稿するにはログインが必要です。\nクラウド同期からログインしてください。');
+      return;
+    }
+    const { error } = await _sb.from('community_posts').insert({
+      user_id: _sbUser.id,
+      name, initial, body,
+      tags: tagStr,
+      location: _reportLocation,
+      lat: _reportCoords.lat,
+      lng: _reportCoords.lng
+    });
+    if (error) {
+      alert('投稿に失敗しました: ' + sbErrorMsg(error.message));
+    } else {
+      await refreshCommunityPosts();
     }
   }
 
