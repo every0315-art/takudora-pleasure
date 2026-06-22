@@ -4889,8 +4889,10 @@
   }
 
   async function sbSignOut() {
-    if (_sb) await _sb.auth.signOut();
+    try { if (_sb) await _sb.auth.signOut({ scope: 'local' }); } catch(e) { console.warn(e); }
     sbUpdateUI(null);
+    document.getElementById('sb-logged-in').style.display = 'none';
+    document.getElementById('sb-logged-out').style.display = 'block';
   }
 
   if (_sb) {
@@ -4908,8 +4910,16 @@
         showPasswordResetModal();
       }
     });
-    _sb.auth.getSession().then(({ data }) => {
-      if (data?.session?.user) sbUpdateUI(data.session.user);
+    _sb.auth.getSession().then(async ({ data }) => {
+      if (data?.session?.user) {
+        sbUpdateUI(data.session.user);
+        await sbPull();
+        const profile = loadProfile();
+        if (profile) {
+          applyProfileToUI(profile);
+          document.getElementById('setup-modal').style.display = 'none';
+        }
+      }
     });
   }
 
