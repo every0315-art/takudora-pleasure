@@ -1919,10 +1919,8 @@
         </div>
         <div>
           <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社</div>
-          <select id="acc-company"
-            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
-            <option value="">まず所属行燈を選択</option>
-          </select>
+          <input type="text" id="acc-company" placeholder="会社名を入力"
+            style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
@@ -2192,10 +2190,8 @@
       </div>
       <div>
         <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">会社</div>
-        <select id="setup-company"
-          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
-          <option value="">まず所属行燈を選択</option>
-        </select>
+        <input type="text" id="setup-company" placeholder="会社名を入力"
+          style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
       </div>
     </div>
     <button onclick="saveSetup()"
@@ -4597,25 +4593,9 @@
     }
   }
 
-  function updateCompanyOptions() {
-    const group = document.getElementById('acc-group')?.value;
-    const sel   = document.getElementById('acc-company');
-    if (!sel) return;
-    const opts = COMPANY_MAP[group] || [];
-    sel.innerHTML = opts.length
-      ? opts.map(c => `<option value="${c}">${c}</option>`).join('')
-      : '<option value="">選択してください</option>';
-  }
-
-  function updateSetupCompanyOptions() {
-    const group = document.getElementById('setup-group')?.value;
-    const sel   = document.getElementById('setup-company');
-    if (!sel) return;
-    const opts = COMPANY_MAP[group] || [];
-    sel.innerHTML = opts.length
-      ? opts.map(c => `<option value="${c}">${c}</option>`).join('')
-      : '<option value="">選択してください</option>';
-  }
+  // 会社名は自由入力に変更したため、行燈選択時の自動切り替えは行わない
+  function updateCompanyOptions() {}
+  function updateSetupCompanyOptions() {}
 
   function saveProfile() {
     const profile = {
