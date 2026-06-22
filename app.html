@@ -2128,6 +2128,30 @@
 
 <!-- 初回セットアップモーダル -->
 <!-- 報告モーダル -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:2000;background:var(--navy-dark);display:none;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:16px;padding:28px 24px;max-width:360px;width:100%;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:22px;font-weight:800;color:var(--gold);">タクドラPLEASURE</div>
+      <div style="font-size:13px;color:var(--gray);margin-top:4px;">ログインしてご利用ください</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="gate-tab-login" onclick="gateSwitch('login')" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--gold);color:#000;font-weight:700;font-size:13px;cursor:pointer;">ログイン</button>
+      <button id="gate-tab-signup" onclick="gateSwitch('signup')" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);font-size:13px;cursor:pointer;">新規登録</button>
+    </div>
+    <input type="email" id="gate-email" placeholder="メールアドレス" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:14px;box-sizing:border-box;margin-bottom:10px;">
+    <input type="password" id="gate-password" placeholder="パスワード（6文字以上）" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:14px;box-sizing:border-box;margin-bottom:12px;">
+    <div id="gate-msg" style="font-size:12px;min-height:16px;margin-bottom:10px;text-align:center;"></div>
+    <button onclick="gateSubmit()" style="width:100%;padding:12px;background:var(--gold);color:#000;font-weight:700;border:none;border-radius:10px;font-size:15px;cursor:pointer;margin-bottom:10px;">ログイン</button>
+    <button onclick="sbGoogleLogin()" style="width:100%;padding:11px;background:#fff;color:#333;font-weight:600;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Googleでログイン
+    </button>
+    <div style="text-align:center;">
+      <span onclick="gateResetPassword()" style="font-size:12px;color:var(--gold);cursor:pointer;text-decoration:underline;">パスワードをお忘れの方</span>
+    </div>
+  </div>
+</div>
+
 <div id="report-modal" style="position:fixed;inset:0;z-index:1001;background:rgba(10,22,40,0.92);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:0;" onclick="if(event.target===this)closeReportModal()">
   <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.25);border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;">
     <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:4px;">📢 状況を報告</div>
@@ -4896,12 +4920,15 @@
     _sb.auth.onAuthStateChange(async (event, session) => {
       sbUpdateUI(session?.user || null);
       if (session?.user) {
+        document.getElementById('login-gate').style.display = 'none';
         await sbPull();
         const profile = loadProfile();
         if (profile) {
           applyProfileToUI(profile);
           document.getElementById('setup-modal').style.display = 'none';
         }
+      } else {
+        document.getElementById('login-gate').style.display = 'flex';
       }
       if (event === 'PASSWORD_RECOVERY') {
         showPasswordResetModal();
@@ -4916,8 +4943,55 @@
           applyProfileToUI(profile);
           document.getElementById('setup-modal').style.display = 'none';
         }
+        document.getElementById('login-gate').style.display = 'none';
+      } else {
+        document.getElementById('login-gate').style.display = 'flex';
       }
     });
+  }
+
+  let _gateTab = 'login';
+  function gateSwitch(mode) {
+    _gateTab = mode;
+    document.getElementById('gate-tab-login').style.background = mode === 'login' ? 'var(--gold)' : 'transparent';
+    document.getElementById('gate-tab-login').style.color = mode === 'login' ? '#000' : 'var(--gray)';
+    document.getElementById('gate-tab-signup').style.background = mode === 'signup' ? 'var(--gold)' : 'transparent';
+    document.getElementById('gate-tab-signup').style.color = mode === 'signup' ? '#000' : 'var(--gray)';
+    document.querySelector('#login-gate button[onclick="gateSubmit()"]').textContent = mode === 'login' ? 'ログイン' : '新規登録';
+    document.getElementById('gate-msg').textContent = '';
+  }
+
+  async function gateSubmit() {
+    if (!_sb) return;
+    const email = document.getElementById('gate-email').value.trim();
+    const password = document.getElementById('gate-password').value;
+    const msg = document.getElementById('gate-msg');
+    if (!email || !password) { msg.style.color='#ff6b6b'; msg.textContent='メールとパスワードを入力してください'; return; }
+    msg.style.color='var(--gray)'; msg.textContent='処理中…';
+    try {
+      const fn = _gateTab === 'login'
+        ? _sb.auth.signInWithPassword({ email, password })
+        : _sb.auth.signUp({ email, password });
+      const { data, error } = await fn;
+      if (error) throw error;
+      if (_gateTab === 'signup' && !data.session) {
+        msg.style.color='var(--gold)'; msg.textContent='確認メールを送信しました';
+        return;
+      }
+      msg.textContent = '';
+    } catch(e) {
+      msg.style.color='#ff6b6b'; msg.textContent = sbErrorMsg(e.message) || 'エラーが発生しました';
+    }
+  }
+
+  async function gateResetPassword() {
+    const email = document.getElementById('gate-email').value.trim() || prompt('メールアドレスを入力してください');
+    if (!email || !_sb) return;
+    const msg = document.getElementById('gate-msg');
+    msg.style.color='var(--gray)'; msg.textContent='送信中…';
+    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://pleasure.delivery-every.com/app' });
+    if (error) { msg.style.color='#ff6b6b'; msg.textContent=sbErrorMsg(error.message); }
+    else { msg.style.color='var(--gold)'; msg.textContent=`${email} にリセットメールを送信しました`; }
   }
 
   function showPasswordResetModal() {
