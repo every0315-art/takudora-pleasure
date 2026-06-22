@@ -3167,11 +3167,25 @@
   // ── 報告モーダル ──
   const COMMUNITY_POST_KEY = 'takudora_community_posts';
 
+  async function loadCommunityPostsFromSb() {
+    if (!_sb) return [];
+    try {
+      const { data } = await _sb.from('community_posts').select('*').order('created_at', { ascending: false }).limit(50);
+      return data || [];
+    } catch { return []; }
+  }
+
   function loadCommunityPosts() {
     try { return JSON.parse(localStorage.getItem(COMMUNITY_POST_KEY) || '[]'); } catch { return []; }
   }
   function saveCommunityPosts(posts) {
     localStorage.setItem(COMMUNITY_POST_KEY, JSON.stringify(posts));
+  }
+
+  async function refreshCommunityPosts() {
+    const posts = await loadCommunityPostsFromSb();
+    renderCommunityPostsFromSb(posts);
+    updateCommunityTileFromSb(posts);
   }
 
   let _reportMap = null, _reportMarker = null, _reportLocation = '', _reportCoords = null;
@@ -3239,7 +3253,7 @@
     } catch { return ''; }
   }
 
-  function submitReport() {
+  async function submitReport() {
     const tags = [...document.querySelectorAll('.report-tag[data-selected="1"]')].map(b => b.dataset.tag);
     const comment = document.getElementById('report-comment').value.trim();
     if (!tags.length && !comment) { alert('タグかコメントを入力してください'); return; }
@@ -3256,13 +3270,20 @@
       return;
     }
 
-    const post = { initial, name, body, location: _reportLocation, lat: _reportCoords.lat, lng: _reportCoords.lng, ts: now.getTime() };
-    const posts = [post, ...loadCommunityPosts()].slice(0, 50);
-    saveCommunityPosts(posts);
-    renderCommunityPosts();
-    updateCommunityTile();
     closeReportModal();
     switchTab('community');
+
+    if (_sb && _sbUser) {
+      const { error } = await _sb.from('community_posts').insert({
+        user_id: _sbUser.id,
+        name, initial, body,
+        tags: tagStr,
+        location: _reportLocation,
+        lat: _reportCoords.lat,
+        lng: _reportCoords.lng
+      });
+      if (!error) await refreshCommunityPosts();
+    }
   }
 
   const ADMIN_EMAILS = ['every0315@gmail.com'];
@@ -3270,12 +3291,10 @@
     return typeof _sbUser !== 'undefined' && _sbUser && ADMIN_EMAILS.includes(_sbUser.email);
   }
 
-  function deletePost(ts) {
+  async function deletePost(id) {
     if (!confirm('この投稿を取り消しますか？')) return;
-    const posts = loadCommunityPosts().filter(p => p.ts !== ts);
-    saveCommunityPosts(posts);
-    renderCommunityPosts();
-    updateCommunityTile();
+    if (_sb) await _sb.from('community_posts').delete().eq('id', id);
+    await refreshCommunityPosts();
   }
 
   function deleteStaticPost(el) {
@@ -3289,6 +3308,62 @@
     if (diff < 3600) return `${Math.floor(diff / 60)}分前`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}時間前`;
     return `${Math.floor(diff / 86400)}日前`;
+  }
+
+  function renderCommunityPostsFromSb(posts) {
+    const container = document.querySelector('#tab-community .card:first-child');
+    if (!container) return;
+    container.querySelectorAll('.my-post').forEach(el => el.remove());
+    const title = container.querySelector('.card-title');
+    const frag = document.createDocumentFragment();
+    const mapIds = [];
+    posts.forEach(p => {
+      const mapId = `post-map-${p.id}`;
+      const isOwn = _sbUser && p.user_id === _sbUser.id;
+      const canDelete = isOwn || isAdmin();
+      const ts = new Date(p.created_at).getTime();
+      const div = document.createElement('div');
+      div.className = 'post my-post';
+      div.innerHTML = `
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="flex:1;min-width:0;">
+            <div class="post-header" style="margin-bottom:8px;">
+              <div class="post-avatar">${p.initial || '?'}</div>
+              <div><div class="post-name">${p.name || 'ドライバー'}</div><div class="post-time">${timeAgo(ts)}</div></div>
+              ${canDelete ? `<button onclick="deletePost('${p.id}')" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;">✕ 取り消す</button>` : ''}
+            </div>
+            <div class="post-body">${p.body}</div>
+            ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}
+          </div>
+          ${p.lat ? `<div id="${mapId}" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;"></div>` : ''}
+        </div>`;
+      frag.appendChild(div);
+      if (p.lat) mapIds.push({ mapId, lat: p.lat, lng: p.lng });
+    });
+    title.after(frag);
+    mapIds.forEach(({ mapId, lat, lng }) => {
+      setTimeout(() => {
+        const el = document.getElementById(mapId);
+        if (!el || el.dataset.mapInit) return;
+        el.dataset.mapInit = '1';
+        const m = L.map(mapId, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+        L.circleMarker([lat, lng], { radius: 7, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
+      }, 100);
+    });
+  }
+
+  function updateCommunityTileFromSb(posts) {
+    const tileEl = document.querySelector('.tile-community');
+    if (!tileEl) return;
+    const listEl = tileEl.querySelector('div[style*="flex-direction:column"]');
+    if (listEl && posts.length) {
+      listEl.innerHTML = posts.slice(0, 3).map(p =>
+        `<div style="font-size:12px;color:var(--text);">「${p.body.slice(0,18)}…」<span style="color:var(--gray);font-size:11px;margin-left:6px;">${timeAgo(new Date(p.created_at).getTime())}</span></div>`
+      ).join('');
+    }
+    const sub = tileEl.querySelector('.tile-sub');
+    if (sub) sub.textContent = `新着 ${posts.length}件 · タップして投稿`;
   }
 
   function renderCommunityPosts() {
@@ -4927,6 +5002,7 @@
           applyProfileToUI(profile);
           document.getElementById('setup-modal').style.display = 'none';
         }
+        refreshCommunityPosts();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
       }
