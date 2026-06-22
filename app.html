@@ -3737,18 +3737,21 @@
     const idx = reports.findIndex(r => r.date === d.date);
     if (idx >= 0) reports[idx] = d; else reports.unshift(d);
     localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+    sbPush(REPORT_KEY, JSON.stringify(reports));
     renderReportHistory();
   }
 
   function deleteReport(date) {
     const reports = loadReports().filter(r => r.date !== date);
     localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+    sbPush(REPORT_KEY, JSON.stringify(reports));
     renderReportHistory();
   }
 
   function clearReportHistory() {
     if (!confirm('日報一覧をすべて削除しますか？')) return;
     localStorage.removeItem(REPORT_KEY);
+    sbPush(REPORT_KEY, '[]');
     renderReportHistory();
   }
 
@@ -4298,6 +4301,7 @@
     const idx = reports.findIndex(r => r.date === d.date);
     if (idx >= 0) reports[idx] = d; else reports.push(d);
     localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
+    sbPush(REPORT_KEY, JSON.stringify(reports));
     renderReportHistory();
   }
 
@@ -4779,6 +4783,8 @@
       applySalarySettingsToUI(loadSalarySettings());
       renderMonthlySummary();
       renderAnnualSales();
+      if (typeof renderReportHistory === 'function') renderReportHistory();
+      if (typeof renderDowChart === 'function') renderDowChart();
     } catch(e) { console.warn('sbPull:', e); }
   }
 
