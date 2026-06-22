@@ -1,3 +1,4 @@
+<!-- v20260622-2 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -3163,11 +3164,21 @@
   // ── 報告モーダル ──
   const COMMUNITY_POST_KEY = 'takudora_community_posts';
 
+  const HIDDEN_POSTS_KEY = 'takudora_hidden_posts';
+  function getHiddenPostIds() {
+    try { return JSON.parse(localStorage.getItem(HIDDEN_POSTS_KEY) || '[]'); } catch { return []; }
+  }
+  function addHiddenPostId(id) {
+    const ids = getHiddenPostIds();
+    if (!ids.includes(id)) { ids.push(id); localStorage.setItem(HIDDEN_POSTS_KEY, JSON.stringify(ids)); }
+  }
+
   async function loadCommunityPostsFromSb() {
     if (!_sb) return [];
     try {
       const { data } = await _sb.from('community_posts').select('*').order('created_at', { ascending: false }).limit(50);
-      return data || [];
+      const hidden = getHiddenPostIds();
+      return (data || []).filter(p => !hidden.includes(p.id));
     } catch { return []; }
   }
 
@@ -3289,6 +3300,7 @@
 
   async function deletePost(id) {
     if (!confirm('この投稿を取り消しますか？')) return;
+    addHiddenPostId(id);
     if (_sb) await _sb.from('community_posts').delete().eq('id', id);
     await refreshCommunityPosts();
   }
