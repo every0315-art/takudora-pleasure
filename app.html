@@ -3110,12 +3110,25 @@
   }
 
   async function loadCommunityPostsFromSb() {
-    if (!_sb) return [];
+    if (!_sb) {
+      const listEl = document.getElementById('community-posts-list');
+      if (listEl) listEl.innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:16px 0;">ログインしてください</div>';
+      return [];
+    }
     try {
-      const { data } = await _sb.from('community_posts').select('*').order('created_at', { ascending: false }).limit(50);
+      const { data, error } = await _sb.from('community_posts').select('*').order('created_at', { ascending: false }).limit(50);
+      if (error) {
+        const listEl = document.getElementById('community-posts-list');
+        if (listEl) listEl.innerHTML = `<div style="color:#e05c5c;font-size:13px;text-align:center;padding:16px 0;">読み込みエラー: ${error.message}</div>`;
+        return [];
+      }
       const hidden = getHiddenPostIds();
       return (data || []).filter(p => !hidden.includes(p.id));
-    } catch { return []; }
+    } catch(e) {
+      const listEl = document.getElementById('community-posts-list');
+      if (listEl) listEl.innerHTML = `<div style="color:#e05c5c;font-size:13px;text-align:center;padding:16px 0;">エラー: ${e.message}</div>`;
+      return [];
+    }
   }
 
   function loadCommunityPosts() {
