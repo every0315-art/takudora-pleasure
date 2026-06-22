@@ -642,12 +642,8 @@
       <!-- 行3中央：コミュニティ -->
       <div class="tile tile-community" data-tab="community">
         <div class="tile-label">みんなの投稿</div>
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-          <div style="font-size:12px; color:var(--text);">「六本木で3万超えのロング出た」<span style="color:var(--gray); font-size:11px; margin-left:6px;">3分前</span></div>
-          <div style="font-size:12px; color:var(--text);">「中央線止まって荻窪が熱い」<span style="color:var(--gray); font-size:11px; margin-left:6px;">11分前</span></div>
-          <div style="font-size:12px; color:var(--text);">「新宿西口さばけてきた」<span style="color:var(--gray); font-size:11px; margin-left:6px;">23分前</span></div>
-        </div>
-        <div class="tile-sub" style="margin-top:8px;">新着 5件 · タップして投稿</div>
+        <div id="top-community-list" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;font-size:12px;color:var(--gray);">読込中…</div>
+        <div class="tile-sub" style="margin-top:8px;">タップして投稿</div>
       </div>
 
       <!-- 行3右：ニュース -->
@@ -3308,16 +3304,15 @@
   }
 
   function updateCommunityTileFromSb(posts) {
-    const tileEl = document.querySelector('.tile-community');
-    if (!tileEl) return;
-    const listEl = tileEl.querySelector('div[style*="flex-direction:column"]');
-    if (listEl && posts.length) {
+    const listEl = document.getElementById('top-community-list');
+    if (!listEl) return;
+    if (!posts.length) {
+      listEl.innerHTML = '<span style="color:var(--gray);font-size:12px;">まだ投稿がありません</span>';
+    } else {
       listEl.innerHTML = posts.slice(0, 3).map(p =>
-        `<div style="font-size:12px;color:var(--text);">「${p.body.slice(0,18)}…」<span style="color:var(--gray);font-size:11px;margin-left:6px;">${timeAgo(new Date(p.created_at).getTime())}</span></div>`
+        `<div style="color:var(--text);">「${p.body.slice(0,18)}…」<span style="color:var(--gray);font-size:11px;margin-left:6px;">${timeAgo(new Date(p.created_at).getTime())}</span></div>`
       ).join('');
     }
-    const sub = tileEl.querySelector('.tile-sub');
-    if (sub) sub.textContent = `新着 ${posts.length}件 · タップして投稿`;
   }
 
   function renderCommunityPosts() {
