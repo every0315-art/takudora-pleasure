@@ -4962,7 +4962,14 @@
   if (_sb) {
     _sb.auth.onAuthStateChange(async (event, session) => {
       sbUpdateUI(session?.user || null);
-      if (session?.user) await sbPull();
+      if (session?.user) {
+        await sbPull();
+        const profile = loadProfile();
+        if (profile) {
+          applyProfileToUI(profile);
+          document.getElementById('setup-modal').style.display = 'none';
+        }
+      }
       if (event === 'PASSWORD_RECOVERY') {
         showPasswordResetModal();
       }
