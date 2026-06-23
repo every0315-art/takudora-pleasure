@@ -3224,22 +3224,33 @@
     closeReportModal();
     switchTab('community');
 
-    if (!_sb || !_sbUser) {
+    if (!_sbUser || !_sbToken) {
       alert('投稿するにはログインが必要です。\nクラウド同期からログインしてください。');
       return;
     }
-    const { error } = await _sb.from('community_posts').insert({
-      user_id: _sbUser.id,
-      name, initial, body,
-      tags: tagStr,
-      location: _reportLocation,
-      lat: _reportCoords.lat,
-      lng: _reportCoords.lng
-    });
-    if (error) {
-      alert('投稿に失敗しました: ' + sbErrorMsg(error.message));
-    } else {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/community_posts`, {
+        method: 'POST',
+        headers: {
+          'apikey': SB_KEY,
+          'Authorization': `Bearer ${_sbToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          user_id: _sbUser.id,
+          name, initial, body,
+          tags: tagStr,
+          location: _reportLocation,
+          lat: _reportCoords.lat,
+          lng: _reportCoords.lng
+        }),
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await refreshCommunityPosts();
+    } catch(e) {
+      alert('投稿に失敗しました: ' + e.message);
     }
   }
 
@@ -3251,7 +3262,15 @@
   async function deletePost(id) {
     if (!confirm('この投稿を取り消しますか？')) return;
     addHiddenPostId(id);
-    if (_sb) await _sb.from('community_posts').delete().eq('id', id);
+    if (_sbToken) {
+      try {
+        await fetch(`${SB_URL}/rest/v1/community_posts?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_sbToken}` },
+          signal: AbortSignal.timeout(8000)
+        });
+      } catch(e) { console.warn('deletePost:', e); }
+    }
     await refreshCommunityPosts();
   }
 
@@ -4726,6 +4745,7 @@
   // ── SUPABASE ──────────────────────────────────────────────────────
   let _sb = null;
   let _sbUser = null;
+  let _sbToken = null;
   try {
     if (typeof supabase !== 'undefined') {
       _sb = supabase.createClient(
@@ -4870,6 +4890,7 @@
 
   if (_sb) {
     _sb.auth.onAuthStateChange(async (event, session) => {
+      _sbToken = session?.access_token || null;
       sbUpdateUI(session?.user || null);
       if (session?.user) {
         document.getElementById('login-gate').style.display = 'none';
@@ -4889,6 +4910,7 @@
     });
     _sb.auth.getSession().then(async ({ data }) => {
       if (data?.session?.user) {
+        _sbToken = data.session.access_token || null;
         sbUpdateUI(data.session.user);
         await sbPull();
         const profile = loadProfile();
