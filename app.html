@@ -3110,24 +3110,29 @@
     if (!ids.includes(id)) { ids.push(id); localStorage.setItem(HIDDEN_POSTS_KEY, JSON.stringify(ids)); }
   }
 
+  const SB_URL = 'https://oxkzmpigegqaakeyhyrk.supabase.co';
+  const SB_KEY = 'sb_publishable_V7mWATT47ffhp45TZ1_DpQ_lgTUiPdF';
+
   async function loadCommunityPostsFromSb() {
-    if (!_sb) {
-      const listEl = document.getElementById('community-posts-list');
-      if (listEl) listEl.innerHTML = '<div style="color:var(--gray);font-size:13px;text-align:center;padding:16px 0;">ログインしてください</div>';
-      return [];
-    }
+    const listEl = document.getElementById('community-posts-list');
     try {
-      const { data, error } = await _sb.from('community_posts').select('*').order('created_at', { ascending: false }).limit(50);
-      if (error) {
-        const listEl = document.getElementById('community-posts-list');
-        if (listEl) listEl.innerHTML = `<div style="color:#e05c5c;font-size:13px;text-align:center;padding:16px 0;">読み込みエラー: ${error.message}</div>`;
-        return [];
-      }
+      const token = _sb ? (await _sb.auth.getSession()).data?.session?.access_token : null;
+      const res = await fetch(
+        `${SB_URL}/rest/v1/community_posts?select=*&order=created_at.desc&limit=50`,
+        {
+          headers: {
+            'apikey': SB_KEY,
+            'Authorization': `Bearer ${token || SB_KEY}`
+          },
+          signal: AbortSignal.timeout(8000)
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
       const hidden = getHiddenPostIds();
-      return (data || []).filter(p => !hidden.includes(p.id));
+      return data.filter(p => !hidden.includes(p.id));
     } catch(e) {
-      const listEl = document.getElementById('community-posts-list');
-      if (listEl) listEl.innerHTML = `<div style="color:#e05c5c;font-size:13px;text-align:center;padding:16px 0;">エラー: ${e.message}</div>`;
+      if (listEl) listEl.innerHTML = `<div style="color:#e05c5c;font-size:13px;text-align:center;padding:16px 0;">読み込みエラー: ${e.message}</div>`;
       return [];
     }
   }
