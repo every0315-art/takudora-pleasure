@@ -2090,6 +2090,15 @@
   </div>
 </div>
 
+<!-- 地図全画面モーダル -->
+<div id="map-fullscreen-modal" style="position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,0.9);display:none;flex-direction:column;" onclick="if(event.target===this||event.target.id==='map-fullscreen-modal')closeMapFullscreen()">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;">
+    <div id="map-fullscreen-label" style="color:var(--white);font-size:14px;font-weight:700;"></div>
+    <button onclick="closeMapFullscreen()" style="background:none;border:none;color:var(--white);font-size:24px;cursor:pointer;line-height:1;">✕</button>
+  </div>
+  <div id="map-fullscreen-container" style="flex:1;"></div>
+</div>
+
 <div id="report-modal" style="position:fixed;inset:0;z-index:1001;background:rgba(10,22,40,0.92);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:0;" onclick="if(event.target===this)closeReportModal()">
   <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.25);border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;">
     <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:4px;">📢 状況を報告</div>
@@ -3310,6 +3319,27 @@
     return `${Math.floor(diff / 86400)}日前`;
   }
 
+  let _fullscreenMap = null;
+
+  function openMapFullscreen(lat, lng, label) {
+    const modal = document.getElementById('map-fullscreen-modal');
+    document.getElementById('map-fullscreen-label').textContent = label || '';
+    modal.style.display = 'flex';
+    const container = document.getElementById('map-fullscreen-container');
+    container.innerHTML = '<div id="map-fullscreen-inner" style="width:100%;height:100%;"></div>';
+    setTimeout(() => {
+      if (_fullscreenMap) { _fullscreenMap.remove(); _fullscreenMap = null; }
+      _fullscreenMap = L.map('map-fullscreen-inner', { zoomControl: true, attributionControl: false }).setView([lat, lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_fullscreenMap);
+      L.circleMarker([lat, lng], { radius: 10, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(_fullscreenMap);
+    }, 100);
+  }
+
+  function closeMapFullscreen() {
+    document.getElementById('map-fullscreen-modal').style.display = 'none';
+    if (_fullscreenMap) { _fullscreenMap.remove(); _fullscreenMap = null; }
+  }
+
   function renderCommunityPostsFromSb(posts) {
     const listEl = document.getElementById('community-posts-list');
     if (!listEl) return;
@@ -3335,7 +3365,7 @@
             <div class="post-body">${p.body}</div>
             ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}
           </div>
-          ${p.lat ? `<div id="${mapId}" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;"></div>` : ''}
+          ${p.lat ? `<div id="${mapId}" onclick="openMapFullscreen(${p.lat},${p.lng},'📍 ${(p.location||'').replace(/'/g,'')}')" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;cursor:pointer;"></div>` : ''}
         </div>`;
       frag.appendChild(div);
       if (p.lat) mapIds.push({ mapId, lat: p.lat, lng: p.lng });
@@ -3359,8 +3389,21 @@
     if (!posts.length) {
       listEl.innerHTML = '<span style="color:var(--gray);font-size:12px;">まだ投稿がありません</span>';
     } else {
-      listEl.innerHTML = posts.slice(0, 3).map(p =>
-        `<div style="color:var(--text);">「${p.body.slice(0,18)}…」<span style="color:var(--gray);font-size:11px;margin-left:6px;">${timeAgo(new Date(p.created_at).getTime())}</span></div>`
+      const latest = posts[0];
+      const mapHtml = latest.lat
+        ? `<div id="top-community-map" onclick="openMapFullscreen(${latest.lat},${latest.lng},'📍 ${(latest.location||'').replace(/'/g,'')}')" style="width:100%;height:70px;border-radius:8px;margin-top:6px;cursor:pointer;"></div>`
+        : '';
+      listEl.innerHTML = `<div style="color:var(--text);font-size:11px;">「${latest.body.slice(0,20)}…」<span style="color:var(--gray);font-size:10px;margin-left:4px;">${timeAgo(new Date(latest.created_at).getTime())}</span></div>${mapHtml}`;
+      if (latest.lat) {
+        setTimeout(() => {
+          const el = document.getElementById('top-community-map');
+          if (!el || el.dataset.mapInit) return;
+          el.dataset.mapInit = '1';
+          const m = L.map('top-community-map', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([latest.lat, latest.lng], 14);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+          L.circleMarker([latest.lat, latest.lng], { radius: 6, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
+        }, 200);
+      }
       ).join('');
     }
   }
