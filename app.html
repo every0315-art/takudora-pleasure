@@ -529,7 +529,7 @@
 
 <!-- HEADER -->
 <div class="header">
-  <div class="logo">タクドラ<span>PLEASURE</span><span style="font-size:9px;color:var(--gray);margin-left:6px;">v34</span></div>
+  <div class="logo">タクドラ<span>PLEASURE</span></div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>LIVE</div>
     <div class="user-area" id="header-user-area" onclick="switchTab('account')" style="cursor:pointer;" title="アカウント設定">ゲスト <strong>ユーザー</strong> さん</div>
@@ -3101,8 +3101,6 @@
   updateTopEventTile();
 
   // ── 報告モーダル ──
-  const COMMUNITY_POST_KEY = 'takudora_community_posts';
-
   const HIDDEN_POSTS_KEY = 'takudora_hidden_posts';
   function getHiddenPostIds() {
     try { return JSON.parse(localStorage.getItem(HIDDEN_POSTS_KEY) || '[]'); } catch { return []; }
@@ -3132,13 +3130,6 @@
       if (listEl) listEl.innerHTML = `<div style="color:#e05c5c;font-size:13px;text-align:center;padding:16px 0;">エラー: ${e.message}</div>`;
       return [];
     }
-  }
-
-  function loadCommunityPosts() {
-    try { return JSON.parse(localStorage.getItem(COMMUNITY_POST_KEY) || '[]'); } catch { return []; }
-  }
-  function saveCommunityPosts(posts) {
-    localStorage.setItem(COMMUNITY_POST_KEY, JSON.stringify(posts));
   }
 
   async function refreshCommunityPosts() {
@@ -3331,64 +3322,6 @@
     }
   }
 
-  function renderCommunityPosts() {
-    const container = document.querySelector('#tab-community .card:first-child');
-    if (!container) return;
-    const posts = loadCommunityPosts();
-    if (!posts.length) return;
-    // 既存の自分の投稿エリアを削除（再描画用）
-    container.querySelectorAll('.my-post').forEach(el => el.remove());
-    // 先頭に挿入（card-titleの直後）
-    const title = container.querySelector('.card-title');
-    const frag = document.createDocumentFragment();
-    const mapIds = [];
-    posts.forEach((p, i) => {
-      const mapId = `post-map-${p.ts}`;
-      const div = document.createElement('div');
-      div.className = 'post my-post';
-      div.innerHTML = `
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="flex:1;min-width:0;">
-            <div class="post-header" style="margin-bottom:8px;">
-              <div class="post-avatar">${p.initial}</div>
-              <div><div class="post-name">${p.name}</div><div class="post-time">${timeAgo(p.ts)}</div></div>
-              <button onclick="deletePost(${p.ts})" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;" title="取り消す">✕ 取り消す</button>
-            </div>
-            <div class="post-body">${p.body}</div>
-            ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}
-          </div>
-          ${p.lat ? `<div id="${mapId}" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;"></div>` : ''}
-        </div>`;
-      frag.appendChild(div);
-      if (p.lat) mapIds.push({ mapId, lat: p.lat, lng: p.lng });
-    });
-    title.after(frag);
-    // 地図を非同期で初期化
-    mapIds.forEach(({ mapId, lat, lng }) => {
-      setTimeout(() => {
-        const el = document.getElementById(mapId);
-        if (!el || el.dataset.mapInit) return;
-        el.dataset.mapInit = '1';
-        const m = L.map(mapId, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([lat, lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
-        L.circleMarker([lat, lng], { radius: 7, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
-      }, 100);
-    });
-  }
-
-  function updateCommunityTile() {
-    const posts = loadCommunityPosts();
-    const tileEl = document.querySelector('.tile-community');
-    if (!tileEl || !posts.length) return;
-    const listEl = tileEl.querySelector('div[style*="flex-direction:column"]');
-    if (!listEl) return;
-    listEl.innerHTML = posts.slice(0, 3).map(p =>
-      `<div style="font-size:12px;color:var(--text);">「${p.body.slice(0,18)}…」<span style="color:var(--gray);font-size:11px;margin-left:6px;">${timeAgo(p.ts)}</span></div>`
-    ).join('');
-    const sub = tileEl.querySelector('.tile-sub');
-    if (sub) sub.textContent = `新着 ${posts.length}件 · タップして投稿`;
-  }
-
   // 管理者の場合、静的投稿に削除ボタンを追加
   function addAdminDeleteButtons() {
     if (!isAdmin()) return;
@@ -3403,31 +3336,6 @@
       header.appendChild(btn);
     });
   }
-  // Supabaseログイン後に呼び出せるよう公開
-  const _origSbUpdateUI = typeof sbUpdateUI === 'function' ? sbUpdateUI : null;
-
-  // 静的投稿の地図を初期化
-  const staticPostMaps = [
-    { id: 'smap-1', lat: 35.6938, lng: 139.6999 }, // 新宿西口
-    { id: 'smap-2', lat: 35.6604, lng: 139.7292 }, // 六本木
-    { id: 'smap-3', lat: 35.7051, lng: 139.6492 }, // 高円寺
-    { id: 'smap-4', lat: 35.6812, lng: 139.7671 }, // 東京駅
-    { id: 'smap-5', lat: 35.6778, lng: 139.7148 }, // 外苑前
-  ];
-  staticPostMaps.forEach(({ id, lat, lng }) => {
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (!el || el.dataset.mapInit) return;
-      el.dataset.mapInit = '1';
-      const m = L.map(id, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([lat, lng], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
-      L.circleMarker([lat, lng], { radius: 7, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
-    }, 200);
-  });
-
-  renderCommunityPosts();
-  updateCommunityTile();
-
   // ストップウォッチ（idle→running→stopped→idle）
   let swState = 'idle', swStart = 0, swElapsed = 0, swTimer = null;
   const pad = n => String(n).padStart(2, '0');
@@ -4988,6 +4896,7 @@
         refreshCommunityPosts();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
+        refreshCommunityPosts();
       }
     });
   }
