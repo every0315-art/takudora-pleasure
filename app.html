@@ -527,6 +527,11 @@
 </head>
 <body>
 
+<!-- 国際線第2プール 車両なしアラートバナー -->
+<div id="haneda-cam-alert" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;background:#c0392b;color:#fff;font-size:15px;font-weight:700;padding:10px 24px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.4);white-space:nowrap;pointer-events:none;">
+  国際線第2プール 車両なし
+</div>
+
 <!-- HEADER -->
 <div class="header">
   <div class="logo">タクドラ<span>PLEASURE</span></div>
@@ -2501,6 +2506,24 @@
   }
   loadTtcImage();
   setInterval(loadTtcImage, 60000);
+
+  // 国際線第2プール 車両有無チェック（2分おき、1〜7時は除外）
+  async function checkHanedaCam() {
+    const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
+    const banner = document.getElementById('haneda-cam-alert');
+    if (jstHour >= 1 && jstHour < 7) {
+      if (banner) banner.style.display = 'none';
+      return;
+    }
+    try {
+      const r = await fetch('/api/haneda-cam', { signal: AbortSignal.timeout(20000) });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (banner) banner.style.display = (d.hasVehicles === false) ? '' : 'none';
+    } catch(e) { /* ネットワークエラーは無視 */ }
+  }
+  checkHanedaCam();
+  setInterval(checkHanedaCam, 120000);
 
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
   const HANEDA_TERMINAL_INFO = {
