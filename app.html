@@ -4734,6 +4734,9 @@
     }
   } catch(e) { console.warn('Supabase init:', e); }
 
+  // 認証完了を待たずにコミュニティ投稿を即時読み込み（公開データのため認証不要）
+  if (_sb) refreshCommunityPosts();
+
   async function sbPush(key, value) {
     if (!_sb || !_sbUser) return;
     try {
