@@ -3116,14 +3116,10 @@
   async function loadCommunityPostsFromSb() {
     const listEl = document.getElementById('community-posts-list');
     try {
-      const token = _sb ? (await _sb.auth.getSession()).data?.session?.access_token : null;
       const res = await fetch(
         `${SB_URL}/rest/v1/community_posts?select=*&order=created_at.desc&limit=50`,
         {
-          headers: {
-            'apikey': SB_KEY,
-            'Authorization': `Bearer ${token || SB_KEY}`
-          },
+          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` },
           signal: AbortSignal.timeout(8000)
         }
       );
