@@ -2524,8 +2524,22 @@
       if (banner) banner.style.display = 'none';
       return;
     }
+    // ブラウザで既に表示中の画像を canvas 経由で base64 化して送信
+    // （Vercelサーバーからttc.taxi-inf.jpへの直接接続が不可のため）
     try {
-      const r = await fetch('/api/haneda-cam', { signal: AbortSignal.timeout(20000) });
+      const img = document.getElementById('top-haneda-img2') || document.getElementById('ttc-img-t3c');
+      if (!img || !img.complete || !img.naturalWidth) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const b64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+      const r = await fetch('/api/haneda-cam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64 }),
+        signal: AbortSignal.timeout(30000),
+      });
       if (!r.ok) return;
       const d = await r.json();
       if (banner) banner.style.display = (d.hasVehicles === false) ? '' : 'none';

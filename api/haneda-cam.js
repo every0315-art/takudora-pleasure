@@ -1,12 +1,15 @@
-// 羽田空港 国際線第2プール（Real04.jpg）車両有無をClaude Haikuで判定
+// 羽田空港 国際線第2プール 車両有無をClaude Haikuで判定
+// クライアントから base64 画像をPOSTで受け取り判定する（サーバーからttc.taxi-inf.jpへの接続不可のため）
 
 export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
@@ -17,16 +20,10 @@ export default async function handler(req, res) {
     return res.json({ hasVehicles: true, skipped: true });
   }
 
-  try {
-    const stamp = Date.now();
-    const imgRes = await fetch(`https://ttc.taxi-inf.jp/Real04.jpg?${stamp}`, {
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!imgRes.ok) throw new Error(`image fetch ${imgRes.status}`);
-    const imgBuf = Buffer.from(await imgRes.arrayBuffer());
-    const imgB64 = imgBuf.toString('base64');
-    console.log(`[haneda-cam] image fetched ${imgBuf.length} bytes`);
+  const { image } = req.body || {};
+  if (!image) return res.status(400).json({ error: 'image required' });
 
+  try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -40,12 +37,12 @@ export default async function handler(req, res) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgB64 } },
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
             { type: 'text', text: '羽田空港タクシー待機場の監視カメラ画像です。タクシーや車両が1台以上写っていますか？「yes」か「no」のみ答えてください。' },
           ],
         }],
       }),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(25000),
     });
 
     if (!r.ok) {
