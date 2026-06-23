@@ -1,6 +1,6 @@
 // 羽田空港 国際線第2プール（Real04.jpg）車両有無をClaude Haikuで判定
 
-export const config = { maxDuration: 20 };
+export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,11 +20,12 @@ export default async function handler(req, res) {
   try {
     const stamp = Date.now();
     const imgRes = await fetch(`https://ttc.taxi-inf.jp/Real04.jpg?${stamp}`, {
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     });
     if (!imgRes.ok) throw new Error(`image fetch ${imgRes.status}`);
     const imgBuf = Buffer.from(await imgRes.arrayBuffer());
     const imgB64 = imgBuf.toString('base64');
+    console.log(`[haneda-cam] image fetched ${imgBuf.length} bytes`);
 
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -44,16 +45,21 @@ export default async function handler(req, res) {
           ],
         }],
       }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
     });
 
-    if (!r.ok) throw new Error(`Claude API ${r.status}`);
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      throw new Error(`Claude API ${r.status}: ${errText.slice(0, 200)}`);
+    }
     const data = await r.json();
     const text = (data.content?.[0]?.text || '').toLowerCase().trim();
     const hasVehicles = text.startsWith('yes');
+    console.log(`[haneda-cam] result: ${text} → hasVehicles=${hasVehicles}`);
 
     return res.json({ hasVehicles, raw: text });
   } catch (e) {
+    console.error(`[haneda-cam] error: ${e.message}`);
     return res.status(502).json({ error: e.message });
   }
 }
