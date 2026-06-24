@@ -3027,10 +3027,10 @@
       if (tMin < 4 * 60) tMin += 24 * 60;
       const diff = tMin - nowMin;
       if (diff < -15 || diff > 15) continue;
-      const sc = STATION_COORDS[t.from];
+      const sc = STATION_COORDS[t.to];
       if (!sc || !pos) continue;
       const km = haversineKm(pos.lat, pos.lon, sc.lat, sc.lon);
-      if (km > 1) continue;
+      if (km > 2) continue;
       const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
       const label = diff >= 0 ? `終電${diff}分前` : `終電${Math.abs(diff)}分後`;
       alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）`, serious: true });
