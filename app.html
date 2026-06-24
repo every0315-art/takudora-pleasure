@@ -2432,7 +2432,15 @@
         updatePickupAlerts();
         return;
       }
-      _trainAlerts = data.lines.filter(l => l.status && l.status !== '平常運転');
+      const newAlerts = data.lines.filter(l => l.status && l.status !== '平常運転');
+      // 遅延の初回検知時刻を記録、平常に戻ったら削除
+      for (const l of newAlerts) {
+        if (!_delayFirstSeen[l.name]) _delayFirstSeen[l.name] = Date.now();
+      }
+      for (const name of Object.keys(_delayFirstSeen)) {
+        if (!newAlerts.find(l => l.name === name)) delete _delayFirstSeen[name];
+      }
+      _trainAlerts = newAlerts;
       updatePickupAlerts();
       statusEl.innerHTML = data.lines.map(l => `
         <a href="${l.url}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:8px 0;">
@@ -2984,6 +2992,7 @@
   // ── ピックアップアラート ──
   // 鉄道運行障害情報（loadTrainInfoから更新される）
   let _trainAlerts = [];
+  let _delayFirstSeen = {}; // {路線名: 最初に遅延検知したtimestamp}
 
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
@@ -2997,11 +3006,18 @@
     // 鉄道遅延・運転見合わせ
     for (const l of _trainAlerts) {
       const isSerious = l.status.includes('見合わせ') || l.status.includes('運休') || l.status.includes('中止');
+      const isDelay = !isSerious;
+      if (isDelay) {
+        // 遅延検知から1時間経過したらアラートを非表示
+        const first = _delayFirstSeen[l.name] || Date.now();
+        if (Date.now() - first > 60 * 60 * 1000) continue;
+      }
       alerts.push({
         tag: isSerious ? '🚨 運転見合わせ' : '⚠️ 遅延情報',
         main: l.name,
         sub: l.status + (l.message ? `：${l.message.slice(0,30)}` : ''),
         serious: isSerious,
+        delay: isDelay,
       });
     }
 
@@ -3053,8 +3069,8 @@
       area.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px;';
       area.className = 'has-alert';
       area.innerHTML = alerts.map(a => `
-        <div class="pickup-card${a.serious ? ' pc-alert' : ''}" style="max-width:100%;width:100%;">
-          <div class="pc-tag">${a.tag}</div>
+        <div class="pickup-card${a.serious ? ' pc-alert' : a.delay ? ' pc-warn' : ''}" style="max-width:100%;width:100%;">
+          <div class="pc-tag" style="${a.delay ? 'color:var(--yellow);' : ''}">${a.tag}</div>
           <div class="pc-main">${a.main}</div>
           <div class="pc-sub">${a.sub}</div>
         </div>`).join('');
