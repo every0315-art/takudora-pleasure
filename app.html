@@ -2711,10 +2711,7 @@
             } else {
               statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
             }
-            const hanedaUrl = f.intl
-              ? 'https://tokyo-haneda.com/flight/int_search.html'
-              : 'https://tokyo-haneda.com/flight/dms_search.html';
-            const flightLink = `<a href="${hanedaUrl}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;font-weight:700;">${f.flight}</a>`;
+            const flightLink = `<a href="https://ja.flightaware.com/live/flight/${f.flight}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;font-weight:700;">${f.flight}</a>`;
             html += `<tr><td>${timeTd}</td><td>${flightLink}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
           }
           html += `</table>`;
