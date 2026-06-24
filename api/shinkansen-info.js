@@ -1,20 +1,16 @@
 // 新幹線運行情報
-// Yahoo!路線情報 全国diainfo から東海道・東北・上越・北陸新幹線を取得
-// リンク先: JR各社公式サイト
+// JR東日本: Yahoo!路線情報 全国diainfo
+// JR東海（東海道新幹線）: ODPT公共交通オープンデータ
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const strip = s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const LINE_CONFIG = {
   '東海道新幹線': { color: '#f39c12', jrUrl: 'https://traininfo.jr-central.co.jp/shinkansen/pc/ja/index.html' },
   '東北新幹線':   { color: '#27ae60', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
   '上越新幹線':   { color: '#2980b9', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
   '北陸新幹線':   { color: '#8e44ad', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
-  '山形新幹線':   { color: '#16a085', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
-  '秋田新幹線':   { color: '#c0392b', jrUrl: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
 };
 
-// diainfo 配列を上り/下り別に整理
 function parseDirections(diainfoArr) {
   if (!diainfoArr || diainfoArr.length === 0) {
     return [{ dir: '上り', status: '平常運転', message: '' }, { dir: '下り', status: '平常運転', message: '' }];
@@ -34,14 +30,9 @@ function parseDirections(diainfoArr) {
   ];
 }
 
-// Yahoo全国diainfo からtrouble路線を取得
 async function fetchFromYahoo(url) {
   const res = await fetch(url, {
-    headers: {
-      'User-Agent': UA,
-      'Accept': 'text/html,application/xhtml+xml',
-      'Accept-Language': 'ja',
-    }
+    headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'ja' }
   });
   const html = await res.text();
   const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
@@ -50,64 +41,86 @@ async function fetchFromYahoo(url) {
   return data?.props?.pageProps?.troubleRails || [];
 }
 
+// ODPT から東海道新幹線の運行情報を取得
+// odpt:railDirection: odpt.RailDirection:Outbound=下り, Inbound=上り
+async function fetchTokaidoFromODPT(apiKey) {
+  const url = `https://api.odpt.org/api/4/odpt:TrainInformation?odpt:operator=odpt.Operator:JRCentral&acl:consumerKey=${apiKey}`;
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error(`ODPT ${res.status}`);
+  const items = await res.json();
+
+  // 東海道新幹線のみフィルタ（他線 = 在来線も含まれる）
+  const tokaido = items.filter(item => {
+    const railway = item['odpt:railway'] || '';
+    return railway.includes('Tokaido') || railway.includes('東海道');
+  });
+
+  if (tokaido.length === 0) {
+    // 全線共通の情報として扱う
+    const all = items[0];
+    if (!all) return [{ dir: '上り', status: '平常運転', message: '' }, { dir: '下り', status: '平常運転', message: '' }];
+    const text = all['odpt:trainInformationText']?.ja || all['odpt:trainInformationText'] || '';
+    const isNormal = !text || text.includes('平常') || text.includes('通常');
+    const status = isNormal ? '平常運転' : '遅延・運休情報あり';
+    return [{ dir: '上り', status, message: text }, { dir: '下り', status, message: text }];
+  }
+
+  // 方向別に整理
+  const dirMap = { up: null, down: null };
+  for (const item of tokaido) {
+    const dir  = item['odpt:railDirection'] || '';
+    const text = item['odpt:trainInformationText']?.ja || item['odpt:trainInformationText'] || '';
+    const isNormal = !text || text.includes('平常') || text.includes('通常');
+    const entry = { status: isNormal ? '平常運転' : '遅延・運休情報あり', message: text };
+    if (dir.includes('Inbound')) dirMap.up = entry;
+    else if (dir.includes('Outbound')) dirMap.down = entry;
+    else { dirMap.up = dirMap.up || entry; dirMap.down = dirMap.down || entry; }
+  }
+
+  return [
+    { dir: '上り', ...(dirMap.up   || { status: '平常運転', message: '' }) },
+    { dir: '下り', ...(dirMap.down || { status: '平常運転', message: '' }) },
+  ];
+}
+
 export default async function handler(req, res) {
   try {
-    // ?debug=1 でtrouble路線の一覧を確認
-    if (req.query?.debug === '1') {
-      // Yahoo全エリア + レスキューナウを試す
-      const yahooAreas = [2,4,6,7,8,9,10].map(n => `https://transit.yahoo.co.jp/diainfo/area/${n}`);
-      const others = [
-        'https://www.rescuenow.net/s/',
-        'https://www.rescuenow.net/',
-      ];
-      const results = await Promise.all([...yahooAreas, ...others].map(async url => {
-        try {
-          if (url.includes('yahoo')) {
-            const rails = await fetchFromYahoo(url);
-            return { url, count: rails.length, lines: rails.map(r => r.routeInfo?.property?.displayName) };
-          } else {
-            const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ja' } });
-            const text = strip(await r.text()).slice(0, 300);
-            return { url, status: r.status, preview: text };
-          }
-        } catch(e) {
-          return { url, error: e.message };
-        }
-      }));
-      return res.json({ debug: true, results });
-    }
+    const ODPT_KEY = process.env.ODPT_KEY;
+    const DISPLAY_LINES = ['東海道新幹線', '東北新幹線', '上越新幹線', '北陸新幹線'];
 
-    // 全国 diainfo と 新幹線エリア の両方を取得してマージ
-    const [allRails, shinkansenRails] = await Promise.allSettled([
-      fetchFromYahoo('https://transit.yahoo.co.jp/diainfo/'),
+    // JR東日本 3線: Yahoo diainfo / 東海道新幹線: ODPT
+    const [shinkansenRails, tokaidoDirections] = await Promise.allSettled([
       fetchFromYahoo('https://transit.yahoo.co.jp/diainfo/area/1'),
+      ODPT_KEY ? fetchTokaidoFromODPT(ODPT_KEY) : Promise.resolve(null),
     ]);
 
-    const troubleRails = [
-      ...(allRails.status === 'fulfilled' ? allRails.value : []),
-      ...(shinkansenRails.status === 'fulfilled' ? shinkansenRails.value : []),
+    // Yahoo の JR東日本 路線をマップ化
+    const troubleMap = {};
+    if (shinkansenRails.status === 'fulfilled') {
+      shinkansenRails.value.forEach(r => {
+        const p    = r.routeInfo?.property || {};
+        const name = p.displayName || p.railName || '';
+        if (LINE_CONFIG[name] && !troubleMap[name]) {
+          troubleMap[name] = parseDirections(p.diainfo);
+        }
+      });
+    }
+
+    // 東海道新幹線は ODPT 結果を使用
+    if (tokaidoDirections.status === 'fulfilled' && tokaidoDirections.value) {
+      troubleMap['東海道新幹線'] = tokaidoDirections.value;
+    }
+
+    const normal = [
+      { dir: '上り', status: '平常運転', message: '' },
+      { dir: '下り', status: '平常運転', message: '' },
     ];
 
-    // 障害のある路線をマップ化（重複は最初のエントリを優先）
-    const troubleMap = {};
-    troubleRails.forEach(r => {
-      const p    = r.routeInfo?.property || {};
-      const name = p.displayName || p.railName || '';
-      if (LINE_CONFIG[name] && !troubleMap[name]) {
-        troubleMap[name] = parseDirections(p.diainfo);
-      }
-    });
-
-    // 全対象路線を出力
-    const DISPLAY_LINES = ['東海道新幹線', '東北新幹線', '上越新幹線', '北陸新幹線'];
     const all = DISPLAY_LINES.map(name => ({
       name,
-      url:   LINE_CONFIG[name].jrUrl,
-      color: LINE_CONFIG[name].color,
-      directions: troubleMap[name] || [
-        { dir: '上り', status: '平常運転', message: '' },
-        { dir: '下り', status: '平常運転', message: '' },
-      ],
+      url:        LINE_CONFIG[name].jrUrl,
+      color:      LINE_CONFIG[name].color,
+      directions: troubleMap[name] || normal,
     }));
 
     res.setHeader('Cache-Control', 's-maxage=60');
