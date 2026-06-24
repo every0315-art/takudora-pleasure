@@ -569,7 +569,7 @@
         </div>
       </div>
       <button onclick="openReportModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 4px;background:var(--red);border:none;border-radius:10px;cursor:pointer;color:var(--white);font-size:11px;font-weight:700;line-height:1.3;">
-        <span style="font-size:16px;">📢</span>現在地報告
+        <span style="font-size:16px;">📢</span>現在地投稿
       </button>
     </div>
     <div class="top-layout">
@@ -603,10 +603,13 @@
       </div>
 
       <!-- 行1右：街の様子 -->
-      <div class="tile tile-stand" data-tab="stand">
-        <div class="tile-label">街の様子</div>
-        <div class="tile-main s-green">新宿西口<br><span style="font-size:13px;">待ち約5分</span></div>
-        <div class="tile-sub">渋谷 22分 / 東京 45分</div>
+      <div class="tile tile-stand" data-tab="stand" style="padding:8px 8px 6px;">
+        <div class="tile-label" style="margin-bottom:6px;">街の様子</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+          <img id="top-pcounter-img-a" src="" alt="八重洲待機所" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲待機所')">
+          <img id="top-pcounter-img-b" src="" alt="八重洲乗場" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲乗場')">
+        </div>
+        <div id="top-pcounter-upd" style="font-size:9px;color:var(--gray);text-align:right;margin-top:4px;"></div>
       </div>
 
       <!-- 行2左：電車・交通 -->
@@ -624,6 +627,8 @@
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
         </div>
         <img id="top-haneda-img1" src="" alt="待機場状況" style="width:calc(100% + 20px);margin:8px -10px 0;display:block;object-fit:cover;">
+        <img id="top-haneda-img2" src="" alt="" crossorigin="anonymous" style="display:none;" aria-hidden="true">
+        <img id="top-haneda-img-real02" src="" alt="" crossorigin="anonymous" style="display:none;" aria-hidden="true">
       </div>
 
       <!-- 行2右：道路情報 -->
@@ -643,8 +648,7 @@
       <!-- 行3中央：コミュニティ -->
       <div class="tile tile-community" data-tab="community">
         <div class="tile-label">みんなの投稿</div>
-        <div id="top-community-list" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;font-size:12px;color:var(--gray);">読込中…</div>
-        <div class="tile-sub" style="margin-top:8px;">タップして投稿</div>
+        <div id="top-community-list" style="display:flex;flex-direction:column;gap:0;margin-top:6px;flex:1;overflow:hidden;">読込中…</div>
       </div>
 
       <!-- 行3右：ニュース -->
@@ -887,24 +891,24 @@
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
         <span>ターミナル別 到着便（リアルタイム）</span>
         <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:10px;color:var(--gray);">過去</span>
-          <select id="arr-past-sel" onchange="loadHanedaArr()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:2px 6px;cursor:pointer;">
+          <span style="font-size:10px;color:var(--gray);">到着後</span>
+          <select id="arr-future-sel" onchange="loadHanedaArr()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:2px 6px;cursor:pointer;">
             <option value="15">15分</option>
-            <option value="30" selected>30分</option>
+            <option value="30">30分</option>
             <option value="45">45分</option>
-            <option value="60">60分</option>
+            <option value="60" selected>60分</option>
             <option value="75">75分</option>
             <option value="90">90分</option>
             <option value="120">120分</option>
             <option value="150">150分</option>
             <option value="180">180分</option>
           </select>
-          <span style="font-size:10px;color:var(--gray);">〜未来</span>
-          <select id="arr-future-sel" onchange="loadHanedaArr()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:2px 6px;cursor:pointer;">
+          <span style="font-size:10px;color:var(--gray);">〜到着前</span>
+          <select id="arr-past-sel" onchange="loadHanedaArr()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:2px 6px;cursor:pointer;">
             <option value="15">15分</option>
-            <option value="30">30分</option>
+            <option value="30" selected>30分</option>
             <option value="45">45分</option>
-            <option value="60" selected>60分</option>
+            <option value="60">60分</option>
             <option value="75">75分</option>
             <option value="90">90分</option>
             <option value="120">120分</option>
@@ -972,6 +976,12 @@
 
     <div class="card" style="padding:16px;">
       <div class="card-title">ライブカメラ</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">八重洲待機所</div>
+      <img id="pcounter-img-a" src="" alt="八重洲待機所" style="width:100%;border-radius:8px;display:block;margin-bottom:4px;" onclick="openImgFullscreen(this.src,'八重洲待機所')">
+      <div id="pcounter-upd-a" style="font-size:10px;color:var(--gray);text-align:right;margin-bottom:12px;"></div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">八重洲乗場</div>
+      <img id="pcounter-img-b" src="" alt="八重洲乗場" style="width:100%;border-radius:8px;display:block;margin-bottom:4px;" onclick="openImgFullscreen(this.src,'八重洲乗場')">
+      <div id="pcounter-upd-b" style="font-size:10px;color:var(--gray);text-align:right;margin-bottom:12px;"></div>
       <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">新宿区役所交差点</div>
       <div style="position:relative;width:100%;padding-top:56.25%;border-radius:8px;overflow:hidden;margin-bottom:12px;">
         <iframe src="https://www.youtube.com/embed/vuP9iwdyyFM?autoplay=1&mute=1"
@@ -1017,85 +1027,6 @@
       </div>
     </div>
 
-    <div class="alert alert-gold">
-      <div class="alert-icon">★</div>
-      <div>新宿駅東口 — コミュニティ投稿：「列がさばけてきた、今が狙い目」 (3分前)</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">街の様子</div>
-
-      <div class="stand-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div class="stand-name">新宿駅 西口</div>
-            <div class="stand-meta">新宿区西新宿 · 24時間</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="stand-wait s-green">待ち 約5分</div>
-            <span class="badge badge-green" style="margin-top:4px;">空いている</span>
-          </div>
-        </div>
-        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：東口一方通行に注意。深夜は誘導員あり。</div>
-      </div>
-
-      <div class="stand-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div class="stand-name">渋谷駅 ハチ公前</div>
-            <div class="stand-meta">渋谷区道玄坂 · 24時間</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="stand-wait s-yellow">待ち 約22分</div>
-            <span class="badge badge-yellow" style="margin-top:4px;">やや混雑</span>
-          </div>
-        </div>
-        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：センター街方向から進入。並び直し不可。</div>
-      </div>
-
-      <div class="stand-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div class="stand-name">東京駅 丸の内南口</div>
-            <div class="stand-meta">千代田区丸の内 · 24時間</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="stand-wait s-red">待ち 約45分</div>
-            <span class="badge badge-red" style="margin-top:4px;">混雑</span>
-          </div>
-        </div>
-        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：タクシー専用レーン。駅員に従うこと。</div>
-      </div>
-
-      <div class="stand-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div class="stand-name">六本木ヒルズ</div>
-            <div class="stand-meta">港区六本木 · 24時間</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="stand-wait s-green">待ち 約8分</div>
-            <span class="badge badge-green" style="margin-top:4px;">空いている</span>
-          </div>
-        </div>
-        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：ヒルズ地下P3から。夜間はロング率高め。</div>
-      </div>
-
-      <div class="stand-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div class="stand-name">銀座 4丁目</div>
-            <div class="stand-meta">中央区銀座 · 23:00まで</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="stand-wait s-green">待ち 約12分</div>
-            <span class="badge badge-green" style="margin-top:4px;">空いている</span>
-          </div>
-        </div>
-        <div style="margin-top:8px; font-size:12px; color:var(--gray);">入構：晴海通り沿い。夜間は外国人観光客が多い。</div>
-      </div>
-
-    </div>
 
   </div>
 
@@ -1120,18 +1051,23 @@
     </div>
 
     <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-        大型客船 入港予定
-        <span id="ships-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;" onclick="toggleShips()">
+        <span>大型客船 入港予定</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span id="ships-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
+          <svg id="ships-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" style="transition:transform 0.2s;flex-shrink:0;"><path d="M4 6l4 4 4-4" stroke="var(--gray)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
       </div>
-      <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">有明 · 晴海 · 竹芝 · 日の出（中央区・港区・江東区）</div>
-      <div id="ships-list">読み込み中…</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
-        <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">東京都港湾局</a>
-        <a href="https://www.tptc.co.jp/terminal/guide/cruise" target="_blank" style="color:var(--gold);">東京国際クルーズターミナル</a>
-        <a href="https://www.tokaikisen.co.jp/timetable/" target="_blank" style="color:var(--gold);">東海汽船 時刻表</a>
-        <a href="https://www.ogasawarakaiun.co.jp/ship/" target="_blank" style="color:var(--gold);">小笠原海運</a>
-        <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">晴海ふ頭 入港情報</a>
+      <div id="ships-body">
+        <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">有明 · 晴海 · 竹芝 · 日の出（中央区・港区・江東区）</div>
+        <div id="ships-list">読み込み中…</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+          <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">東京都港湾局</a>
+          <a href="https://www.tptc.co.jp/terminal/guide/cruise" target="_blank" style="color:var(--gold);">東京国際クルーズターミナル</a>
+          <a href="https://www.tokaikisen.co.jp/timetable/" target="_blank" style="color:var(--gold);">東海汽船 時刻表</a>
+          <a href="https://www.ogasawarakaiun.co.jp/ship/" target="_blank" style="color:var(--gold);">小笠原海運</a>
+          <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">晴海ふ頭 入港情報</a>
+        </div>
       </div>
     </div>
 
@@ -2079,8 +2015,29 @@
 
 <!-- アバター選択モーダル -->
 <div id="avatar-modal" style="position:fixed;inset:0;z-index:1001;background:rgba(10,22,40,0.92);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px;">
-  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:24px;max-width:340px;width:100%;">
-    <div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:16px;">アバターを選択</div>
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:24px;max-width:340px;width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:14px;">アバターを選択</div>
+
+    <!-- 画像アップロード -->
+    <div style="background:rgba(255,255,255,.04);border:1px dashed rgba(201,168,76,.4);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px;">画像からアバターを設定</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="avatar-img-preview" style="width:54px;height:54px;border-radius:50%;border:2px solid var(--border);background:var(--navy-light);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;">📷</div>
+        <div style="flex:1;">
+          <button onclick="document.getElementById('avatar-file-input').click()"
+            style="width:100%;padding:8px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:var(--gold);font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;margin-bottom:6px;">
+            画像を選択
+          </button>
+          <button id="avatar-img-set-btn" onclick="applyAvatarImage()" disabled
+            style="width:100%;padding:8px;background:var(--gold);color:#000;font-size:12px;font-weight:700;border:none;border-radius:6px;cursor:pointer;opacity:0.4;">
+            この画像に設定
+          </button>
+        </div>
+      </div>
+      <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="previewAvatarImage(this)">
+    </div>
+
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">または絵文字から選択</div>
     <div id="avatar-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;"></div>
     <button onclick="closeAvatarPicker()"
       style="width:100%;padding:10px;background:none;border:1px solid var(--border);color:var(--gray);font-size:13px;border-radius:6px;cursor:pointer;">
@@ -2154,14 +2111,30 @@
         <input type="checkbox" id="report-map-toggle" onchange="toggleReportMap(this.checked)" style="width:16px;height:16px;cursor:pointer;">
       </label>
     </div>
-    <div id="report-map" style="display:none;width:100%;height:180px;border-radius:10px;margin-bottom:12px;background:rgba(255,255,255,.05);align-items:center;justify-content:center;">
+    <div id="report-map" style="display:none;width:100%;height:180px;border-radius:10px;margin-bottom:4px;background:rgba(255,255,255,.05);align-items:center;justify-content:center;">
       <span style="font-size:11px;color:var(--gray);">位置情報を取得中…</span>
     </div>
+    <div style="font-size:10px;color:var(--gray);margin-bottom:8px;display:none;" id="report-map-hint">ピンをドラッグ、または地図をタップして位置を調整できます</div>
     <div id="report-location-label" style="font-size:11px;color:var(--gold);margin-bottom:12px;min-height:16px;"></div>
-    <textarea id="report-comment" rows="2" placeholder="コメント（任意）" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:14px;padding:10px 12px;resize:none;box-sizing:border-box;margin-bottom:14px;font-family:inherit;"></textarea>
+    <textarea id="report-comment" rows="2" placeholder="コメント（任意）" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:14px;padding:10px 12px;resize:none;box-sizing:border-box;margin-bottom:10px;font-family:inherit;"></textarea>
+
+    <!-- 画像・動画添付 -->
+    <div style="margin-bottom:14px;">
+      <div id="report-media-preview" style="display:none;position:relative;margin-bottom:8px;">
+        <img id="report-media-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;display:none;">
+        <video id="report-media-vid" style="width:100%;max-height:160px;border-radius:8px;display:none;" controls muted playsinline></video>
+        <button onclick="clearReportMedia()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);border:none;color:#fff;width:24px;height:24px;border-radius:50%;font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <button onclick="document.getElementById('report-media-input').click()"
+        style="width:100%;padding:9px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.2);color:var(--gray);font-size:13px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span style="font-size:16px;">📷</span> 画像・動画を添付（任意）
+      </button>
+      <input type="file" id="report-media-input" accept="image/*,video/*" style="display:none;" onchange="previewReportMedia(this)">
+    </div>
+
     <div style="display:flex;gap:10px;">
       <button onclick="closeReportModal()" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--gray);font-size:14px;font-weight:700;cursor:pointer;">キャンセル</button>
-      <button onclick="submitReport()" style="flex:2;padding:12px;border-radius:10px;border:none;background:var(--red);color:var(--white);font-size:14px;font-weight:800;cursor:pointer;">投稿する</button>
+      <button onclick="submitReport()" id="report-submit-btn" style="flex:2;padding:12px;border-radius:10px;border:none;background:var(--red);color:var(--white);font-size:14px;font-weight:800;cursor:pointer;">投稿する</button>
     </div>
   </div>
 </div>
@@ -2523,17 +2496,6 @@
       };
 
       el.innerHTML = lines.map(line => {
-        // 東海道新幹線はJR東海データ取得不可のため直リンク表示
-        if (line.name === '東海道新幹線') {
-          return `
-            <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;gap:8px;">
-              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${line.color};flex-shrink:0;"></span>
-                <div style="font-size:13px;font-weight:600;color:var(--text);">${line.name}</div>
-              </div>
-              <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(243,156,18,.15);color:#f39c12;font-weight:600;white-space:nowrap;">JR東海で確認 →</span>
-            </a>`;
-        }
         const info = infoMap[line.name];
         const dirs = info?.directions || [
           { dir: '上り', status: '平常運転' },
@@ -2583,6 +2545,8 @@
     if (topImg2) topImg2.src = `https://ttc.taxi-inf.jp/Real04.jpg?${stamp}`;
     const img2 = document.getElementById('ttc-img2');
     if (img2) img2.src = `https://ttc.taxi-inf.jp/Real02.jpg?${stamp}`;
+    const imgReal02 = document.getElementById('top-haneda-img-real02');
+    if (imgReal02) imgReal02.src = `https://ttc.taxi-inf.jp/Real02.jpg?${stamp}`;
     const img3 = document.getElementById('ttc-img3');
     if (img3) img3.src = `https://ttc.taxi-inf.jp/Real104_line.jpg?${stamp}`;
     const imgT3 = document.getElementById('ttc-img-t3');
@@ -2598,7 +2562,47 @@
   loadTtcImage();
   setInterval(loadTtcImage, 60000);
 
-  // 国際線第2プール 車両有無チェック（2分おき、1〜7時は除外）
+  // p-counter乗り場カメラ（60秒更新）
+  function loadPcounterImages() {
+    const ts = Date.now();
+    const pad = n => String(n).padStart(2,'0');
+    const d = new Date();
+    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())} 更新`;
+    const imgA = document.getElementById('pcounter-img-a');
+    const imgB = document.getElementById('pcounter-img-b');
+    const updA = document.getElementById('pcounter-upd-a');
+    const updB = document.getElementById('pcounter-upd-b');
+    const url_a = `https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg?${ts}`;
+    const url_b = `https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/cam_a.jpg?${ts}`;
+    if (imgA) imgA.src = url_a;
+    if (imgB) imgB.src = url_b;
+    if (updA) updA.textContent = timeStr;
+    if (updB) updB.textContent = timeStr;
+    const topA = document.getElementById('top-pcounter-img-a');
+    const topB = document.getElementById('top-pcounter-img-b');
+    const topUpd = document.getElementById('top-pcounter-upd');
+    if (topA) topA.src = url_a;
+    if (topB) topB.src = url_b;
+    if (topUpd) topUpd.textContent = timeStr;
+  }
+  loadPcounterImages();
+  setInterval(loadPcounterImages, 60000);
+
+  // 画像URLをwsrv.nl経由でfetchしてbase64に変換（CORS回避）
+  async function fetchImgAsBase64(url) {
+    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&t=${Date.now()}`;
+    const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`proxy ${resp.status}`);
+    const blob = await resp.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // 国際線第2プール 車両有無チェック（2分おき、1〜10時は除外）
   async function checkHanedaCam() {
     const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
     if (jstHour >= 1 && jstHour < 10) {
@@ -2607,13 +2611,7 @@
       return;
     }
     try {
-      const img = document.getElementById('top-haneda-img2') || document.getElementById('ttc-img-t3c');
-      if (!img || !img.complete || !img.naturalWidth) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      const b64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+      const b64 = await fetchImgAsBase64('https://ttc.taxi-inf.jp/Real04.jpg');
       const r = await fetch('/api/haneda-cam', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2628,6 +2626,31 @@
   }
   checkHanedaCam();
   setInterval(checkHanedaCam, 120000);
+
+  // 国内線待機場（Real02.jpg）車列数チェック（2分おき、23〜6時は除外）
+  async function checkHanedaCam2() {
+    const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
+    if (jstHour >= 23 || jstHour < 6) {
+      _hanedaCam2Rows = 99;
+      updatePickupAlerts();
+      return;
+    }
+    try {
+      const b64 = await fetchImgAsBase64('https://ttc.taxi-inf.jp/Real02.jpg');
+      const r = await fetch('/api/haneda-cam2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64 }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d.skipped) _hanedaCam2Rows = typeof d.rows === 'number' ? d.rows : 99;
+      updatePickupAlerts();
+    } catch(e) { /* ネットワークエラーは無視 */ }
+  }
+  checkHanedaCam2();
+  setInterval(checkHanedaCam2, 120000);
 
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
   const HANEDA_TERMINAL_INFO = {
@@ -3011,6 +3034,7 @@
   let _delayFirstSeen = {}; // {路線名: 最初に遅延検知したtimestamp}
   let _hanedaBigDelayCount = 0; // 羽田1時間以上遅延便数
   let _hanedaCamNoVehicle = false; // 国際線第2プール 車両なし
+  let _hanedaCam2Rows = 99; // 国内線待機場 車列数（2列以下でアラート）
   let _communityPosts = []; // みんなの投稿（位置情報アラート用）
   let _nearPostAlertAt = 0; // 近隣投稿アラート最初の検知timestamp
 
@@ -3073,6 +3097,17 @@
         tag: '📷 国際線第2プール',
         main: '車両なし',
         sub: 'タクシープールに車が確認できません',
+        serious: false,
+        delay: true,
+      });
+    }
+
+    // 国内線待機場 車列2列以下
+    if (_hanedaCam2Rows <= 2) {
+      alerts.push({
+        tag: '📷 羽田空港国内線車両減少',
+        main: `待機車列 ${_hanedaCam2Rows}列`,
+        sub: '国内線タクシー待機場の車列が少なくなっています',
         serious: false,
         delay: true,
       });
@@ -3204,54 +3239,47 @@
   loadNews();
   setInterval(loadNews, 600000); // 10分ごと更新
 
-  // 大型客船入港予定（横浜港）
-  // 東京港 客船入港予定（JOPA情報 手動更新）
-  const SHIP_SCHEDULE = [
-    // 東京国際クルーズターミナル（有明・江東区）
-    { date:'2026-06-17', name:'ハンセアティック・インスピレーション', arrival:'08:00', departure:'23:00', terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-06-18', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-06-19', name:'飛鳥Ⅱ',                               arrival:'09:00', departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-06-30', name:'セレブリティ・ミレニアム',             arrival:'08:00', departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-07-12', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-07-24', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-08-06', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-08-13', name:'スペクトラム・オブ・ザ・シーズ',       arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    { date:'2026-08-17', name:'セレブリティ・ミレニアム',             arrival:'',      departure:'',      terminal:'東京国際クルーズターミナル（有明）' },
-    // 晴海ふ頭客船ターミナル（中央区）
-    { date:'2026-06-22', name:'飛鳥Ⅱ',                               arrival:'09:00', departure:'',      terminal:'晴海ふ頭客船ターミナル' },
-    { date:'2026-06-25', name:'飛鳥Ⅲ',                               arrival:'09:00', departure:'',      terminal:'晴海ふ頭客船ターミナル' },
-    // 竹芝客船ターミナル（港区）― 小笠原航路・伊豆諸島航路
-    { date:'2026-06-19', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
-    { date:'2026-07-03', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
-    { date:'2026-07-17', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
-    { date:'2026-07-31', name:'小笠原丸（父島→竹芝）',               arrival:'09:00', departure:'',      terminal:'竹芝客船ターミナル' },
-    // 日の出桟橋（港区）― 大型客船・イベント船
-    { date:'2026-06-21', name:'にっぽん丸',                           arrival:'08:00', departure:'',      terminal:'日の出桟橋' },
-  ];
-
-  function renderShips() {
+  // 客船入港スケジュール（APIから自動取得）
+  async function loadShips() {
     const listEl = document.getElementById('ships-list');
     const updEl  = document.getElementById('ships-updated');
     if (!listEl) return;
+    try {
+      const r = await fetch('/api/ships', { signal: AbortSignal.timeout(45000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      renderShips(data.ships || [], data.updatedAt);
+      if (updEl && data.updatedAt) {
+        const d = new Date(data.updatedAt);
+        const pad = n => String(n).padStart(2,'0');
+        updEl.textContent = `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())} 更新`;
+      }
+    } catch(e) {
+      if (listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">取得エラー。時間をおいて再試行してください。</div>';
+    }
+  }
+
+  function renderShips(ships, updatedAt) {
+    const listEl = document.getElementById('ships-list');
+    if (!listEl) return;
     const wday = ['日','月','火','水','木','金','土'];
     const today = new Date(); today.setHours(0,0,0,0);
-    const limit = new Date(today); limit.setDate(today.getDate() + 30);
-    const upcoming = SHIP_SCHEDULE.filter(s => {
+    const limit = new Date(today); limit.setDate(today.getDate() + 45);
+    const upcoming = ships.filter(s => {
       const d = new Date(s.date + 'T00:00:00');
       return d >= today && d <= limit;
     });
-    if (updEl) updEl.textContent = 'JOPA情報';
     if (upcoming.length === 0) {
-      listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">今後30日以内の入港予定なし</div>';
+      listEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0;">今後45日以内の入港予定なし</div>';
       return;
     }
-    // ターミナルごとにグループ化
     const byTerminal = {};
     upcoming.forEach(s => {
       if (!byTerminal[s.terminal]) byTerminal[s.terminal] = [];
       byTerminal[s.terminal].push(s);
     });
-    listEl.innerHTML = Object.entries(byTerminal).map(([terminal, entries]) => {
+    const terminalOrder = t => t.includes('竹芝') ? 1 : 0;
+    listEl.innerHTML = Object.entries(byTerminal).sort((a,b) => terminalOrder(a[0]) - terminalOrder(b[0])).map(([terminal, entries]) => {
       const rows = entries.map(s => {
         const d = new Date(s.date + 'T00:00:00');
         const m = d.getMonth() + 1, day = d.getDate();
@@ -3272,7 +3300,16 @@
       </div>`;
     }).join('');
   }
-  renderShips();
+  loadShips();
+
+  let _shipsOpen = true;
+  function toggleShips() {
+    _shipsOpen = !_shipsOpen;
+    const body = document.getElementById('ships-body');
+    const chevron = document.getElementById('ships-chevron');
+    if (body) body.style.display = _shipsOpen ? '' : 'none';
+    if (chevron) chevron.style.transform = _shipsOpen ? '' : 'rotate(-90deg)';
+  }
 
   // 日時を毎秒更新
   function updateDatetime() {
@@ -3380,13 +3417,16 @@
   function toggleReportMap(show) {
     localStorage.setItem('reportMapShow', show ? '1' : '0');
     const mapEl = document.getElementById('report-map');
+    const hintEl = document.getElementById('report-map-hint');
     if (!mapEl) return;
     mapEl.style.display = show ? '' : 'none';
+    if (hintEl) hintEl.style.display = show ? '' : 'none';
     if (show) {
       if (!_reportMap) {
         mapEl.innerHTML = '';
         _reportMap = L.map('report-map', { zoomControl: true, attributionControl: false }).setView([35.681, 139.767], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_reportMap);
+        _reportMap.on('click', e => moveReportMarker(e.latlng.lat, e.latlng.lng));
         getReportLocation();
       }
       _reportMap.invalidateSize();
@@ -3412,6 +3452,8 @@
     if (toggle) toggle.checked = mapShow;
     const mapElInit = document.getElementById('report-map');
     if (mapElInit) mapElInit.style.display = mapShow ? '' : 'none';
+    const hintElInit = document.getElementById('report-map-hint');
+    if (hintElInit) hintElInit.style.display = mapShow ? '' : 'none';
 
     // 地図初期化（初回のみ・表示中のみ）
     setTimeout(() => {
@@ -3421,6 +3463,7 @@
           mapEl.innerHTML = '';
           _reportMap = L.map('report-map', { zoomControl: true, attributionControl: false }).setView([35.681, 139.767], 14);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_reportMap);
+          _reportMap.on('click', e => moveReportMarker(e.latlng.lat, e.latlng.lng));
         }
         _reportMap.invalidateSize();
       }
@@ -3437,19 +3480,91 @@
   async function getReportLocation() {
     navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude: lat, longitude: lng } = pos.coords;
-      _reportCoords = { lat, lng };
-      if (_reportMap) {
-        _reportMap.setView([lat, lng], 15);
-        if (_reportMarker) _reportMarker.setLatLng([lat, lng]);
-        else _reportMarker = L.circleMarker([lat, lng], { radius: 8, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(_reportMap);
-      }
-      const loc = await reverseGeocode(lat, lng);
-      _reportLocation = loc;
-      document.getElementById('report-location-label').textContent = loc ? `📍 ${loc}` : '';
+      await moveReportMarker(lat, lng, true);
     }, () => {}, { timeout: 8000, maximumAge: 30000 });
+  }
+
+  async function moveReportMarker(lat, lng, setView = false) {
+    _reportCoords = { lat, lng };
+    if (_reportMap) {
+      if (setView) _reportMap.setView([lat, lng], 15);
+      if (_reportMarker) {
+        _reportMarker.setLatLng([lat, lng]);
+      } else {
+        _reportMarker = L.marker([lat, lng], {
+          draggable: true,
+          icon: L.divIcon({
+            className: '',
+            html: '<div style="width:20px;height:20px;border-radius:50%;background:#e05c5c;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          })
+        }).addTo(_reportMap);
+        _reportMarker.on('dragend', async () => {
+          const p = _reportMarker.getLatLng();
+          _reportCoords = { lat: p.lat, lng: p.lng };
+          document.getElementById('report-location-label').textContent = '📍 取得中…';
+          const loc = await reverseGeocode(p.lat, p.lng);
+          _reportLocation = loc;
+          document.getElementById('report-location-label').textContent = loc ? `📍 ${loc}` : '';
+        });
+      }
+    }
+    document.getElementById('report-location-label').textContent = '📍 取得中…';
+    const loc = await reverseGeocode(lat, lng);
+    _reportLocation = loc;
+    document.getElementById('report-location-label').textContent = loc ? `📍 ${loc}` : '';
   }
   function closeReportModal() {
     document.getElementById('report-modal').style.display = 'none';
+    clearReportMedia();
+  }
+
+  let _reportMediaFile = null;
+
+  function previewReportMedia(input) {
+    const file = input.files[0];
+    if (!file) return;
+    _reportMediaFile = file;
+    const isVideo = file.type.startsWith('video/');
+    const url = URL.createObjectURL(file);
+    const img = document.getElementById('report-media-img');
+    const vid = document.getElementById('report-media-vid');
+    const prev = document.getElementById('report-media-preview');
+    img.style.display = isVideo ? 'none' : 'block';
+    vid.style.display = isVideo ? 'block' : 'none';
+    if (isVideo) { vid.src = url; } else { img.src = url; }
+    prev.style.display = 'block';
+  }
+
+  function clearReportMedia() {
+    _reportMediaFile = null;
+    const fi = document.getElementById('report-media-input');
+    if (fi) fi.value = '';
+    const prev = document.getElementById('report-media-preview');
+    if (prev) prev.style.display = 'none';
+    const img = document.getElementById('report-media-img');
+    if (img) img.src = '';
+    const vid = document.getElementById('report-media-vid');
+    if (vid) vid.src = '';
+  }
+
+  async function uploadPostMedia(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const path = `${_sbUser.id}/${Date.now()}.${ext}`;
+    const res = await fetch(`${SB_URL}/storage/v1/object/post-media/${path}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${_sbToken}`,
+        'Content-Type': file.type,
+        'x-upsert': 'true',
+      },
+      body: file,
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) throw new Error(`media upload ${res.status}`);
+    return `${SB_URL}/storage/v1/object/public/post-media/${path}`;
   }
   function toggleReportTag(btn) {
     const sel = btn.dataset.selected === '1';
@@ -3484,14 +3599,40 @@
       return;
     }
 
-    closeReportModal();
-    switchTab('community');
-
     if (!_sbUser || !_sbToken) {
       alert('投稿するにはログインが必要です。\nクラウド同期からログインしてください。');
       return;
     }
+
+    const submitBtn = document.getElementById('report-submit-btn');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '投稿中…'; }
+
+    let mediaUrl = null;
+    let mediaType = null;
+    if (_reportMediaFile) {
+      try {
+        mediaUrl = await uploadPostMedia(_reportMediaFile);
+        mediaType = _reportMediaFile.type.startsWith('video/') ? 'video' : 'image';
+      } catch(e) {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '投稿する'; }
+        alert('メディアのアップロードに失敗しました: ' + e.message);
+        return;
+      }
+    }
+
+    closeReportModal();
+    switchTab('community');
+
     try {
+      const postData = {
+        user_id: _sbUser.id,
+        name, initial, body,
+        tags: tagStr,
+        location: _reportLocation,
+        lat: _reportCoords.lat,
+        lng: _reportCoords.lng,
+      };
+      if (mediaUrl) { postData.media_url = mediaUrl; postData.media_type = mediaType; }
       const res = await fetch(`${SB_URL}/rest/v1/community_posts`, {
         method: 'POST',
         headers: {
@@ -3500,20 +3641,15 @@
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({
-          user_id: _sbUser.id,
-          name, initial, body,
-          tags: tagStr,
-          location: _reportLocation,
-          lat: _reportCoords.lat,
-          lng: _reportCoords.lng
-        }),
+        body: JSON.stringify(postData),
         signal: AbortSignal.timeout(8000)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await refreshCommunityPosts();
     } catch(e) {
       alert('投稿に失敗しました: ' + e.message);
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '投稿する'; }
     }
   }
 
@@ -3571,6 +3707,14 @@
     if (_fullscreenMap) { _fullscreenMap.remove(); _fullscreenMap = null; }
   }
 
+  function openImgFullscreen(src, label) {
+    const modal = document.getElementById('map-popup-modal');
+    document.getElementById('map-popup-label').textContent = label || '';
+    const container = document.getElementById('map-popup-container');
+    container.innerHTML = `<img src="${src}" alt="${label||''}" style="width:100%;height:auto;display:block;border-radius:0 0 14px 14px;">`;
+    modal.style.display = 'flex';
+  }
+
   let _popupMap = null;
   function openMapPopup(lat, lng, label) {
     document.getElementById('map-popup-label').textContent = label || '';
@@ -3613,6 +3757,9 @@
             </div>
             <div class="post-body">${p.body}</div>
             ${p.location ? `<div class="post-area">📍 ${p.location}</div>` : ''}
+            ${p.media_url ? (p.media_type === 'video'
+              ? `<video src="${p.media_url}" style="width:100%;max-height:200px;border-radius:8px;margin-top:8px;display:block;" controls muted playsinline></video>`
+              : `<img src="${p.media_url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-top:8px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'')">`) : ''}
           </div>
           ${p.lat ? `<div id="${mapId}" onclick="openMapPopup(${p.lat},${p.lng},'📍 ${(p.location||'').replace(/'/g,'')}')" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;cursor:pointer;"></div>` : ''}
         </div>`;
@@ -3637,22 +3784,37 @@
     if (!listEl) return;
     if (!posts.length) {
       listEl.innerHTML = '<span style="color:var(--gray);font-size:12px;">まだ投稿がありません</span>';
-    } else {
-      const latest = posts[0];
-      const mapHtml = latest.lat
-        ? `<div id="top-community-map" onclick="openMapFullscreen(${latest.lat},${latest.lng},'📍 ${(latest.location||'').replace(/'/g,'')}')" style="width:100%;height:70px;border-radius:8px;margin-top:6px;cursor:pointer;"></div>`
-        : '';
-      listEl.innerHTML = `<div style="color:var(--text);font-size:11px;">「${latest.body.slice(0,20)}…」<span style="color:var(--gray);font-size:10px;margin-left:4px;">${timeAgo(new Date(latest.created_at).getTime())}</span></div>${mapHtml}`;
-      if (latest.lat) {
-        setTimeout(() => {
-          const el = document.getElementById('top-community-map');
+      return;
+    }
+    const show = posts.slice(0, 2);
+    const mapIds = [];
+    listEl.innerHTML = show.map((p, i) => {
+      const tag = p.tag ? `<span style="background:rgba(201,168,76,.18);color:var(--gold);font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;">${p.tag}</span>` : '';
+      const body = p.body ? p.body.slice(0, 18) + (p.body.length > 18 ? '…' : '') : '';
+      const loc = p.location ? `<span style="color:var(--gray);font-size:9px;">📍${p.location.slice(0,10)}</span>` : '';
+      const ago = `<span style="color:var(--gray);font-size:9px;">${timeAgo(new Date(p.created_at).getTime())}</span>`;
+      const border = i === 0 && show.length > 1 ? 'border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:6px;margin-bottom:4px;' : '';
+      const mapId = `top-comm-map-${i}`;
+      const mapHtml = p.lat ? `<div id="${mapId}" onclick="openMapPopup(${p.lat},${p.lng},'📍 ${(p.location||'').replace(/'/g,'')}')" style="width:100%;height:60px;border-radius:6px;margin-top:4px;cursor:pointer;overflow:hidden;"></div>` : '';
+      if (p.lat) mapIds.push({ id: mapId, lat: p.lat, lng: p.lng });
+      return `<div style="${border}display:flex;flex-direction:column;gap:2px;">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${tag}${ago}</div>
+        <div style="color:var(--text);font-size:11px;line-height:1.4;">${body}</div>
+        ${loc ? `<div>${loc}</div>` : ''}
+        ${mapHtml}
+      </div>`;
+    }).join('');
+    if (mapIds.length) {
+      setTimeout(() => {
+        mapIds.forEach(({ id, lat, lng }) => {
+          const el = document.getElementById(id);
           if (!el || el.dataset.mapInit) return;
           el.dataset.mapInit = '1';
-          const m = L.map('top-community-map', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([latest.lat, latest.lng], 14);
+          const m = L.map(id, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false }).setView([lat, lng], 14);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
-          L.circleMarker([latest.lat, latest.lng], { radius: 6, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
-        }, 200);
-      }
+          L.circleMarker([lat, lng], { radius: 6, color: '#e05c5c', fillColor: '#e05c5c', fillOpacity: 0.9 }).addTo(m);
+        });
+      }, 200);
     }
   }
 
@@ -4872,7 +5034,13 @@
     const dispBelong = document.getElementById('acc-display-belong');
     if (dispBelong) dispBelong.textContent = [profile.group, profile.company].filter(Boolean).join(' / ');
     const dispAvatar = document.getElementById('acc-avatar-display');
-    if (dispAvatar) dispAvatar.textContent = profile.avatar || '🚕';
+    if (dispAvatar) {
+      if (profile.avatarImage) {
+        dispAvatar.innerHTML = `<img src="${profile.avatarImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        dispAvatar.textContent = profile.avatar || '🚕';
+      }
+    }
     // フォーム
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     set('acc-last-name',  profile.lastName);
@@ -4997,13 +5165,58 @@
     document.getElementById('avatar-modal').style.display = 'flex';
   }
   function selectAvatar(emoji) {
-    const profile = { ...(loadProfile() || {}), avatar: emoji };
+    const profile = { ...(loadProfile() || {}), avatar: emoji, avatarImage: null };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     applyProfileToUI(profile);
     closeAvatarPicker();
   }
   function closeAvatarPicker() {
     document.getElementById('avatar-modal').style.display = 'none';
+    // プレビューをリセット
+    const prev = document.getElementById('avatar-img-preview');
+    if (prev) prev.innerHTML = '📷';
+    const btn = document.getElementById('avatar-img-set-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
+    const fi = document.getElementById('avatar-file-input');
+    if (fi) fi.value = '';
+  }
+
+  let _avatarDataUrl = null;
+
+  function previewAvatarImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        // canvas で 120x120 正方形にクロップ
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 120;
+        const ctx = canvas.getContext('2d');
+        const size = Math.min(img.width, img.height);
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, 120, 120);
+        _avatarDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        // プレビュー更新
+        const prev = document.getElementById('avatar-img-preview');
+        if (prev) prev.innerHTML = `<img src="${_avatarDataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        const btn = document.getElementById('avatar-img-set-btn');
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function applyAvatarImage() {
+    if (!_avatarDataUrl) return;
+    const profile = { ...(loadProfile() || {}), avatarImage: _avatarDataUrl };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    applyProfileToUI(profile);
+    closeAvatarPicker();
+    _avatarDataUrl = null;
   }
 
   // 初回セットアップ

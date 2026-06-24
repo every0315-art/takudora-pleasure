@@ -32,8 +32,8 @@ export default async function handler(req, res) {
         Math.abs(b.dt - target) < Math.abs(a.dt - target) ? b : a
       );
       return {
-        label: `+${h}h`,
         time: String(new Date(item.dt * 1000).getHours()).padStart(2,'0') + ':00',
+        label: `${new Date(item.dt * 1000 + 9 * 3600000).getUTCHours()}時〜`,
         icon: item.weather[0].icon,
         temp: Math.round(item.main.temp),
         isRain: item.weather[0].id < 700,

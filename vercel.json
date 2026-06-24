@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/ships",
+      "schedule": "0 21 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/app", "destination": "/app.html" },
     { "source": "/qr", "destination": "/qr.html" },
