@@ -1734,6 +1734,15 @@
         <div id="sb-user-email" style="font-size:11px;color:var(--gray);margin-top:2px;flex:1;"></div>
         <button class="sb-btn sb-btn-secondary" style="width:auto;padding:6px 14px;font-size:12px;" onclick="sbSignOut()">ログアウト</button>
       </div>
+      <div id="sb-logged-in-actions" style="display:none;margin-top:12px;display:none;flex-direction:column;gap:8px;">
+        <button onclick="sbPushAll()" style="width:100%;padding:10px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:var(--green);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">
+          このデバイスのデータをクラウドに保存
+        </button>
+        <button onclick="sbPull()" style="width:100%;padding:10px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">
+          クラウドからデータを読み込む
+        </button>
+        <div style="font-size:10px;color:var(--gray);text-align:center;">ホーム画面アプリ↔ブラウザ間でデータを合わせるときに使用</div>
+      </div>
 
       <!-- 未ログイン -->
       <div id="sb-logged-out">
@@ -5334,14 +5343,35 @@
     const inEl  = document.getElementById('sb-logged-in');
     const outEl = document.getElementById('sb-logged-out');
     const mailEl= document.getElementById('sb-user-email');
+    const actEl = document.getElementById('sb-logged-in-actions');
     if (user) {
       if (inEl)  inEl.style.display  = 'flex';
       if (outEl) outEl.style.display = 'none';
+      if (actEl) actEl.style.display = 'flex';
       if (mailEl) mailEl.textContent = user.email;
       addAdminDeleteButtons();
     } else {
       if (inEl)  inEl.style.display  = 'none';
+      if (actEl) actEl.style.display = 'none';
       if (outEl) outEl.style.display = 'block';
+    }
+  }
+
+  async function sbPushAll() {
+    if (!_sb || !_sbUser) return;
+    const keys = [
+      PROFILE_KEY, PUB_KEY, SALARY_KEY,
+      REPORT_KEY, CLOSING_DAY_KEY, ANNUAL_OVERRIDE_KEY,
+    ];
+    try {
+      await Promise.all(keys.map(key => {
+        const val = localStorage.getItem(key);
+        if (val == null) return Promise.resolve();
+        return sbPush(key, val);
+      }));
+      alert('このデバイスのデータをクラウドに保存しました');
+    } catch(e) {
+      alert('保存に失敗しました: ' + e.message);
     }
   }
 
