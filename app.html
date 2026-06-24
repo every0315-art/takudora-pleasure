@@ -888,9 +888,35 @@
     </div>
 
     <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-        ターミナル別 到着便（リアルタイム）
-        <span id="haneda-arr-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+        <span>ターミナル別 到着便（リアルタイム）</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:10px;color:var(--gray);">過去</span>
+          <select id="arr-past-sel" onchange="loadHanedaArr()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:2px 6px;cursor:pointer;">
+            <option value="15">15分</option>
+            <option value="30" selected>30分</option>
+            <option value="45">45分</option>
+            <option value="60">60分</option>
+            <option value="75">75分</option>
+            <option value="90">90分</option>
+            <option value="120">120分</option>
+            <option value="150">150分</option>
+            <option value="180">180分</option>
+          </select>
+          <span style="font-size:10px;color:var(--gray);">〜未来</span>
+          <select id="arr-future-sel" onchange="loadHanedaArr()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:2px 6px;cursor:pointer;">
+            <option value="15">15分</option>
+            <option value="30">30分</option>
+            <option value="45">45分</option>
+            <option value="60" selected>60分</option>
+            <option value="75">75分</option>
+            <option value="90">90分</option>
+            <option value="120">120分</option>
+            <option value="150">150分</option>
+            <option value="180">180分</option>
+          </select>
+          <span id="haneda-arr-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
+        </div>
       </div>
       <div id="haneda-arr-body" style="min-height:60px;">
         <div style="color:var(--gray);font-size:12px;padding:8px 0;">読み込み中…</div>
@@ -2581,7 +2607,9 @@
     const updEl  = document.getElementById('haneda-arr-updated');
     if (!bodyEl) return;
     try {
-      const res = await fetch('/api/haneda-arr');
+      const past   = document.getElementById('arr-past-sel')?.value   || '30';
+      const future = document.getElementById('arr-future-sel')?.value || '60';
+      const res = await fetch(`/api/haneda-arr?past=${past}&future=${future}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       const { terminals, updatedAt } = data;

@@ -77,6 +77,8 @@ async function fetchAdsbApproach() {
 
 export default async function handler(req, res) {
   try {
+    const pastMin  = Math.min(180, Math.max(0, parseInt(req.query?.past  ?? '30', 10) || 30));
+    const futureMin = Math.min(180, Math.max(0, parseInt(req.query?.future ?? '60', 10) || 60));
     const now = Date.now();
     const jstNow = new Date(now + 9 * 3600000);
     const Y = jstNow.getUTCFullYear(), M = jstNow.getUTCMonth(), D = jstNow.getUTCDate();
@@ -108,7 +110,7 @@ export default async function handler(req, res) {
       if (!arrMs) continue;
 
       const diff = arrMs - now;
-      if (diff < -30 * 60000 || diff > 60 * 60000) continue;
+      if (diff < -pastMin * 60000 || diff > futureMin * 60000) continue;
 
       const tStr = f.terminal?.terminal || '';
       const terminal = tStr === 'T1' ? 1 : tStr === 'T2' ? 2 : 3;
