@@ -5,7 +5,9 @@ const OPERATOR_URLS = {
   '中央線快速':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '中央・総武線各駅停車': 'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '中央本線':             'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '総武線':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '総武線快速':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '中央線':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '埼京線':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '湘南新宿ライン':       'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '上野東京ライン':       'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
@@ -67,6 +69,7 @@ const TOKYO_LINES = new Set([
   // JR
   '山手線','京浜東北根岸線','中央線快速','中央・総武線各駅停車','中央本線','総武線快速',
   '埼京線','湘南新宿ライン','上野東京ライン','りんかい線','南武線','横浜線',
+  '総武線','中央線',
   // 東京メトロ
   '銀座線','丸ノ内線','日比谷線','東西線','千代田線',
   '有楽町線','半蔵門線','南北線','副都心線',
