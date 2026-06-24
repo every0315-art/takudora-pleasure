@@ -5376,11 +5376,10 @@
       REPORT_KEY, CLOSING_DAY_KEY, ANNUAL_OVERRIDE_KEY,
     ];
     try {
-      await Promise.all(keys.map(key => {
-        const val = localStorage.getItem(key);
-        if (val == null) return Promise.resolve();
-        return sbPush(key, val);
-      }));
+      const rows = keys
+        .map(key => ({ user_id: _sbUser.id, key, value: localStorage.getItem(key) }))
+        .filter(r => r.value != null);
+      await _sb.from('user_data').upsert(rows, { onConflict: 'user_id,key' });
       sbSyncMsg('✓ クラウドに保存しました', 'var(--green)');
     } catch(e) {
       sbSyncMsg('✗ 保存失敗: ' + e.message, 'var(--red)');
