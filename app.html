@@ -2635,7 +2635,9 @@
     const terminalLabel = { 1:'第1ターミナル', 2:'第2ターミナル', 3:'第3ターミナル' };
     const stand = getTaxiStand(terminal, f.exitGates, f.intl);
     document.getElementById('fd-flight').textContent = f.flight;
-    document.getElementById('fd-time').textContent = fmtJst(f.arrStr);
+    const isDelayed = f.onTime && f.onTime !== f.arrStr;
+    document.getElementById('fd-time').innerHTML = fmtJst(f.arrStr)
+      + (isDelayed ? `<div style="font-size:11px;color:var(--gray);text-decoration:line-through;margin-top:2px;">予定 ${fmtJst(f.onTime)}</div>` : '');
     document.getElementById('fd-origin').textContent = f.origin || '—';
     document.getElementById('fd-terminal').textContent = (terminalLabel[terminal] || '') + (f.intl ? '（国際線）' : '');
     document.getElementById('fd-exit').textContent =

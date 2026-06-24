@@ -138,7 +138,8 @@ export default async function handler(req, res) {
         statusCode = 'scheduled';
       }
 
-      result.push({ flight: flightNum, origin: f.area_name || null, arrStr: timeStr, arrMs, terminal, exitGates, intl: f.flightType === 'international', status, statusCode });
+      const onTime = (f.on_time && f.on_time !== '-') ? f.on_time : null;
+      result.push({ flight: flightNum, origin: f.area_name || null, arrStr: timeStr, onTime, arrMs, terminal, exitGates, intl: f.flightType === 'international', status, statusCode });
     }
 
     result.sort((a, b) => a.arrMs - b.arrMs);
