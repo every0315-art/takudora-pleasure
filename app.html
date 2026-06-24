@@ -3849,7 +3849,9 @@
     const maxAvg = Math.max(...validAvgs);
     const overallAvg = Math.round(validAvgs.reduce((s,v)=>s+v,0)/validAvgs.length);
 
-    const dowColor = w => w===0?'#f87171':w===6?'#60a5fa':'var(--gold)';
+    const DOW_COLORS = ['#f87171','#4ade80','#fb923c','#60a5fa','#a78bfa','#fbbf24','#38bdf8'];
+    // 日=赤 月=緑 火=橙 水=青 木=紫 金=黄 土=水色
+    const dowColor = w => DOW_COLORS[w];
     const bars = DOW_ORDER.map(w => {
       const avg = avgs[w];
       const cnt = counts[w];
