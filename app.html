@@ -2747,6 +2747,9 @@
           <div style="font-size:9px;color:var(--gray);">便 · 乗り場5</div>
         </div>`;
         ts += `</div>`;
+        if (bigDelayCount > 0) {
+          ts += `<div style="margin-top:5px;font-size:10px;color:#fb923c;font-weight:700;">${bigDelayCount}便が1時間以上遅延</div>`;
+        }
         topSummaryEl.innerHTML = ts;
       }
 
