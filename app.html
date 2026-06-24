@@ -2581,7 +2581,7 @@
   // 国際線第2プール 車両有無チェック（2分おき、1〜7時は除外）
   async function checkHanedaCam() {
     const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
-    if (jstHour >= 1 && jstHour < 7) {
+    if (jstHour >= 1 && jstHour < 10) {
       _hanedaCamNoVehicle = false;
       updatePickupAlerts();
       return;
@@ -3025,7 +3025,8 @@
         tag: '📷 国際線第2プール',
         main: '車両なし',
         sub: 'タクシープールに車が確認できません',
-        serious: true,
+        serious: false,
+        delay: true,
       });
     }
 

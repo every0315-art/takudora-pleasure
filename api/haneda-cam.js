@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   // JST時刻で1〜7時はスキップ
   const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
-  if (jstHour >= 1 && jstHour < 7) {
+  if (jstHour >= 1 && jstHour < 10) {
     return res.json({ hasVehicles: true, skipped: true });
   }
 
