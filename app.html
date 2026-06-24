@@ -2711,7 +2711,8 @@
             } else {
               statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
             }
-            html += `<tr><td>${timeTd}</td><td>${f.flight}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
+            const flightLink = `<a href="https://www.flightradar24.com/data/flights/${f.flight.toLowerCase()}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;font-weight:700;">${f.flight}</a>`;
+            html += `<tr><td>${timeTd}</td><td>${flightLink}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
           }
           html += `</table>`;
         }
