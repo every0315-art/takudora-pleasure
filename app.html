@@ -2692,7 +2692,7 @@
       const intlT3 = (terminals[3] || []).length;
       // 1時間以上遅延便カウント
       const toMin = s => { const m = s && s.match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]*60 + +m[2] : null; };
-      const bigDelayCount = [1,2,3].flatMap(t => terminals[t] || []).filter(f => {
+      _hanedaBigDelayCount = [1,2,3].flatMap(t => terminals[t] || []).filter(f => {
         if (!f.onTime || f.onTime === f.arrStr) return false;
         const diff = toMin(f.arrStr) - toMin(f.onTime);
         return diff !== null && diff >= 60;
@@ -2703,9 +2703,9 @@
         '❸': { terminal: '第2T', color: '#4ca8c9' },
         '❹': { terminal: '第2T', color: '#4ca8c9' },
       };
-      let html = bigDelayCount > 0
+      let html = _hanedaBigDelayCount > 0
         ? `<div style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.4);border-radius:8px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
-            <span style="font-size:20px;font-weight:900;color:#fb923c;">${bigDelayCount}</span>
+            <span style="font-size:20px;font-weight:900;color:#fb923c;">${_hanedaBigDelayCount}</span>
             <span style="font-size:12px;color:#fb923c;font-weight:600;">便が1時間以上の遅延</span>
            </div>`
         : '';
@@ -2755,8 +2755,8 @@
           <div style="font-size:9px;color:var(--gray);">便 · 乗り場5</div>
         </div>`;
         ts += `</div>`;
-        if (bigDelayCount > 0) {
-          ts += `<div style="margin-top:5px;font-size:10px;color:#fb923c;font-weight:700;">${bigDelayCount}便が1時間以上遅延</div>`;
+        if (_hanedaBigDelayCount > 0) {
+          ts += `<div style="margin-top:5px;font-size:10px;color:#fb923c;font-weight:700;">${_hanedaBigDelayCount}便が1時間以上遅延</div>`;
         }
         topSummaryEl.innerHTML = ts;
       }
@@ -2993,6 +2993,7 @@
   // 鉄道運行障害情報（loadTrainInfoから更新される）
   let _trainAlerts = [];
   let _delayFirstSeen = {}; // {路線名: 最初に遅延検知したtimestamp}
+  let _hanedaBigDelayCount = 0; // 羽田1時間以上遅延便数
 
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
@@ -3018,6 +3019,16 @@
         sub: l.status + (l.message ? `：${l.message.slice(0,30)}` : ''),
         serious: isSerious,
         delay: isDelay,
+      });
+    }
+
+    // 羽田空港 1時間以上遅延6便以上
+    if (_hanedaBigDelayCount >= 6) {
+      alerts.push({
+        tag: '✈️ 羽田空港 大規模遅延',
+        main: `${_hanedaBigDelayCount}便が1時間以上遅延`,
+        sub: '到着ラッシュ・需要増の可能性',
+        serious: true,
       });
     }
 
