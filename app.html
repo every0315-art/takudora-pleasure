@@ -2682,13 +2682,26 @@
       }
       const intlT2 = (terminals[2] || []).filter(f => f.intl).length;
       const intlT3 = (terminals[3] || []).length;
+      // 1時間以上遅延便カウント
+      const toMin = s => { const m = s && s.match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]*60 + +m[2] : null; };
+      const bigDelayCount = [1,2,3].flatMap(t => terminals[t] || []).filter(f => {
+        if (!f.onTime || f.onTime === f.arrStr) return false;
+        const diff = toMin(f.arrStr) - toMin(f.onTime);
+        return diff !== null && diff >= 60;
+      }).length;
       const standMeta = {
         '❶': { terminal: '第1T', color: '#c9a84c' },
         '❷': { terminal: '第1T', color: '#c9a84c' },
         '❸': { terminal: '第2T', color: '#4ca8c9' },
         '❹': { terminal: '第2T', color: '#4ca8c9' },
       };
-      let html = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">`;
+      let html = bigDelayCount > 0
+        ? `<div style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.4);border-radius:8px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;font-weight:900;color:#fb923c;">${bigDelayCount}</span>
+            <span style="font-size:12px;color:#fb923c;font-weight:600;">便が1時間以上の遅延</span>
+           </div>`
+        : '';
+      html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">`;
       for (const [s, c] of Object.entries(standCount)) {
         const m = standMeta[s];
         html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid ${m.color};border-radius:8px;padding:12px 8px;text-align:center;">
