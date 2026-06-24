@@ -2748,7 +2748,10 @@
         } else {
           html += `<table class="tbl"><tr><th>到着時刻</th><th>便名</th><th>発地</th><th>出口</th><th>状態</th></tr>`;
           for (const f of flights) {
-            const timeTd = `<strong>${fmtJst(f.arrStr)}</strong>`;
+            const isDelayed = f.onTime && f.onTime !== f.arrStr;
+            const timeTd = isDelayed
+              ? `<strong style="color:#fb923c;">${fmtJst(f.arrStr)}</strong><br><span style="font-size:9px;color:var(--gray);text-decoration:line-through;">${fmtJst(f.onTime)}</span>`
+              : `<strong>${fmtJst(f.arrStr)}</strong>`;
             const stand = getTaxiStand(t, f.exitGates, f.intl);
             const exitTd = f.exitGates
               ? `<span style="color:var(--gold);font-size:10px;">${f.exitGates}番</span>${stand ? `<br><span style="font-size:12px;">${stand}</span>` : ''}`
