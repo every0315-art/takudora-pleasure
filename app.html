@@ -2206,6 +2206,35 @@
 </div>
 
 <!-- 雨雲レーダーモーダル -->
+<!-- 到着便詳細モーダル -->
+<div id="flight-detail-modal" style="position:fixed;inset:0;z-index:1500;background:rgba(10,22,40,0.88);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:0;" onclick="if(event.target===this)closeFlightDetail()">
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.3);border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div id="fd-flight" style="font-size:22px;font-weight:900;color:var(--gold);letter-spacing:.05em;"></div>
+      <button onclick="closeFlightDetail()" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;">
+        <div style="font-size:10px;color:var(--gray);letter-spacing:.06em;margin-bottom:4px;">到着時刻</div>
+        <div id="fd-time" style="font-size:22px;font-weight:800;color:var(--white);"></div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;">
+        <div style="font-size:10px;color:var(--gray);letter-spacing:.06em;margin-bottom:4px;">出発地</div>
+        <div id="fd-origin" style="font-size:18px;font-weight:700;color:var(--white);"></div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;">
+        <div style="font-size:10px;color:var(--gray);letter-spacing:.06em;margin-bottom:4px;">ターミナル</div>
+        <div id="fd-terminal" style="font-size:18px;font-weight:700;color:var(--white);"></div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;">
+        <div style="font-size:10px;color:var(--gray);letter-spacing:.06em;margin-bottom:4px;">出口 / 乗り場</div>
+        <div id="fd-exit" style="font-size:16px;font-weight:700;color:var(--white);"></div>
+      </div>
+    </div>
+    <div id="fd-status-wrap" style="margin-top:12px;text-align:center;"></div>
+  </div>
+</div>
+
 <div class="radar-modal" id="radarModal">
   <div class="radar-modal-header">
     <div class="radar-modal-title">雨雲レーダー — 東京23区</div>
@@ -2602,6 +2631,29 @@
     if (m) return `${m[1].padStart(2,'0')}:${m[2]}`;
     return '—';
   }
+  function showFlightDetail(f, terminal) {
+    const terminalLabel = { 1:'第1ターミナル', 2:'第2ターミナル', 3:'第3ターミナル' };
+    const stand = getTaxiStand(terminal, f.exitGates, f.intl);
+    document.getElementById('fd-flight').textContent = f.flight;
+    document.getElementById('fd-time').textContent = fmtJst(f.arrStr);
+    document.getElementById('fd-origin').textContent = f.origin || '—';
+    document.getElementById('fd-terminal').textContent = (terminalLabel[terminal] || '') + (f.intl ? '（国際線）' : '');
+    document.getElementById('fd-exit').textContent =
+      [f.exitGates ? f.exitGates + '番出口' : null, stand || null].filter(Boolean).join(' → ') || '—';
+    const statusMap = {
+      landed: '<span class="badge badge-green" style="font-size:14px;padding:6px 18px;">到着済み</span>',
+      approach: '<span class="badge badge-yellow" style="font-size:14px;padding:6px 18px;">進入中</span>',
+      delayed: '<span class="badge badge-yellow" style="font-size:14px;padding:6px 18px;">遅延</span>',
+      canceled: '<span style="color:var(--gray);font-size:14px;">欠航</span>',
+      scheduled: '<span style="color:var(--gray);font-size:14px;">予定通り</span>',
+    };
+    document.getElementById('fd-status-wrap').innerHTML = statusMap[f.statusCode] || '';
+    document.getElementById('flight-detail-modal').style.display = 'flex';
+  }
+  function closeFlightDetail() {
+    document.getElementById('flight-detail-modal').style.display = 'none';
+  }
+
   async function loadHanedaArr() {
     const bodyEl = document.getElementById('haneda-arr-body');
     const updEl  = document.getElementById('haneda-arr-updated');
@@ -2711,7 +2763,7 @@
             } else {
               statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
             }
-            const flightLink = `<a href="https://ja.flightaware.com/live/flight/${f.flight}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;font-weight:700;">${f.flight}</a>`;
+            const flightLink = `<span onclick='showFlightDetail(${JSON.stringify(f)},${t})' style="color:var(--gold);font-weight:700;cursor:pointer;text-decoration:underline dotted;">${f.flight}</span>`;
             html += `<tr><td>${timeTd}</td><td>${flightLink}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
           }
           html += `</table>`;
