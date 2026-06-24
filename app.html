@@ -763,12 +763,15 @@
 
     <!-- 日報一覧 -->
     <div class="card" style="margin-bottom:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;cursor:pointer;" onclick="toggleReportHistory()">
         <div class="card-title" style="margin-bottom:0;">日報一覧</div>
-        <select id="report-period-select" onchange="renderReportHistory()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:3px 8px;cursor:pointer;">
-          <option value="current">今月度</option>
-          <option value="all">全期間</option>
-        </select>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <select id="report-period-select" onchange="renderReportHistory()" onclick="event.stopPropagation()" style="font-size:11px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:3px 8px;cursor:pointer;">
+            <option value="current">今月度</option>
+            <option value="all">全期間</option>
+          </select>
+          <span id="report-history-chevron" style="font-size:13px;color:var(--gray);transition:transform .25s;">▼</span>
+        </div>
       </div>
       <div id="report-history-wrap" style="overflow-x:auto;margin:0 -2px;">
         <table id="report-history-table" style="width:100%;min-width:480px;border-collapse:collapse;">
@@ -4285,9 +4288,25 @@
     renderAnnualSales();
   }
 
+  function toggleReportHistory() {
+    const wrap = document.getElementById('report-history-wrap');
+    const chevron = document.getElementById('report-history-chevron');
+    if (!wrap) return;
+    const isOpen = wrap.style.display !== 'none';
+    wrap.style.display = isOpen ? 'none' : '';
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : '';
+    localStorage.setItem('reportHistoryOpen', isOpen ? '0' : '1');
+  }
+
   function renderReportHistory() {
     const tbody = document.getElementById('report-history-body');
     if (!tbody) return;
+    // 開閉状態を復元（デフォルト: 開く）
+    const wrap = document.getElementById('report-history-wrap');
+    const chevron = document.getElementById('report-history-chevron');
+    const isOpen = localStorage.getItem('reportHistoryOpen') !== '0';
+    if (wrap) wrap.style.display = isOpen ? '' : 'none';
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(-90deg)';
     renderMonthlySummary();
     renderAnnualSales();
     updateTopSalesTile();
