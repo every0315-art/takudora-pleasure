@@ -2,8 +2,10 @@ const OPERATOR_URLS = {
   // JR東日本（専用運行情報システム）
   '山手線':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '京浜東北根岸線':       'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '京浜東北・根岸線':     'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '中央線快速':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '中央・総武線各駅停車': 'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
+  '中央・総武緩行線':     'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '中央本線':             'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '総武線':               'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
   '総武線快速':           'https://traininfo.jreast.co.jp/train_info/kanto.aspx',
@@ -58,6 +60,7 @@ const OPERATOR_URLS = {
   'ゆりかもめ':               'https://www.yurikamome.co.jp/ride-guidance/operation.html',
   '東京モノレール':           'https://traininfo.jreast.co.jp/train_info/line.aspx?gid=1&lineid=monorail',
   '東京臨海高速鉄道りんかい線':'http://service.twr.co.jp/service_info/information.html',
+  'りんかい線':               'http://service.twr.co.jp/service_info/information.html',
   '北総線':                   'https://www.hokuso-railway.co.jp/train_info/',
   '東葉高速線':               'https://www.toyokosoku.co.jp/station/unkou',
   'つくばエクスプレス':       'https://www.mir.co.jp/info/',
@@ -67,7 +70,8 @@ const OPERATOR_URLS = {
 // 都内主要路線のホワイトリスト
 const TOKYO_LINES = new Set([
   // JR
-  '山手線','京浜東北根岸線','中央線快速','中央・総武線各駅停車','中央本線','総武線快速',
+  '山手線','京浜東北根岸線','京浜東北・根岸線',
+  '中央線快速','中央・総武線各駅停車','中央・総武緩行線','中央本線','総武線快速',
   '埼京線','湘南新宿ライン','上野東京ライン','りんかい線','南武線','横浜線',
   '総武線','中央線',
   // 東京メトロ
@@ -89,6 +93,7 @@ const TOKYO_LINES = new Set([
 
 export default async function handler(req, res) {
   try {
+    const debug = req.query?.debug === '1';
     const response = await fetch('https://transit.yahoo.co.jp/diainfo/area/4', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -117,11 +122,11 @@ export default async function handler(req, res) {
           url: OPERATOR_URLS[p.displayName || p.railName || ''] || 'https://transit.yahoo.co.jp/diainfo/area/4',
         };
       })
-      .filter(l => TOKYO_LINES.has(l.name));
+      .filter(l => debug || TOKYO_LINES.has(l.name));
 
     res.setHeader('Cache-Control', 's-maxage=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json({ lines, updateDate });
+    res.json({ lines, updateDate, ...(debug ? { _debug: true, _total: troubleRails.length } : {}) });
   } catch(e) {
     res.status(502).json({ error: e.message });
   }
