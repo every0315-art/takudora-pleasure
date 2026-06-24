@@ -2991,6 +2991,7 @@
   let _delayFirstSeen = {}; // {路線名: 最初に遅延検知したtimestamp}
   let _hanedaBigDelayCount = 0; // 羽田1時間以上遅延便数
   let _hanedaCamNoVehicle = false; // 国際線第2プール 車両なし
+  let _communityPosts = []; // みんなの投稿（位置情報アラート用）
 
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
@@ -3017,6 +3018,27 @@
         serious: isSerious,
         delay: isDelay,
       });
+    }
+
+    // みんなの投稿 1km以内（直近24時間）
+    if (pos && _communityPosts.length > 0) {
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      const nearPosts = _communityPosts.filter(p => {
+        if (new Date(p.created_at).getTime() < cutoff) return false;
+        return haversineKm(pos.lat, pos.lon, p.lat, p.lng) <= 1;
+      });
+      if (nearPosts.length > 0) {
+        const latest = nearPosts[0];
+        const name = latest.name || '匿名';
+        const body = (latest.body || '').slice(0, 20);
+        alerts.push({
+          tag: '💬 みんなの投稿 1km以内',
+          main: `${name}：${body}`,
+          sub: `${nearPosts.length}件の投稿が近くにあります`,
+          serious: false,
+          delay: true,
+        });
+      }
     }
 
     // 国際線第2プール 車両なし
@@ -3321,8 +3343,10 @@
 
   async function refreshCommunityPosts() {
     const posts = await loadCommunityPostsFromSb();
+    _communityPosts = posts.filter(p => p.lat && p.lng);
     renderCommunityPostsFromSb(posts);
     updateCommunityTileFromSb(posts);
+    updatePickupAlerts();
   }
 
   let _reportMap = null, _reportMarker = null, _reportLocation = '', _reportCoords = null;
