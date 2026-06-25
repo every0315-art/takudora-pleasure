@@ -3058,6 +3058,7 @@
         sub: l.status + (l.message ? `：${l.message.slice(0,30)}` : ''),
         serious: isSerious,
         delay: isDelay,
+        tab: 'tab-train',
       });
     }
 
@@ -3095,6 +3096,7 @@
         sub: '待機所または乗場にタクシーが確認できません',
         serious: false,
         delay: true,
+        link: 'https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/',
       });
     }
 
@@ -3106,6 +3108,7 @@
         sub: 'タクシープールに車が確認できません',
         serious: false,
         delay: true,
+        link: 'https://ttc.taxi-inf.jp/',
       });
     }
 
@@ -3117,6 +3120,7 @@
         sub: '国内線タクシー待機場の車列が少なくなっています',
         serious: false,
         delay: true,
+        link: 'https://ttc.taxi-inf.jp/',
       });
     }
 
@@ -3127,6 +3131,7 @@
         main: `${_hanedaBigDelayCount}便が1時間以上遅延`,
         sub: '到着ラッシュ・需要増の可能性',
         serious: true,
+        tab: 'tab-haneda',
       });
     }
 
@@ -3142,7 +3147,7 @@
       if (km > 2) continue;
       const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
       const label = diff >= 0 ? `終電${diff}分前` : `終電${Math.abs(diff)}分後`;
-      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）`, serious: true });
+      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）`, serious: true, tab: 'tab-train' });
     }
 
     // イベント終演±15分 かつ 会場5km以内
@@ -3166,7 +3171,7 @@
         const name = item.querySelector('.event-name')?.textContent?.trim() || '';
         const timeStr = `${endMatch[1]}:${endMatch[2]}`;
         const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
-        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）`, serious: true });
+        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）`, serious: true, tab: 'tab-event' });
       });
     });
 
@@ -3177,12 +3182,21 @@
     } else {
       area.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px;';
       area.className = 'has-alert';
-      area.innerHTML = alerts.map(a => `
-        <div class="pickup-card${a.serious ? ' pc-alert' : a.delay ? ' pc-warn' : ''}" style="max-width:100%;width:100%;">
-          <div class="pc-tag" style="${a.delay ? 'color:var(--yellow);' : ''}">${a.tag}</div>
+      area.innerHTML = alerts.map(a => {
+        const clickable = a.link || a.tab;
+        const onclick = a.link
+          ? `onclick="window.open('${a.link}','_blank')"`
+          : a.tab ? `onclick="switchTab('${a.tab}')"` : '';
+        return `
+        <div class="pickup-card${a.serious ? ' pc-alert' : a.delay ? ' pc-warn' : ''}" style="max-width:100%;width:100%;${clickable ? 'cursor:pointer;' : ''}" ${onclick}>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div class="pc-tag" style="${a.delay ? 'color:var(--yellow);' : ''}">${a.tag}</div>
+            ${clickable ? `<span style="font-size:10px;color:var(--gray);flex-shrink:0;padding-top:1px;">開く →</span>` : ''}
+          </div>
           <div class="pc-main">${a.main}</div>
           <div class="pc-sub">${a.sub}</div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
   }
   updatePickupAlerts();
