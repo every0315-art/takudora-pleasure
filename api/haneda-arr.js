@@ -124,6 +124,9 @@ export default async function handler(req, res) {
       if (approachMap[flightNum]) {
         status = approachMap[flightNum];
         statusCode = 'approach';
+      } else if (f.status?.category === 'baggageClaim' || f.status?.category === 'baggage_claim') {
+        status = '手荷物引き渡し中';
+        statusCode = 'baggage';
       } else if (f.status?.category === 'arrived') {
         status = '到着済み';
         statusCode = 'landed';

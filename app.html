@@ -2700,6 +2700,7 @@
       [f.exitGates ? f.exitGates + '番出口' : null, stand || null].filter(Boolean).join(' → ') || '—';
     const statusMap = {
       landed: '<span class="badge badge-green" style="font-size:14px;padding:6px 18px;">到着済み</span>',
+      baggage: '<span class="badge badge-green" style="font-size:14px;padding:6px 18px;">手荷物引き渡し中</span>',
       approach: '<span class="badge badge-yellow" style="font-size:14px;padding:6px 18px;">進入中</span>',
       delayed: '<span class="badge badge-yellow" style="font-size:14px;padding:6px 18px;">遅延</span>',
       canceled: '<span style="color:var(--gray);font-size:14px;">欠航</span>',
@@ -2741,6 +2742,7 @@
       // 1時間以上遅延便カウント
       const toMin = s => { const m = s && s.match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]*60 + +m[2] : null; };
       _hanedaBigDelayCount = [1,2,3].flatMap(t => terminals[t] || []).filter(f => {
+        if (f.statusCode === 'landed' || f.statusCode === 'baggage' || f.statusCode === 'canceled') return false;
         if (!f.onTime || f.onTime === f.arrStr) return false;
         const diff = toMin(f.arrStr) - toMin(f.onTime);
         return diff !== null && diff >= 60;
@@ -2831,6 +2833,8 @@
             let statusTd;
             if (f.statusCode === 'landed') {
               statusTd = `<span class="badge badge-green">到着済</span>`;
+            } else if (f.statusCode === 'baggage') {
+              statusTd = `<span class="badge badge-green">手荷物中</span>`;
             } else if (f.statusCode === 'approach') {
               statusTd = `<span class="badge badge-yellow">進入中</span>`;
             } else if (f.statusCode === 'delayed') {
