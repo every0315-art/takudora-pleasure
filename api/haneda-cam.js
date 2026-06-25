@@ -13,9 +13,9 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
 
-  // JST 1〜10時はスキップ
+  // JST 23〜6時はスキップ
   const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
-  if (jstHour >= 1 && jstHour < 10) {
+  if (jstHour >= 23 || jstHour < 6) {
     return res.json({ hasVehicles: true, skipped: true });
   }
 

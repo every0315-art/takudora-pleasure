@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/haneda-cam.js":  { "regions": ["hnd1"] },
+    "api/haneda-cam2.js": { "regions": ["hnd1"] },
+    "api/yaesu-cam.js":   { "regions": ["hnd1"] }
+  },
   "crons": [
     {
       "path": "/api/ships",
