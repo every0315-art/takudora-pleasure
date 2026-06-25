@@ -4,7 +4,7 @@
 
 export const config = { maxDuration: 55 };
 
-const NOTION_DB_ID = 'cb7e1ba7-a1f9-4c0d-bd06-9dbe6fe70b10';
+const NOTION_DB_ID = '6b71dc84-d080-834b-9c6a-01c3f476fd3a';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 // 千葉・首都圏のみで東京都外は除外
