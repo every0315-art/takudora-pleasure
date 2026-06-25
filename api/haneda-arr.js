@@ -124,12 +124,15 @@ export default async function handler(req, res) {
       if (approachMap[flightNum]) {
         status = approachMap[flightNum];
         statusCode = 'approach';
-      } else if (f.status?.category === 'baggageClaim' || f.status?.category === 'baggage_claim') {
-        status = '手荷物引き渡し中';
-        statusCode = 'baggage';
       } else if (f.status?.category === 'arrived') {
-        status = '到着済み';
-        statusCode = 'landed';
+        const minSince = (now - arrMs) / 60000;
+        if (minSince >= 0 && minSince <= 25) {
+          status = '手荷物中';
+          statusCode = 'baggage';
+        } else {
+          status = '到着済み';
+          statusCode = 'landed';
+        }
       } else if (f.status?.category === 'canceled') {
         status = '欠航';
         statusCode = 'canceled';
