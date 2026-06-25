@@ -2602,47 +2602,23 @@
     });
   }
 
-  // 国際線第2プール 車両有無チェック（2分おき、1〜10時は除外）
+  // 国際線第2プール 車両有無チェック（2分おき、APIがサーバー側で画像取得）
   async function checkHanedaCam() {
-    const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
-    if (jstHour >= 1 && jstHour < 10) {
-      _hanedaCamNoVehicle = false;
-      updatePickupAlerts();
-      return;
-    }
     try {
-      const b64 = await fetchImgAsBase64('https://ttc.taxi-inf.jp/Real04.jpg');
-      const r = await fetch('/api/haneda-cam', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: b64 }),
-        signal: AbortSignal.timeout(30000),
-      });
+      const r = await fetch('/api/haneda-cam', { signal: AbortSignal.timeout(35000) });
       if (!r.ok) return;
       const d = await r.json();
-      _hanedaCamNoVehicle = (d.hasVehicles === false);
+      if (!d.skipped) _hanedaCamNoVehicle = (d.hasVehicles === false);
       updatePickupAlerts();
     } catch(e) { /* ネットワークエラーは無視 */ }
   }
   checkHanedaCam();
   setInterval(checkHanedaCam, 120000);
 
-  // 国内線待機場（Real02.jpg）車列数チェック（2分おき、23〜6時は除外）
+  // 国内線待機場 車列数チェック（2分おき、APIがサーバー側で画像取得）
   async function checkHanedaCam2() {
-    const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
-    if (jstHour >= 23 || jstHour < 6) {
-      _hanedaCam2Rows = 99;
-      updatePickupAlerts();
-      return;
-    }
     try {
-      const b64 = await fetchImgAsBase64('https://ttc.taxi-inf.jp/Real02.jpg');
-      const r = await fetch('/api/haneda-cam2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: b64 }),
-        signal: AbortSignal.timeout(30000),
-      });
+      const r = await fetch('/api/haneda-cam2', { signal: AbortSignal.timeout(35000) });
       if (!r.ok) return;
       const d = await r.json();
       if (!d.skipped) _hanedaCam2Rows = typeof d.rows === 'number' ? d.rows : 99;
@@ -2652,22 +2628,13 @@
   checkHanedaCam2();
   setInterval(checkHanedaCam2, 120000);
 
-  // 八重洲待機所・乗場 車両有無チェック（2分おき、1〜6時は除外）
+  // 八重洲待機所・乗場 車両有無チェック（2分おき、APIがサーバー側で画像取得）
   async function checkYaesuCam() {
-    const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
-    if (jstHour >= 1 && jstHour < 6) return;
     try {
-      const [b64a, b64b] = await Promise.all([
-        fetchImgAsBase64('https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg'),
-        fetchImgAsBase64('https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/cam_a.jpg'),
-      ]);
-      const [ra, rb] = await Promise.all([
-        fetch('/api/haneda-cam', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({image: b64a}), signal: AbortSignal.timeout(30000) }),
-        fetch('/api/haneda-cam', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({image: b64b}), signal: AbortSignal.timeout(30000) }),
-      ]);
-      if (!ra.ok || !rb.ok) return;
-      const [da, db] = await Promise.all([ra.json(), rb.json()]);
-      if (da.hasVehicles === false || db.hasVehicles === false) {
+      const r = await fetch('/api/yaesu-cam', { signal: AbortSignal.timeout(35000) });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d.skipped && d.hasVehicles === false) {
         _yaesuAlertUntil = Date.now() + 5 * 60 * 1000;
       }
       updatePickupAlerts();
