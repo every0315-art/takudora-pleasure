@@ -8,6 +8,10 @@
     {
       "path": "/api/ships",
       "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/events",
+      "schedule": "0 20 * * *"
     }
   ],
   "rewrites": [
