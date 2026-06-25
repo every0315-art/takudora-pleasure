@@ -1,122 +1,134 @@
-// 年間大規模イベント 公式サイト日程確認API
-// 非固定イベントのみ公式URLをフェッチしClaude Haikuで2026年日程を抽出
-// Vercel CDNで24時間キャッシュ
+// 年間大規模イベントAPI
+// Notionデータベースからイベントを取得 → 公式サイトで日程確認 → 返却
+// Vercel CDN 24時間キャッシュ、毎朝cronで更新
 
 export const config = { maxDuration: 55 };
 
+const NOTION_DB_ID = 'cb7e1ba7-a1f9-4c0d-bd06-9dbe6fe70b10';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-// fixed:true = 毎年同じ日付（確認不要）、url:null = 公式サイト確認不可
-const BASE_EVENTS = [
-  // ── 6月 ──
-  { name: '81 MUSIC FESTIVAL', url: 'https://81musicfestival.com/', notionStart: '2026-06-27', notionEnd: '2026-06-27', venue: 'お台場・TOYOTA ARENA TOKYO', demand: 'high', fixed: false },
-  { name: '東京みなと祭', url: 'https://www.tokyominatomatsuri.com/', notionStart: '2026-06-27', notionEnd: '2026-06-28', venue: '東京国際クルーズターミナル', demand: 'medium', fixed: false },
-  // ── 7月 ──
-  { name: 'World DJ Festival Japan', url: 'https://www.worlddjfestival.jp/', notionStart: '2026-07-04', notionEnd: '2026-07-05', venue: '海の森水上競技場', demand: 'high', fixed: false },
-  { name: '入谷朝顔市', url: null, notionStart: '2026-07-06', notionEnd: '2026-07-08', venue: '入谷鬼子母神', demand: 'medium', fixed: true },
-  { name: 'ほおずき市', url: null, notionStart: '2026-07-09', notionEnd: '2026-07-10', venue: '浅草寺', demand: 'medium', fixed: true },
-  // ── 8月 ──
-  { name: '原宿表参道元氣祭スーパーよさこい', url: 'https://www.harajuku-omotesando.tokyo/', notionStart: '2026-08-29', notionEnd: '2026-08-30', venue: '原宿・表参道', demand: 'high', fixed: false },
-  { name: '高円寺阿波おどり', url: 'https://www.koenji-awaodori.com/', notionStart: '2026-08-29', notionEnd: '2026-08-30', venue: '高円寺', demand: 'high', fixed: false },
-  // ── 10月 ──
-  { name: 'TOKYO ISLAND', url: 'https://tokyoisland.tokyo/', notionStart: '2026-10-10', notionEnd: '2026-10-12', venue: '海の森公園', demand: 'high', fixed: false },
-  { name: '東京よさこい', url: 'https://www.tokyo-yosakoi.com/', notionStart: '2026-10-10', notionEnd: '2026-10-11', venue: '池袋', demand: 'medium', fixed: false },
-  { name: '雑司ヶ谷鬼子母神 御会式', url: 'https://www.kishimojin.jp/', notionStart: '2026-10-16', notionEnd: '2026-10-18', venue: '雑司ヶ谷鬼子母神堂', demand: 'medium', fixed: false },
-  // ── 11月 ──
-  { name: '酉の市（一の酉）', url: null, notionStart: '2026-11-07', notionEnd: '2026-11-07', venue: '鷲神社・花園神社', demand: 'medium', fixed: true },
-  { name: '酉の市（二の酉）', url: null, notionStart: '2026-11-19', notionEnd: '2026-11-19', venue: '鷲神社・花園神社', demand: 'medium', fixed: true },
-  // ── 12月 ──
-  { name: 'カウントダウン・年末イベント', url: null, notionStart: '2026-12-31', notionEnd: '2026-12-31', venue: '都内各所', demand: 'high', fixed: true },
-];
+// 千葉・首都圏のみで東京都外は除外
+const EXCLUDE_VENUE_KEYWORDS = ['幕張', '千葉', 'さいたま', '横浜'];
 
-// ビッグサイト・国立競技場などは各会場カードで管理するため別管理
-const VENUE_EVENTS = [
-  { name: 'ハンドメイドインジャパンフェス', url: 'https://hmj-fes.jp/', notionStart: '2026-07-18', notionEnd: '2026-07-19', venue: '東京ビッグサイト', demand: 'medium', fixed: false, venueCard: '東京ビッグサイト' },
-  { name: 'コミックマーケット（夏コミ）', url: 'https://www.comiket.co.jp/info-a/C104/C104gaiyo.html', notionStart: '2026-08-15', notionEnd: '2026-08-16', venue: '東京ビッグサイト', demand: 'max', fixed: false, venueCard: '東京ビッグサイト' },
-  { name: 'ジャパンモビリティショー', url: 'https://www.japan-mobility-show.com/', notionStart: '2026-10-30', notionEnd: '2026-10-30', venue: '東京ビッグサイト', demand: 'medium', fixed: false, venueCard: '東京ビッグサイト' },
-  { name: 'デザインフェスタ（秋）', url: 'https://designfesta.com/', notionStart: '2026-11-14', notionEnd: '2026-11-15', venue: '東京ビッグサイト', demand: 'medium', fixed: false, venueCard: '東京ビッグサイト' },
-  { name: 'コミックマーケット（冬コミ）', url: 'https://www.comiket.co.jp/', notionStart: '2026-12-29', notionEnd: '2026-12-31', venue: '東京ビッグサイト', demand: 'max', fixed: false, venueCard: '東京ビッグサイト' },
-  { name: '東京レガシーハーフマラソン', url: 'https://www.legacyhalf.tokyo/', notionStart: '2026-10-18', notionEnd: '2026-10-18', venue: '国立競技場', demand: 'low', fixed: false, venueCard: '国立競技場' },
-];
+// app.html で独自カードを持つ会場（同名カード経由で表示されるため別扱い）
+const DEDICATED_VENUE_CARDS = ['東京ビッグサイト', '国立競技場', '東京ドーム', '代々木第一体育館', '両国国技館'];
 
-const ALL_EVENTS = [...BASE_EVENTS, ...VENUE_EVENTS];
+async function fetchNotionEvents(notionToken) {
+  const res = await fetch(`https://api.notion.com/v1/databases/${NOTION_DB_ID}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${notionToken}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ page_size: 100 }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`Notion API ${res.status}`);
+  const data = await res.json();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return data.results.map(page => {
+    const p = page.properties;
+    const name = p['イベント名']?.title?.[0]?.text?.content || '';
+    const start = p['開催日2026']?.date?.start || null;
+    const end   = p['開催日2026']?.date?.end   || start;
+    const venue = p['会場・エリア']?.rich_text?.[0]?.text?.content || '';
+    const genre = p['ジャンル']?.select?.name || '';
+    const memo  = p['規模・メモ']?.rich_text?.[0]?.text?.content  || '';
+    const url   = p['公式サイト']?.url || null;
+
+    if (!name || !start) return null;
+    if (end && new Date(end) < today) return null;
+
+    // 東京都外は除外
+    if (EXCLUDE_VENUE_KEYWORDS.some(kw => venue.includes(kw))) return null;
+
+    // 需要レベル推定
+    let demand = 'medium';
+    if (genre === '音楽フェス') demand = 'high';
+    if (memo.includes('数十万人') || name.includes('コミックマーケット')) demand = 'max';
+    if (genre === 'スポーツ') demand = 'low';
+    if (genre === '伝統行事' || genre === '市・縁日') demand = 'medium';
+
+    // 伝統的な固定日程（伝統祭礼・縁日は毎年同日）
+    const fixed = genre === '伝統祭礼' || genre === '市・縁日' || genre === '伝統行事';
+
+    // 専用会場カードを持つイベントかどうか
+    const venueCard = DEDICATED_VENUE_CARDS.find(vc => venue.includes(vc)) || null;
+
+    return { name, notionStart: start, notionEnd: end || start, venue, url, demand, fixed, venueCard, genre };
+  }).filter(Boolean);
+}
 
 async function fetchPageText(url) {
   const r = await fetch(url, {
-    headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' },
+    headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
     signal: AbortSignal.timeout(10000),
     redirect: 'follow',
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const html = await r.text();
-  // meta + JSON-LD + text content (最大8000文字)
-  const metaDesc = (html.match(/<meta[^>]*description[^>]*content="([^"]*)"[^>]*>/i) || [])[1] || '';
-  const title = (html.match(/<title>([^<]*)<\/title>/i) || [])[1] || '';
-  const jsonLd = (html.match(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) || []).join('\n').slice(0, 3000);
-  const bodyText = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 5000);
-  return `TITLE: ${title}\nMETA: ${metaDesc}\nJSON-LD: ${jsonLd}\nBODY: ${bodyText}`;
+  const title    = (html.match(/<title>([^<]*)<\/title>/i) || [])[1] || '';
+  const metaDesc = (html.match(/<meta[^>]*description[^>]*content="([^"]+)"/i) || [])[1] || '';
+  const jsonLd   = (html.match(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) || []).join('\n').slice(0, 3000);
+  const body     = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 5000);
+  return `TITLE:${title}\nMETA:${metaDesc}\nJSON-LD:${jsonLd}\nBODY:${body}`;
 }
 
-async function extractDateWithClaude(eventName, pageText, apiKey) {
+async function extractDateWithClaude(name, text, anthropicKey) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 120,
-      messages: [{
-        role: 'user',
-        content: `「${eventName}」の2026年開催日程をこのページ内容から抽出してください。JSONのみ返答: {"found":true,"start":"YYYY-MM-DD","end":"YYYY-MM-DD"} または {"found":false}\n\n${pageText}`,
-      }],
+      messages: [{ role: 'user', content: `「${name}」の2026年開催日程をこのページから抽出。JSONのみ: {"found":true,"start":"YYYY-MM-DD","end":"YYYY-MM-DD"} または {"found":false}\n\n${text}` }],
     }),
     signal: AbortSignal.timeout(20000),
   });
   if (!r.ok) throw new Error(`Claude ${r.status}`);
   const data = await r.json();
-  const text = (data.content?.[0]?.text || '').trim();
-  const m = text.match(/\{[^}]+\}/);
-  if (!m) return null;
-  return JSON.parse(m[0]);
+  const raw = (data.content?.[0]?.text || '').trim();
+  const m = raw.match(/\{[^}]+\}/);
+  return m ? JSON.parse(m[0]) : null;
 }
 
-async function verifyEvent(ev, apiKey) {
-  if (ev.fixed || !ev.url) return { ...ev, verified: ev.fixed, verifiedAt: null };
+async function verifyEvent(ev, anthropicKey) {
+  // 固定日程 or 公式URLなし → 確認不要
+  if (ev.fixed || !ev.url) return { ...ev, verified: ev.fixed };
   try {
-    const pageText = await fetchPageText(ev.url);
-    const result = await extractDateWithClaude(ev.name, pageText, apiKey);
+    const text   = await fetchPageText(ev.url);
+    const result = await extractDateWithClaude(ev.name, text, anthropicKey);
     if (result?.found && result.start) {
-      return {
-        ...ev,
-        start: result.start,
-        end: result.end || result.start,
-        verified: true,
-        verifiedAt: new Date().toISOString(),
-      };
+      return { ...ev, start: result.start, end: result.end || result.start, verified: true, verifiedAt: new Date().toISOString() };
     }
     return { ...ev, verified: false, verifiedAt: new Date().toISOString() };
   } catch {
-    return { ...ev, verified: false, verifiedAt: null };
+    return { ...ev, verified: false };
   }
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  // Vercel CDN 24時間キャッシュ
   res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=3600');
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
+  const notionToken  = process.env.NOTION_TOKEN;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!notionToken)  return res.status(500).json({ error: 'NOTION_TOKEN not configured' });
+  if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
 
-  // 過去イベントはスキップ（今日以降のみ確認）
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const upcoming = ALL_EVENTS.filter(ev => new Date(ev.notionEnd) >= today);
+  let events;
+  try {
+    events = await fetchNotionEvents(notionToken);
+  } catch (e) {
+    return res.status(502).json({ error: `Notion fetch failed: ${e.message}` });
+  }
 
-  const results = await Promise.allSettled(upcoming.map(ev => verifyEvent(ev, apiKey)));
+  const results = await Promise.allSettled(events.map(ev => verifyEvent(ev, anthropicKey)));
+  const verified = results.map((r, i) => r.status === 'fulfilled' ? r.value : { ...events[i], verified: false });
 
-  const events = results.map((r, i) =>
-    r.status === 'fulfilled' ? r.value : { ...upcoming[i], verified: false }
-  );
-
-  return res.json({ events, updatedAt: new Date().toISOString() });
+  return res.json({ events: verified, updatedAt: new Date().toISOString(), total: verified.length });
 }
