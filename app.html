@@ -2652,6 +2652,30 @@
   checkHanedaCam2();
   setInterval(checkHanedaCam2, 120000);
 
+  // 八重洲待機所・乗場 車両有無チェック（2分おき、1〜6時は除外）
+  async function checkYaesuCam() {
+    const jstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
+    if (jstHour >= 1 && jstHour < 6) return;
+    try {
+      const [b64a, b64b] = await Promise.all([
+        fetchImgAsBase64('https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg'),
+        fetchImgAsBase64('https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/cam_a.jpg'),
+      ]);
+      const [ra, rb] = await Promise.all([
+        fetch('/api/haneda-cam', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({image: b64a}), signal: AbortSignal.timeout(30000) }),
+        fetch('/api/haneda-cam', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({image: b64b}), signal: AbortSignal.timeout(30000) }),
+      ]);
+      if (!ra.ok || !rb.ok) return;
+      const [da, db] = await Promise.all([ra.json(), rb.json()]);
+      if (da.hasVehicles === false || db.hasVehicles === false) {
+        _yaesuAlertUntil = Date.now() + 5 * 60 * 1000;
+      }
+      updatePickupAlerts();
+    } catch(e) { /* ネットワークエラーは無視 */ }
+  }
+  checkYaesuCam();
+  setInterval(checkYaesuCam, 120000);
+
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
   const HANEDA_TERMINAL_INFO = {
     1: { label: '第1ターミナル（JAL系 国内線）', arrExits: '到着出口 1〜8番　出口1-4→❶　出口5-8→❷', taxiStand: '乗り場❶❷' },
@@ -3039,6 +3063,7 @@
   let _hanedaBigDelayCount = 0; // 羽田1時間以上遅延便数
   let _hanedaCamNoVehicle = false; // 国際線第2プール 車両なし
   let _hanedaCam2Rows = 99; // 国内線待機場 車列数（2列以下でアラート）
+  let _yaesuAlertUntil = 0; // 八重洲カメラ 車両なしアラート終了timestamp
   let _communityPosts = []; // みんなの投稿（位置情報アラート用）
   let _nearPostAlertAt = 0; // 近隣投稿アラート最初の検知timestamp
 
@@ -3093,6 +3118,17 @@
       } else {
         _nearPostAlertAt = 0; // 範囲外になったらリセット
       }
+    }
+
+    // 八重洲待機所・乗場 車両なし（検知から5分間継続）
+    if (Date.now() < _yaesuAlertUntil) {
+      alerts.push({
+        tag: '📷 八重洲',
+        main: '車両なし',
+        sub: '待機所または乗場にタクシーが確認できません',
+        serious: false,
+        delay: true,
+      });
     }
 
     // 国際線第2プール 車両なし
