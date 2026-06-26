@@ -4796,39 +4796,69 @@
     const thisYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
+    // renderAnnualSales と同一の集計ロジック
     const sal = JSON.parse(localStorage.getItem('userSalarySettings') || '{}');
-    const stepRate = parseFloat(sal.stepRate) || 0;
-    const poolRate = parseFloat(sal.poolRate) || 0;
-    const totalRate = stepRate + poolRate;
     const closingDay = Number(sal.closingDay) || loadClosingDay() || 0;
+    const stepRate   = parseFloat(sal.stepRate) || 0;
+    const poolRate   = parseFloat(sal.poolRate) || 0;
+    const payday     = Number(sal.payday) || 0;
 
-    // 月別売上（税抜）集計
-    const monthlyRaw = {};
+    const monthlyMap = {};
     reports.forEach(r => {
       if (!r.date || !r.sales) return;
       const [y, m, d] = r.date.split('-').map(Number);
-      if (y !== thisYear) return;
-      let periodM = m;
-      if (closingDay && d > closingDay) { periodM = m === 12 ? 1 : m + 1; }
-      if (!monthlyRaw[periodM]) monthlyRaw[periodM] = 0;
-      monthlyRaw[periodM] += Math.max(0, Number(r.sales) - (Number(r.tax) || 0));
+      let periodY = y, periodM = m;
+      if (closingDay && d > closingDay) {
+        periodM = m + 1;
+        if (periodM > 12) { periodM = 1; periodY = y + 1; }
+      }
+      let payY = periodY, payM = periodM;
+      if (payday && closingDay && payday <= closingDay) {
+        payM = periodM + 1;
+        if (payM > 12) { payM = 1; payY = periodY + 1; }
+      }
+      const key = `${payY}-${String(payM).padStart(2, '0')}`;
+      if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, tax: 0, kyuyo: 0, pool: 0 };
+      const dailySales = Number(r.sales) || 0;
+      const dailyTax   = Number(r.tax) || 0;
+      const dailyTaxEx = Math.max(0, dailySales - dailyTax);
+      monthlyMap[key].sales += dailySales;
+      monthlyMap[key].tax   += dailyTax;
+      monthlyMap[key].kyuyo += Math.round(dailyTaxEx * stepRate / 100);
+      monthlyMap[key].pool  += Math.round(dailyTaxEx * poolRate / 100);
     });
 
-    // 歩率適用（設定があれば）
+    // 手入力上書き値（年間売上カードと共有）
+    let overrides = {};
+    try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
+    const overrideYear = overrides[thisYear] || {};
+
+    // 月別 総支給（手取り計算の基準）
     const monthlyGross = {};
-    for (let m = 1; m <= currentMonth; m++) {
-      const raw = monthlyRaw[m] || 0;
-      monthlyGross[m] = (totalRate > 0 && raw > 0) ? Math.round(raw * totalRate / 100) : raw;
+    let ytdSum = 0, ytdCount = 0;
+    for (let m = 1; m <= 12; m++) {
+      const key = `${thisYear}-${String(m).padStart(2, '0')}`;
+      const v   = monthlyMap[key] || { sales: 0, tax: 0, kyuyo: 0, pool: 0 };
+      const ov  = overrideYear[m];
+      const ovObj   = ov && typeof ov === 'object' ? ov : null;
+      const ovSales = ovObj ? ovObj.sales : (ov != null ? ov : undefined);
+      const ovKyuyo = ovObj?.kyuyo;
+      const ovPool  = ovObj?.pool;
+      const dispSales  = ovSales != null ? Number(ovSales) : v.sales;
+      const taxExcluded = Math.max(0, dispSales - (ov != null ? 0 : v.tax));
+      const kyuyo = ovKyuyo != null ? Number(ovKyuyo) : (stepRate > 0 ? v.kyuyo : 0);
+      const pool  = ovPool  != null ? Number(ovPool)  : (poolRate > 0 ? v.pool  : 0);
+      const gross = (stepRate + poolRate > 0) ? (kyuyo + pool) : taxExcluded;
+      monthlyGross[m] = gross;
+      if (m <= currentMonth && gross > 0) { ytdSum += gross; ytdCount++; }
     }
 
-    const actualEntries = Object.entries(monthlyGross).filter(([, v]) => v > 0);
-    if (actualEntries.length === 0) {
+    if (ytdCount === 0) {
       el.innerHTML = '<div style="color:var(--gray);font-size:12px;text-align:center;padding:16px 0;">日報データがありません。日報を入力すると自動計算されます。</div>';
       return;
     }
 
-    const ytdSum = actualEntries.reduce((s, [, v]) => s + v, 0);
-    const avgMonthly = Math.round(ytdSum / actualEntries.length);
+    const avgMonthly = Math.round(ytdSum / ytdCount);
     const remainingMonths = 12 - currentMonth;
     const projectedAnnual = ytdSum + avgMonthly * remainingMonths;
 
