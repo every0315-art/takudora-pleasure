@@ -2368,7 +2368,7 @@
     const updEl = document.getElementById('kisei-updated');
     if (!el) return;
     try {
-      const res = await fetch('/api/shutoko-kisei');
+      const res = await fetch('/api/shutoko?type=json');
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       if (updEl) updEl.textContent = data.update || '';
@@ -2641,7 +2641,7 @@
   // 国内線待機場 車列数チェック（2分おき、APIがサーバー側で画像取得）
   async function checkHanedaCam2() {
     try {
-      const r = await fetch('/api/haneda-cam2', { signal: AbortSignal.timeout(35000) });
+      const r = await fetch('/api/haneda-cam?n=2', { signal: AbortSignal.timeout(35000) });
       if (!r.ok) return;
       const d = await r.json();
       if (!d.skipped) _hanedaCam2Rows = typeof d.rows === 'number' ? d.rows : 99;
