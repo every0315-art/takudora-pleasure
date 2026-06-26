@@ -556,8 +556,14 @@
 
   <!-- TOP -->
   <div class="tab-pane active" id="tab-top">
-    <!-- ピックアップアラートエリア -->
-    <div id="pickup-alert-area" style="display:none;margin-bottom:8px;"></div>
+    <!-- アラート一覧 -->
+    <div id="pickup-alert-area" style="margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1.2"/><line x1="6" y1="3.5" x2="6" y2="6.5" stroke="#f0b429" stroke-width="1.4" stroke-linecap="round"/><circle cx="6" cy="8.2" r=".7" fill="#f0b429"/></svg>
+        アラート一覧
+      </div>
+      <div id="pickup-alert-list"></div>
+    </div>
 
     <!-- ストップウォッチ固定バー -->
     <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch;">
@@ -3059,7 +3065,8 @@
 
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
-    if (!area) return;
+    const list = document.getElementById('pickup-alert-list');
+    if (!area || !list) return;
     const alerts = [];
     const now = new Date();
     let nowMin = now.getHours() * 60 + now.getMinutes();
@@ -3200,13 +3207,11 @@
     });
 
     if (alerts.length === 0) {
-      area.style.display = 'none';
       area.className = '';
-      area.innerHTML = '';
+      list.innerHTML = '<div style="font-size:12px;color:var(--green);padding:4px 0;">現在アラートなし</div>';
     } else {
-      area.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px;';
       area.className = 'has-alert';
-      area.innerHTML = alerts.map(a => {
+      list.innerHTML = alerts.map(a => {
         const clickable = a.link || a.tab;
         const onclick = a.link
           ? `onclick="Object.assign(document.createElement('a'),{href:'${a.link}',target:'_blank',rel:'noopener'}).click()"`
