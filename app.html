@@ -814,31 +814,8 @@
 
     <div class="card">
       <div class="card-title">税金・社会保険シミュレーション（年間）</div>
-      <div class="grid2" style="gap:12px;">
-        <div>
-          <div class="progress-wrap">
-            <div class="progress-label"><span>年収見込み</span><span style="color:var(--white); font-weight:700;">¥6,840,000</span></div>
-          </div>
-          <div class="progress-wrap">
-            <div class="progress-label"><span>所得税（概算）</span><span style="color:var(--gold);">¥412,000</span></div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:30%"></div></div>
-          </div>
-          <div class="progress-wrap" style="margin-top:10px;">
-            <div class="progress-label"><span>住民税（概算）</span><span style="color:var(--gold);">¥384,000</span></div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:28%"></div></div>
-          </div>
-          <div class="progress-wrap" style="margin-top:10px;">
-            <div class="progress-label"><span>国民健康保険</span><span style="color:var(--gold);">¥486,000</span></div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:35%"></div></div>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:13px; color:var(--gray); line-height:1.9; margin-top:4px;">
-            <div>年収見込み<br><strong style="font-size:18px; color:var(--white);">¥6,840,000</strong></div>
-            <div style="margin-top:10px;">税・保険合計（概算）<br><strong style="font-size:18px; color:var(--red);">¥1,282,000</strong></div>
-            <div style="margin-top:10px;">手取り概算<br><strong style="font-size:18px; color:var(--green);">¥5,558,000</strong></div>
-          </div>
-        </div>
+      <div id="tax-sim-content">
+        <div style="color:var(--gray);font-size:12px;text-align:center;padding:16px 0;">読み込み中…</div>
       </div>
     </div>
 
@@ -4810,6 +4787,189 @@
       <div id="annual-edit-area"></div>`;
   }
 
+  function renderTaxSimulation() {
+    const el = document.getElementById('tax-sim-content');
+    if (!el) return;
+
+    const reports = loadReports();
+    const now = new Date();
+    const thisYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const sal = JSON.parse(localStorage.getItem('userSalarySettings') || '{}');
+    const stepRate = parseFloat(sal.stepRate) || 0;
+    const poolRate = parseFloat(sal.poolRate) || 0;
+    const totalRate = stepRate + poolRate;
+    const closingDay = Number(sal.closingDay) || loadClosingDay() || 0;
+
+    // 月別売上（税抜）集計
+    const monthlyRaw = {};
+    reports.forEach(r => {
+      if (!r.date || !r.sales) return;
+      const [y, m, d] = r.date.split('-').map(Number);
+      if (y !== thisYear) return;
+      let periodM = m;
+      if (closingDay && d > closingDay) { periodM = m === 12 ? 1 : m + 1; }
+      if (!monthlyRaw[periodM]) monthlyRaw[periodM] = 0;
+      monthlyRaw[periodM] += Math.max(0, Number(r.sales) - (Number(r.tax) || 0));
+    });
+
+    // 歩率適用（設定があれば）
+    const monthlyGross = {};
+    for (let m = 1; m <= currentMonth; m++) {
+      const raw = monthlyRaw[m] || 0;
+      monthlyGross[m] = (totalRate > 0 && raw > 0) ? Math.round(raw * totalRate / 100) : raw;
+    }
+
+    const actualEntries = Object.entries(monthlyGross).filter(([, v]) => v > 0);
+    if (actualEntries.length === 0) {
+      el.innerHTML = '<div style="color:var(--gray);font-size:12px;text-align:center;padding:16px 0;">日報データがありません。日報を入力すると自動計算されます。</div>';
+      return;
+    }
+
+    const ytdSum = actualEntries.reduce((s, [, v]) => s + v, 0);
+    const avgMonthly = Math.round(ytdSum / actualEntries.length);
+    const remainingMonths = 12 - currentMonth;
+    const projectedAnnual = ytdSum + avgMonthly * remainingMonths;
+
+    // 社会保険料（法人タクシー・協会けんぽ東京 2026年度）
+    // 健保4.99% + 介護0.90% = 5.89%、厚年9.15%、雇保0.6%
+    const KENKO  = 0.0589;
+    const KOSEI  = 0.0915;
+    const KOYO   = 0.006;
+    const KOSEI_CAP = 650000;
+
+    const monthlySI = {};
+    let siTotal = { kenko: 0, kosei: 0, koyo: 0, total: 0 };
+    for (let m = 1; m <= 12; m++) {
+      const g = monthlyGross[m] ?? avgMonthly;
+      const kenko = Math.round(g * KENKO);
+      const kosei = Math.round(Math.min(g, KOSEI_CAP) * KOSEI);
+      const koyo  = Math.round(g * KOYO);
+      const total = kenko + kosei + koyo;
+      monthlySI[m] = { kenko, kosei, koyo, total };
+      siTotal.kenko += kenko; siTotal.kosei += kosei;
+      siTotal.koyo  += koyo;  siTotal.total += total;
+    }
+
+    // 給与所得控除
+    function empDeduction(a) {
+      if (a <= 1625000) return 550000;
+      if (a <= 3600000) return Math.round(a * 0.4) - 100000;
+      if (a <= 6600000) return Math.round(a * 0.3) + 80000;
+      if (a <= 8500000) return Math.round(a * 0.2) + 440000;
+      return 1950000;
+    }
+
+    // 所得税（累進）
+    function incomeTaxCalc(ti) {
+      let t;
+      if (ti <= 1950000)  t = ti * 0.05;
+      else if (ti <= 3300000)  t = ti * 0.10 - 97500;
+      else if (ti <= 6950000)  t = ti * 0.20 - 427500;
+      else if (ti <= 9000000)  t = ti * 0.23 - 636000;
+      else if (ti <= 18000000) t = ti * 0.33 - 1536000;
+      else t = ti * 0.40 - 2796000;
+      return Math.max(0, Math.round(t * 1.021));
+    }
+
+    const kyuyoIncome = Math.max(0, projectedAnnual - empDeduction(projectedAnnual));
+    const taxableIT   = Math.max(0, kyuyoIncome - siTotal.total - 480000);
+    const taxableMuni = Math.max(0, kyuyoIncome - siTotal.total - 430000);
+    const annualIT    = incomeTaxCalc(taxableIT);
+    const annualMuni  = Math.max(0, Math.round(taxableMuni * 0.1) - 2500);
+    const annualTax   = annualIT + annualMuni;
+    const annualNet   = projectedAnnual - siTotal.total - annualTax;
+
+    const monthlyIT   = Math.round(annualIT / 12);
+    const monthlyMuni = Math.round(annualMuni / 12);
+
+    const fmt = n => '¥' + Math.round(n).toLocaleString();
+    const pct = (n, d) => Math.round(n / d * 100) + '%';
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">年収見込み</div>
+          <div style="font-size:15px;font-weight:900;color:var(--gold);">${fmt(projectedAnnual)}</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">実績${actualEntries.length}ヶ月+推計${remainingMonths}ヶ月</div>
+        </div>
+        <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">税・社保合計</div>
+          <div style="font-size:15px;font-weight:900;color:var(--red);">${fmt(siTotal.total + annualTax)}</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">${pct(siTotal.total + annualTax, projectedAnnual)}</div>
+        </div>
+        <div style="background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.25);border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">年間手取り</div>
+          <div style="font-size:15px;font-weight:900;color:var(--green);">${fmt(annualNet)}</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">${pct(annualNet, projectedAnnual)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;font-size:11px;">
+        <div style="padding:8px 10px;background:rgba(255,255,255,.04);border-radius:6px;">
+          <div style="color:var(--gray);margin-bottom:5px;">社会保険（年間）</div>
+          <div style="font-weight:700;color:var(--white);margin-bottom:4px;">${fmt(siTotal.total)}</div>
+          <div style="color:var(--gray);font-size:9px;">健保+介護 ${fmt(siTotal.kenko)}</div>
+          <div style="color:var(--gray);font-size:9px;">厚生年金  ${fmt(siTotal.kosei)}</div>
+          <div style="color:var(--gray);font-size:9px;">雇用保険  ${fmt(siTotal.koyo)}</div>
+        </div>
+        <div style="padding:8px 10px;background:rgba(255,255,255,.04);border-radius:6px;">
+          <div style="color:var(--gray);margin-bottom:5px;">税金（年間）</div>
+          <div style="font-weight:700;color:var(--white);margin-bottom:4px;">${fmt(annualTax)}</div>
+          <div style="color:var(--gray);font-size:9px;">所得税  ${fmt(annualIT)}</div>
+          <div style="color:var(--gray);font-size:9px;">住民税  ${fmt(annualMuni)}</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--gray);margin-bottom:6px;">月別内訳${remainingMonths > 0 ? '（薄色は平均値から推計）' : ''}</div>
+      <div style="overflow-x:auto;margin:0 -2px;">
+        <table style="width:100%;min-width:400px;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.12);">
+              <th style="text-align:left;padding:4px 6px;color:var(--gray);font-weight:600;white-space:nowrap;">月</th>
+              <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">総支給</th>
+              <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">社保</th>
+              <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">所得税</th>
+              <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">住民税</th>
+              <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">手取</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Array.from({length:12},(_,i)=>i+1).map(m => {
+              const isFuture = m > currentMonth;
+              const g  = monthlyGross[m] ?? (isFuture ? avgMonthly : 0);
+              const si = monthlySI[m];
+              const net = g > 0 ? g - si.total - monthlyIT - monthlyMuni : 0;
+              const color = isFuture ? 'var(--gray)' : 'var(--white)';
+              const goldC = isFuture ? 'var(--gray)' : 'var(--gold)';
+              const greenC = isFuture ? 'var(--gray)' : 'var(--green)';
+              return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);${isFuture?'opacity:.55;':''}">
+                <td style="padding:5px 6px;color:${color};font-weight:${isFuture?400:600};">${m}月${isFuture?'<span style="font-size:8px;margin-left:2px;">推</span>':''}</td>
+                <td style="text-align:right;padding:5px 6px;color:${goldC};">${g>0?fmt(g):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${g>0?'-'+fmt(si.total):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${g>0?'-'+fmt(monthlyIT):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${g>0?'-'+fmt(monthlyMuni):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;font-weight:700;color:${greenC};">${g>0?fmt(net):'—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="border-top:2px solid rgba(255,255,255,.2);">
+              <td style="padding:6px 6px;font-weight:700;color:var(--white);">合計</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:var(--gold);">${fmt(projectedAnnual)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(siTotal.total)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualIT)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualMuni)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:var(--green);">${fmt(annualNet)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div style="font-size:9px;color:var(--gray);margin-top:10px;line-height:1.6;">
+        ※ 法人タクシー乗務員（協会けんぽ東京 2026年度）想定。健保+介護5.89%・厚生年金9.15%・雇用保険0.6%。<br>
+        ※ 給与所得控除・基礎控除48万・復興特別所得税2.1%込。扶養控除等は未考慮の概算です。
+      </div>`;
+  }
+
   function editAnnualMonth(m, current, currentDays, currentKyuyo, currentPool) {
     const area = document.getElementById('annual-edit-area');
     if (!area) return;
@@ -4870,6 +5030,7 @@
     localStorage.setItem(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
     sbPush(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
     renderAnnualSales();
+    renderTaxSimulation();
   }
 
   function toggleReportHistory() {
@@ -4893,6 +5054,7 @@
     if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(-90deg)';
     renderMonthlySummary();
     renderAnnualSales();
+    renderTaxSimulation();
     updateTopSalesTile();
     renderDowChart();
     const closingDay = loadClosingDay();
@@ -5514,6 +5676,7 @@
       applySalarySettingsToUI(loadSalarySettings());
       renderMonthlySummary();
       renderAnnualSales();
+      renderTaxSimulation();
       if (typeof renderReportHistory === 'function') renderReportHistory();
       if (typeof renderDowChart === 'function') renderDowChart();
     } catch(e) { console.warn('sbPull:', e); }
