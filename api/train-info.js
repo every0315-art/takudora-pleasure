@@ -123,7 +123,7 @@ export default async function handler(req, res) {
           url: OPERATOR_URLS[p.displayName || p.railName || ''] || 'https://transit.yahoo.co.jp/diainfo/area/4',
         };
       })
-      .filter(l => debug || TOKYO_LINES.has(l.name));
+      .filter(l => debug || TOKYO_LINES.has(l.name) || [...TOKYO_LINES].some(t => l.name.includes(t)));
 
     res.setHeader('Cache-Control', 's-maxage=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
