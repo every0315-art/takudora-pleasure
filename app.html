@@ -4862,22 +4862,33 @@
     const remainingMonths = 12 - currentMonth;
     const projectedAnnual = ytdSum + avgMonthly * remainingMonths;
 
-    // 社会保険料（法人タクシー・協会けんぽ東京 2026年度）
-    // 健保4.99% + 介護0.90% = 5.89%、厚年9.15%、雇保0.6%
-    const KENKO  = 0.0589;
-    const KOSEI  = 0.0915;
-    const KOYO   = 0.006;
-    const KOSEI_CAP = 650000;
+    // 社会保険料（協会けんぽ東京 2026年度 標準報酬月額等級）
+    // 健保+介護5.89%、厚年9.15%（上限等級32: 650,000円）、雇保0.6%
+    // 月収（給与+プール金）→ 標準報酬月額等級 → 保険料
+    const HYOJUN_THRESHOLDS = [63,73,83,93,101,107,114,122,130,138,146,155,165,175,185,195,210,230,250,270,290,310,330,350,370,395,425,455,485,515,545,575,605,635,665,695,730,770,810,855,905,955,1005,1055,1115,1175,1235,1295,1355].map(v=>v*1000);
+    const HYOJUN_AMOUNTS    = [58,68,78,88,98,104,110,118,126,134,142,150,160,170,180,190,200,220,240,260,280,300,320,340,360,380,410,440,470,500,530,560,590,620,650,680,710,750,790,830,880,930,980,1030,1090,1150,1210,1270,1330,1390].map(v=>v*1000);
+    const KOSEI_CAP_GRADE   = 650000; // 厚年上限（32等級）
+    const KENKO_RATE = 0.0589; // 健保+介護（本人負担）
+    const KOSEI_RATE = 0.0915; // 厚年（本人負担）
+    const KOYO_RATE  = 0.006;  // 雇保（本人負担）
+
+    function getHyojunHoshu(monthlyIncome) {
+      for (let i = 0; i < HYOJUN_THRESHOLDS.length; i++) {
+        if (monthlyIncome < HYOJUN_THRESHOLDS[i]) return HYOJUN_AMOUNTS[i];
+      }
+      return HYOJUN_AMOUNTS[HYOJUN_AMOUNTS.length - 1];
+    }
 
     const monthlySI = {};
     let siTotal = { kenko: 0, kosei: 0, koyo: 0, total: 0 };
     for (let m = 1; m <= 12; m++) {
-      const g = m > currentMonth ? (monthlyGross[m] || avgMonthly) : monthlyGross[m];
-      const kenko = Math.round(g * KENKO);
-      const kosei = Math.round(Math.min(g, KOSEI_CAP) * KOSEI);
-      const koyo  = Math.round(g * KOYO);
+      const g  = m > currentMonth ? (monthlyGross[m] || avgMonthly) : monthlyGross[m];
+      const hh = getHyojunHoshu(g);
+      const kenko = Math.round(hh * KENKO_RATE);
+      const kosei = Math.round(Math.min(hh, KOSEI_CAP_GRADE) * KOSEI_RATE);
+      const koyo  = Math.round(g * KOYO_RATE);
       const total = kenko + kosei + koyo;
-      monthlySI[m] = { kenko, kosei, koyo, total };
+      monthlySI[m] = { kenko, kosei, koyo, total, hh };
       siTotal.kenko += kenko; siTotal.kosei += kosei;
       siTotal.koyo  += koyo;  siTotal.total += total;
     }
@@ -4995,8 +5006,8 @@
         </table>
       </div>
       <div style="font-size:9px;color:var(--gray);margin-top:10px;line-height:1.6;">
-        ※ 法人タクシー乗務員（協会けんぽ東京 2026年度）想定。健保+介護5.89%・厚生年金9.15%・雇用保険0.6%。<br>
-        ※ 給与所得控除・基礎控除48万・復興特別所得税2.1%込。扶養控除等は未考慮の概算です。
+        ※ 協会けんぽ東京 2026年度・標準報酬月額等級を使用。健保+介護5.89%・厚生年金9.15%（上限65万）・雇用保険0.6%。<br>
+        ※ 社保の基準額は給与＋プール金の月収で等級を決定。給与所得控除・基礎控除48万・復興特別所得税2.1%込。扶養控除等は未考慮。
       </div>`;
   }
 
