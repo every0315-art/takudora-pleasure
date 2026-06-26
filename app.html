@@ -4835,7 +4835,7 @@
 
     // 月別 総支給（給与・プール金を分けて保持）
     const monthlyGross = {}, monthlyKyuyo = {}, monthlyPool = {};
-    let ytdSum = 0, ytdCount = 0;
+    let ytdSum = 0, ytdCount = 0, ytdKyuyo = 0, ytdPool = 0;
     for (let m = 1; m <= 12; m++) {
       const key = `${thisYear}-${String(m).padStart(2, '0')}`;
       const v   = monthlyMap[key] || { sales: 0, tax: 0, kyuyo: 0, pool: 0 };
@@ -4852,7 +4852,9 @@
       monthlyGross[m] = gross;
       monthlyKyuyo[m] = (stepRate + poolRate > 0) ? kyuyo : taxExcluded;
       monthlyPool[m]  = (stepRate + poolRate > 0) ? pool  : 0;
-      if (m <= currentMonth && gross > 0) { ytdSum += gross; ytdCount++; }
+      // 実データがあるかで判定（payday/closingDayシフト後のキーに入る場合もあるため月番号では判断しない）
+      const hasRealData = v.sales > 0 || ov != null;
+      if (hasRealData && gross > 0) { ytdSum += gross; ytdCount++; ytdKyuyo += monthlyKyuyo[m]; ytdPool += monthlyPool[m]; }
     }
 
     if (ytdCount === 0) {
@@ -4861,7 +4863,7 @@
     }
 
     const avgMonthly = Math.round(ytdSum / ytdCount);
-    const remainingMonths = 12 - currentMonth;
+    const remainingMonths = 12 - ytdCount;
     const projectedAnnual = ytdSum + avgMonthly * remainingMonths;
 
     // 社会保険料（協会けんぽ東京 2026年度）
@@ -4883,22 +4885,32 @@
     }
 
     // 平均月給・平均プール金（推計用）
-    const avgKyuyo = ytdCount > 0 ? Math.round(Object.entries(monthlyKyuyo).filter(([k])=>Number(k)<=currentMonth&&monthlyKyuyo[k]>0).reduce((s,[,v])=>s+v,0)/ytdCount) : 0;
-    const avgPool  = ytdCount > 0 ? Math.round(Object.entries(monthlyPool).filter(([k])=>Number(k)<=currentMonth&&monthlyGross[k]>0).reduce((s,[,v])=>s+v,0)/ytdCount) : 0;
+    const avgKyuyo = ytdCount > 0 ? Math.round(ytdKyuyo / ytdCount) : 0;
+    const avgPool  = ytdCount > 0 ? Math.round(ytdPool  / ytdCount) : 0;
+
+    // 算定基礎届: 4・5・6月の給与平均 → 9月〜の標準報酬月額を決定
+    const santeiSrc = [4, 5, 6].map(m => monthlyKyuyo[m] || 0).filter(v => v > 0);
+    const santeiHH  = santeiSrc.length > 0
+      ? getHyojunHoshu(Math.round(santeiSrc.reduce((a, b) => a + b, 0) / santeiSrc.length))
+      : null; // nullなら通常等級を使う
 
     const monthlySI = {};
     let siTotal = { kenko: 0, kosei: 0, koyo: 0, total: 0 };
     for (let m = 1; m <= 12; m++) {
-      const isFut  = m > currentMonth;
-      const kyuyo  = isFut ? (monthlyKyuyo[m] || avgKyuyo) : monthlyKyuyo[m];
-      const pool   = isFut ? (monthlyPool[m]  || avgPool)  : monthlyPool[m];
-      const hh     = getHyojunHoshu(kyuyo);
+      const hasReal = monthlyGross[m] > 0 && (() => {
+        const key2 = `${thisYear}-${String(m).padStart(2,'0')}`;
+        return (monthlyMap[key2]?.sales > 0) || (overrideYear[m] != null);
+      })();
+      const kyuyo = hasReal ? monthlyKyuyo[m] : avgKyuyo;
+      const pool  = hasReal ? monthlyPool[m]  : avgPool;
+      // 9月以降は算定基礎届の等級を使用（データがある場合）
+      const hh = (m >= 9 && santeiHH) ? santeiHH : getHyojunHoshu(kyuyo);
       // 月給分（標準報酬月額ベース）
       const kenkoM = Math.round(hh * KENKO_RATE);
       const koseiM = Math.round(Math.min(hh, KOSEI_CAP_MONTHLY) * KOSEI_RATE);
       const koyoM  = Math.round(kyuyo * KOYO_RATE);
-      // プール金分（賞与扱い）
-      const bonusBase = Math.floor(pool / 1000) * 1000; // 1,000円未満切り捨て
+      // プール金分（賞与扱い: 1,000円未満切り捨て、厚年上限150万/回）
+      const bonusBase = Math.floor(pool / 1000) * 1000;
       const kenkoB = Math.round(bonusBase * KENKO_RATE);
       const koseiB = Math.round(Math.min(bonusBase, KOSEI_CAP_BONUS) * KOSEI_RATE);
       const koyoB  = Math.round(bonusBase * KOYO_RATE);
@@ -5024,8 +5036,8 @@
         </table>
       </div>
       <div style="font-size:9px;color:var(--gray);margin-top:10px;line-height:1.6;">
-        ※ 協会けんぽ東京 2026年度。月給は標準報酬月額等級で社保計算、プール金は賞与扱い（1,000円未満切捨て、厚年上限150万/回）。<br>
-        ※ 健保+介護5.89%・厚年9.15%・雇保0.6%。給与所得控除・基礎控除48万・復興特別所得税2.1%込。扶養控除等は未考慮。
+        ※ 協会けんぽ東京2026年度。月給は標準報酬月額等級で計算、プール金は賞与扱い（1,000円未満切捨て・厚年上限150万/回）。<br>
+        ※ 算定基礎届: 4〜6月給与平均の等級を9月から適用。健保+介護5.89%・厚年9.15%・雇保0.6%。給与所得控除・基礎控除48万・復興特別所得税2.1%込。
       </div>`;
   }
 
