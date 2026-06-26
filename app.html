@@ -563,9 +563,12 @@
     <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch;">
       <div style="flex:2;display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;">
         <button id="sw-btn" onclick="swAction()" style="font-size:13px;font-weight:700;padding:8px 16px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;">乗務開始</button>
-        <div style="flex:1;display:flex;align-items:center;gap:10px;">
-          <div id="sw-display" style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;">00:00:00</div>
-          <div id="sw-label" style="font-size:10px;color:var(--gray);">乗務開始前</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="sw-display" style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;">00:00:00</div>
+            <div id="sw-label" style="font-size:10px;color:var(--gray);">乗務開始前</div>
+          </div>
+          <div id="sw-projected" style="display:none;font-size:11px;color:var(--green);font-weight:600;"></div>
         </div>
       </div>
       <button onclick="openReportModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 4px;background:var(--red);border:none;border-radius:10px;cursor:pointer;color:var(--white);font-size:11px;font-weight:700;line-height:1.3;">
@@ -4011,6 +4014,20 @@
     const m = Math.floor(swElapsed / 60000) % 60;
     const h = Math.floor(swElapsed / 3600000);
     document.getElementById('sw-display').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    const proj = document.getElementById('sw-projected');
+    if (proj && swState === 'running') {
+      const elapsedHours = swElapsed / 3600000;
+      if (elapsedHours >= 0.1) {
+        const reports = loadReports().filter(r => r.sales != null && Number(r.sales) > 0);
+        if (reports.length > 0) {
+          const avgDaily = reports.slice(0, 30).reduce((acc, r) => acc + Number(r.sales), 0) / Math.min(reports.length, 30);
+          const avgHourly = avgDaily / 12;
+          const projected = Math.round(avgHourly * elapsedHours / 100) * 100;
+          proj.textContent = `¥${projected.toLocaleString()} ペース（平均日報${reports.length}件）`;
+          proj.style.display = '';
+        }
+      }
+    }
   }
   function swSave() {
     localStorage.setItem('sw', JSON.stringify({ state: swState, startAt: swStart, elapsed: swElapsed }));
@@ -4019,10 +4036,12 @@
     const btn = document.getElementById('sw-btn');
     const lbl = document.getElementById('sw-label');
     const disp = document.getElementById('sw-display');
+    const proj = document.getElementById('sw-projected');
     if (swState === 'idle') {
       btn.textContent = '乗務開始'; btn.style.background = 'var(--green)'; btn.style.color = '#000';
       lbl.textContent = '乗務開始前';
       disp.style.color = 'var(--white)';
+      if (proj) proj.style.display = 'none';
     } else if (swState === 'running') {
       btn.textContent = '乗務終了'; btn.style.background = 'var(--red)'; btn.style.color = '#fff';
       lbl.textContent = '乗務中';
@@ -4031,6 +4050,7 @@
       btn.textContent = 'リセット'; btn.style.background = 'rgba(255,255,255,.15)'; btn.style.color = 'var(--white)';
       lbl.textContent = '乗務終了';
       disp.style.color = 'var(--gray)';
+      if (proj) proj.style.display = 'none';
     }
   }
   // 位置情報許可管理
