@@ -4872,7 +4872,7 @@
     const monthlySI = {};
     let siTotal = { kenko: 0, kosei: 0, koyo: 0, total: 0 };
     for (let m = 1; m <= 12; m++) {
-      const g = monthlyGross[m] ?? avgMonthly;
+      const g = m > currentMonth ? (monthlyGross[m] || avgMonthly) : monthlyGross[m];
       const kenko = Math.round(g * KENKO);
       const kosei = Math.round(Math.min(g, KOSEI_CAP) * KOSEI);
       const koyo  = Math.round(g * KOYO);
@@ -4922,7 +4922,7 @@
         <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:10px;">
           <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">年収見込み</div>
           <div style="font-size:15px;font-weight:900;color:var(--gold);">${fmt(projectedAnnual)}</div>
-          <div style="font-size:9px;color:var(--gray);margin-top:2px;">実績${actualEntries.length}ヶ月+推計${remainingMonths}ヶ月</div>
+          <div style="font-size:9px;color:var(--gray);margin-top:2px;">実績${ytdCount}ヶ月+推計${remainingMonths}ヶ月</div>
         </div>
         <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);border-radius:8px;padding:10px;">
           <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">税・社保合計</div>
@@ -4966,7 +4966,7 @@
           <tbody>
             ${Array.from({length:12},(_,i)=>i+1).map(m => {
               const isFuture = m > currentMonth;
-              const g  = monthlyGross[m] ?? (isFuture ? avgMonthly : 0);
+              const g  = isFuture ? (monthlyGross[m] || avgMonthly) : monthlyGross[m];
               const si = monthlySI[m];
               const net = g > 0 ? g - si.total - monthlyIT - monthlyMuni : 0;
               const color = isFuture ? 'var(--gray)' : 'var(--white)';
