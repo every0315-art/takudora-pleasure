@@ -4000,7 +4000,7 @@
           const avgDaily = reports.slice(0, 30).reduce((acc, r) => acc + Number(r.sales), 0) / Math.min(reports.length, 30);
           const avgHourly = avgDaily / 12;
           const projected = Math.round(avgHourly * elapsedHours / 100) * 100;
-          proj.textContent = `¥${projected.toLocaleString()} ペース（平均日報${reports.length}件）`;
+          proj.textContent = `¥${projected.toLocaleString()} ペース`;
           proj.style.display = '';
         }
       }
