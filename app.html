@@ -4775,6 +4775,7 @@
     const stepRate = parseFloat(sal.stepRate) || 0;
     const poolRate = parseFloat(sal.poolRate) || 0;
     const payday = Number(sal.payday) || 0; // 支払日（0=末日）
+    const poolMonths = sal.poolMonths ? sal.poolMonths.split(',').map(Number).filter(Boolean) : [];
 
     const monthlyMap = {}; // key: "YYYY-MM"（給与支払い月）
     reports.forEach(r => {
@@ -4841,8 +4842,9 @@
           const dispDays  = ovDays  != null ? ovDays  : days;
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
           // override に給与/プール金が入力されていればそれを使用、なければ計算
+          const isPoolMonth = poolMonths.length === 0 || poolMonths.includes(m);
           const kyuyo = ovKyuyo != null ? ovKyuyo : (hasOverride ? Math.round(taxExcluded * stepRate / 100) : (kyuyo_map || 0));
-          const pool  = ovPool  != null ? ovPool  : (hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map  || 0));
+          const pool  = !isPoolMonth ? 0 : ovPool  != null ? ovPool  : (hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map  || 0));
           const takehome = kyuyo + pool;
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
@@ -4901,6 +4903,7 @@
     const stepRate   = parseFloat(sal.stepRate) || 0;
     const poolRate   = parseFloat(sal.poolRate) || 0;
     const payday     = Number(sal.payday) || 0;
+    const poolMonths = sal.poolMonths ? sal.poolMonths.split(',').map(Number).filter(Boolean) : [];
 
     const monthlyMap = {};
     reports.forEach(r => {
@@ -4945,8 +4948,9 @@
       const ovPool  = ovObj?.pool;
       const dispSales   = ovSales != null ? Number(ovSales) : v.sales;
       const taxExcluded = Math.max(0, dispSales - (ov != null ? 0 : v.tax));
+      const isPoolMonth = poolMonths.length === 0 || poolMonths.includes(m);
       const kyuyo = ovKyuyo != null ? Number(ovKyuyo) : (ov != null && stepRate > 0) ? Math.round(taxExcluded * stepRate / 100) : (stepRate > 0 ? v.kyuyo : 0);
-      const pool  = ovPool  != null ? Number(ovPool)  : (ov != null ? Math.round(taxExcluded * 0.10) : (poolRate > 0 ? v.pool  : 0));
+      const pool  = !isPoolMonth ? 0 : ovPool  != null ? Number(ovPool)  : (ov != null ? Math.round(taxExcluded * 0.10) : (poolRate > 0 ? v.pool  : 0));
       const gross = (stepRate + poolRate > 0) ? (kyuyo + pool) : taxExcluded;
       monthlyGross[m] = gross;
       monthlyKyuyo[m] = (stepRate + poolRate > 0) ? kyuyo : taxExcluded;
