@@ -126,7 +126,8 @@ export default async function handler(req, res) {
         statusCode = 'approach';
       } else if (f.status?.category === 'arrived') {
         const minSince = (now - arrMs) / 60000;
-        if (minSince >= 0 && minSince <= 25) {
+        const baggageMin = f.flightType === 'international' ? 45 : 25;
+        if (minSince >= 0 && minSince <= baggageMin) {
           status = '手荷物中';
           statusCode = 'baggage';
         } else {
