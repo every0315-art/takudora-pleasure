@@ -2976,8 +2976,25 @@
     '横浜スタジアム':       { lat: 35.4439, lon: 139.6383 },
   };
 
+  const VENUE_SCHEDULE_URLS = {
+    // 会場別カード（スケジュールページ）
+    '東京ドーム':           'https://www.tokyo-dome.co.jp/dome/event/schedule.html',
+    '国立競技場':           'https://www.jpnsport.go.jp/kokuritu/tabid/517/Default.aspx',
+    '神宮球場':             'https://www.jingu-stadium.com/event_schedule/',
+    '有明アリーナ':         'https://www.ariake-arena.com/schedule/',
+    '東京ガーデンシアター': 'https://tokyogardencity.com/theater/schedule/',
+    '日本武道館':           'https://www.nipponbudokan.or.jp/schedule/',
+    '東京ビッグサイト':     'https://www.bigsight.jp/visitor/eventschedule/',
+    '代々木第一体育館':     'https://www.yoyogi-gym.jp/schedule/',
+    '両国国技館':           'https://www.sumo.or.jp/kokugikan/',
+    // 大規模イベントカードの会場（スケジュールページがある会場のみ）
+    'お台場・TOYOTA ARENA TOKYO': 'https://toyota-arena-tokyo.jp/schedule/',
+  };
+
   function initVenueLinks() {
-    // data-venue付き event-item → .event-meta をMapsリンクに
+    const BADGE_STYLE = 'font-size:10px;color:var(--gray);font-weight:400;text-decoration:none;border:1px solid rgba(255,255,255,.15);padding:1px 7px;border-radius:4px;margin-left:6px;vertical-align:middle;';
+
+    // data-venue付き event-item → .event-meta に「スケジュール」「地図」リンクを付与
     document.querySelectorAll('#tab-event .event-item[data-venue]').forEach(item => {
       const venue = item.dataset.venue;
       if (!venue || venue === '都内各所') return;
@@ -2985,32 +3002,45 @@
       if (!metaEl || metaEl.querySelector('a')) return;
       const text = metaEl.textContent.trim();
       if (/開演|終演|開始|終了|スタート/.test(text)) return;
+      const schedUrl = VENUE_SCHEDULE_URLS[venue];
       const vc = VENUE_COORDS[venue];
-      const url = vc
+      const mapsUrl = vc
         ? `https://maps.google.com/?q=${vc.lat},${vc.lon}`
         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`;
-      metaEl.innerHTML = `<a href="${url}" target="_blank" rel="noopener" style="color:var(--gray);text-decoration:underline dotted;text-underline-offset:2px;" onclick="event.stopPropagation();">${text}</a>`;
+      const schedLink = schedUrl
+        ? `<a href="${schedUrl}" target="_blank" rel="noopener" style="${BADGE_STYLE}" onclick="event.stopPropagation();">予定</a>`
+        : '';
+      metaEl.innerHTML = `${text}${schedLink}<a href="${mapsUrl}" target="_blank" rel="noopener" style="${BADGE_STYLE}" onclick="event.stopPropagation();">地図</a>`;
     });
 
-    // 会場別カード（東京ドーム等）→ card-title に「地図」バッジを挿入
+    // 会場別カード → card-title に「予定」「地図」バッジを挿入
     document.querySelectorAll('#tab-event .card').forEach(card => {
       const titleEl = card.querySelector('.card-title');
-      if (!titleEl || titleEl.querySelector('a.venue-map-link')) return;
+      if (!titleEl || titleEl.querySelector('a.venue-sched-link')) return;
       const textNode = [...titleEl.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
       const titleText = textNode?.textContent?.trim();
       if (!titleText) return;
+      const schedUrl = VENUE_SCHEDULE_URLS[titleText];
       const vc = VENUE_COORDS[titleText];
-      if (!vc) return;
-      const url = `https://maps.google.com/?q=${vc.lat},${vc.lon}`;
-      const badge = document.createElement('a');
-      badge.href = url;
-      badge.target = '_blank';
-      badge.rel = 'noopener';
-      badge.className = 'venue-map-link';
-      badge.textContent = '地図';
-      badge.style.cssText = 'font-size:10px;color:var(--gray);font-weight:400;text-decoration:none;border:1px solid rgba(255,255,255,.15);padding:1px 7px;border-radius:4px;margin-left:8px;vertical-align:middle;';
-      badge.addEventListener('click', e => e.stopPropagation());
-      textNode.after(badge);
+      if (!schedUrl && !vc) return;
+      const wrap = document.createElement('span');
+      wrap.style.cssText = 'display:inline-flex;gap:4px;vertical-align:middle;margin-left:8px;';
+      if (schedUrl) {
+        const a = document.createElement('a');
+        a.href = schedUrl; a.target = '_blank'; a.rel = 'noopener';
+        a.className = 'venue-sched-link'; a.textContent = '予定';
+        a.style.cssText = BADGE_STYLE;
+        a.addEventListener('click', e => e.stopPropagation());
+        wrap.appendChild(a);
+      }
+      if (vc) {
+        const a = document.createElement('a');
+        a.href = `https://maps.google.com/?q=${vc.lat},${vc.lon}`; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = '地図'; a.style.cssText = BADGE_STYLE;
+        a.addEventListener('click', e => e.stopPropagation());
+        wrap.appendChild(a);
+      }
+      textNode.after(wrap);
     });
   }
   initVenueLinks();
