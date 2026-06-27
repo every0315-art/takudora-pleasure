@@ -2767,7 +2767,7 @@
       html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">`;
       for (const [s, c] of Object.entries(standCount)) {
         const m = standMeta[s];
-        html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid ${m.color};border-radius:8px;padding:12px 8px;text-align:center;">
+        html += `<div class="stand-filter-card" data-stand="${s}" onclick="setHanedaStandFilter('${s}')" style="cursor:pointer;background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid ${m.color};border-radius:8px;padding:12px 8px;text-align:center;transition:opacity .15s;">
           <div style="font-size:22px;line-height:1.2;">${s}</div>
           <div style="font-size:20px;font-weight:900;color:var(--white);line-height:1.1;margin:2px 0;">${c}</div>
           <div style="font-size:10px;color:var(--gray);letter-spacing:.05em;">便 · ${m.terminal}</div>
@@ -2775,11 +2775,11 @@
       }
       html += `</div>`;
       html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">`;
-      html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid #4ca8c9;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+      html += `<div class="stand-filter-card" data-stand="❹" onclick="setHanedaStandFilter('❹')" style="cursor:pointer;background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid #4ca8c9;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;transition:opacity .15s;">
         <div><div style="font-size:10px;color:var(--gray);letter-spacing:.05em;">第2T 国際線</div><div style="font-size:11px;color:#4ca8c9;margin-top:2px;">乗り場❹</div></div>
         <div style="font-size:26px;font-weight:900;color:var(--white);">${intlT2}<span style="font-size:12px;font-weight:400;color:var(--gray);margin-left:3px;">便</span></div>
       </div>`;
-      html += `<div style="background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid #9b7fe8;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+      html += `<div class="stand-filter-card" data-stand="5" onclick="setHanedaStandFilter('5')" style="cursor:pointer;background:var(--navy-mid);border:1px solid var(--border);border-top:2px solid #9b7fe8;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;transition:opacity .15s;">
         <div><div style="font-size:10px;color:var(--gray);letter-spacing:.05em;">第3T 国際線</div><div style="font-size:11px;color:#9b7fe8;margin-top:2px;">乗り場5</div></div>
         <div style="font-size:26px;font-weight:900;color:var(--white);">${intlT3}<span style="font-size:12px;font-weight:400;color:var(--gray);margin-left:3px;">便</span></div>
       </div>`;
@@ -2831,7 +2831,7 @@
             const timeTd = isDelayed
               ? `<strong style="color:#fb923c;">${fmtJst(f.arrStr)}</strong><br><span style="font-size:9px;color:var(--gray);text-decoration:line-through;">${fmtJst(f.onTime)}</span>`
               : `<strong>${fmtJst(f.arrStr)}</strong>`;
-            const stand = getTaxiStand(t, f.exitGates, f.intl);
+            const stand = t === 3 ? '5' : getTaxiStand(t, f.exitGates, f.intl);
             const exitTd = f.exitGates
               ? `<span style="color:var(--gold);font-size:10px;">${f.exitGates}番</span>${stand ? `<br><span style="font-size:12px;">${stand}</span>` : ''}`
               : (stand ? `<span style="font-size:12px;">${stand}</span>` : `<span style="color:var(--gray);">—</span>`);
@@ -2850,7 +2850,7 @@
               statusTd = `<span style="color:var(--gray);font-size:10px;">予定</span>`;
             }
             const flightLink = `<span onclick='showFlightDetail(${JSON.stringify(f)},${t})' style="color:var(--gold);font-weight:700;cursor:pointer;text-decoration:underline dotted;">${f.flight}</span>`;
-            html += `<tr><td>${timeTd}</td><td>${flightLink}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
+            html += `<tr data-stand="${stand}"><td>${timeTd}</td><td>${flightLink}</td><td>${f.origin||'—'}</td><td>${exitTd}</td><td>${statusTd}</td></tr>`;
           }
           html += `</table>`;
         }
@@ -2860,6 +2860,7 @@
         html += `<div style="font-size:12px;color:var(--gray);padding:4px 0 0;">到着便データなし（深夜・早朝帯または受信なし）</div>`;
       }
       bodyEl.innerHTML = html;
+      applyHanedaStandFilter();
       updatePickupAlerts();
     } catch(e) {
       if (bodyEl) bodyEl.innerHTML = `<div style="color:var(--gray);font-size:12px;padding:6px 0;">データ取得エラー: ${e.message}</div>`;
@@ -3047,6 +3048,23 @@
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  let _hanedaStandFilter = null;
+  function setHanedaStandFilter(s) {
+    _hanedaStandFilter = (_hanedaStandFilter === s) ? null : s;
+    applyHanedaStandFilter();
+  }
+  function applyHanedaStandFilter() {
+    const f = _hanedaStandFilter;
+    document.querySelectorAll('#haneda-arr-body tr[data-stand]').forEach(tr => {
+      tr.style.display = (!f || tr.dataset.stand.includes(f)) ? '' : 'none';
+    });
+    document.querySelectorAll('#haneda-arr-body .stand-filter-card').forEach(el => {
+      const active = el.dataset.stand === f;
+      el.style.outline = active ? '2px solid var(--gold)' : 'none';
+      el.style.opacity = (f && !active) ? '0.4' : '1';
+    });
   }
 
   // 終電駅座標マップ
