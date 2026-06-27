@@ -5176,7 +5176,7 @@
               const goldC = isFuture ? 'var(--gray)' : 'var(--gold)';
               const greenC = isFuture ? 'var(--gray)' : 'var(--green)';
               const salaryRow = `<tr style="border-bottom:1px solid rgba(255,255,255,.05);${isFuture?'opacity:.55;':''}">
-                <td style="padding:5px 6px;color:${color};font-weight:${isFuture?400:600};">${m}月${isFuture?'<span style="font-size:8px;margin-left:2px;">推</span>':''}</td>
+                <td style="padding:5px 6px;color:${color};font-weight:${isFuture?400:600};white-space:nowrap;">${m}月${isFuture?'<span style="font-size:8px;margin-left:2px;">推</span>':''}</td>
                 <td style="text-align:right;padding:5px 6px;color:${goldC};">${kyuyo>0?fmt(kyuyo):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(siM):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(monthlyIT):'—'}</td>
@@ -5187,7 +5187,7 @@
               const poolSI  = poolPaymentSI[m] || 0;
               const poolIT  = poolPaymentIT[m] || 0;
               const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);">
-                <td style="padding:5px 6px 5px 14px;color:var(--gold);">賞与</td>
+                <td style="padding:5px 6px;color:var(--gold);white-space:nowrap;">賞与</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gold);">${fmt(poolAmt)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolSI)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolIT)}</td>
