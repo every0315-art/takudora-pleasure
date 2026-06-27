@@ -4800,7 +4800,7 @@
       const key = `${payY}-${String(payM).padStart(2,'0')}`;
       if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, tax: 0, kyuyo: 0, pool: 0, trips: 0, days: 0 };
       const dailySales = Number(r.sales) || 0;
-      const dailyTax   = Number(r.tax)   || 0;
+      const dailyTax   = (r.tax != null && r.tax !== '') ? Number(r.tax) : Math.round(dailySales / 11);
       const dailyTaxEx = Math.max(0, dailySales - dailyTax);
       monthlyMap[key].sales += dailySales;
       monthlyMap[key].tax   += dailyTax;
@@ -4919,7 +4919,7 @@
       const key = `${payY}-${String(payM).padStart(2, '0')}`;
       if (!monthlyMap[key]) monthlyMap[key] = { sales: 0, tax: 0, kyuyo: 0, pool: 0 };
       const dailySales = Number(r.sales) || 0;
-      const dailyTax   = Number(r.tax) || 0;
+      const dailyTax   = (r.tax != null && r.tax !== '') ? Number(r.tax) : Math.round(dailySales / 11);
       const dailyTaxEx = Math.max(0, dailySales - dailyTax);
       monthlyMap[key].sales += dailySales;
       monthlyMap[key].tax   += dailyTax;
