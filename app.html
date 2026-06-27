@@ -1968,7 +1968,11 @@
             <div style="font-size:11px;color:var(--white);margin-bottom:2px;">プール金 支払い月</div>
             <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">プール金がまとめて支払われる月を選択（複数可）</div>
             <input type="hidden" id="acc-pool-months" value="">
-            <div id="pool-month-calendar" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;"></div>
+            <div id="pool-month-calendar" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px;"></div>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="acc-pool-prev-month" style="width:16px;height:16px;accent-color:var(--gold);">
+              <span style="font-size:11px;color:var(--gray);">支給月の前月末締め（例：6月支給＝1〜5月分）</span>
+            </label>
           </div>
         </div>
 
@@ -4904,6 +4908,7 @@
     const poolRate   = parseFloat(sal.poolRate) || 0;
     const payday     = Number(sal.payday) || 0;
     const poolMonths = sal.poolMonths ? sal.poolMonths.split(',').map(Number).filter(Boolean) : [];
+    const poolPrevMonth = !!sal.poolPrevMonth;
 
     const monthlyMap = {};
     reports.forEach(r => {
@@ -5070,8 +5075,9 @@
       for (let i = 0; i < sortedPoolMonths.length; i++) {
         const payM = sortedPoolMonths[i];
         const prevPayM = i === 0 ? 0 : sortedPoolMonths[i-1];
+        const endM = poolPrevMonth ? payM - 1 : payM;
         let acc = 0;
-        for (let mm = prevPayM + 1; mm <= payM; mm++) {
+        for (let mm = prevPayM + 1; mm <= endM; mm++) {
           acc += (monthlyPool[mm] > 0) ? monthlyPool[mm] : avgPool;
         }
         poolPayments[payM] = acc;
@@ -5647,6 +5653,8 @@
     const months = s.poolMonths ? s.poolMonths.split(',').filter(Boolean) : [];
     set('acc-pool-months', s.poolMonths ?? '');
     renderPoolMonthCalendar(months);
+    const pmCb = document.getElementById('acc-pool-prev-month');
+    if (pmCb) pmCb.checked = !!s.poolPrevMonth;
     // 売上管理の締め日とも同期
     const closingSel = document.getElementById('closing-day-select');
     if (closingSel && s.closingDay !== undefined) {
@@ -5697,6 +5705,7 @@
       stepRate:    document.getElementById('acc-step-rate').value,
       poolRate:    document.getElementById('acc-pool-rate').value,
       poolMonths:  document.getElementById('acc-pool-months').value,
+      poolPrevMonth: document.getElementById('acc-pool-prev-month').checked,
       pool:        document.getElementById('acc-pool-rate').value, // 後方互換
       dependents:  document.getElementById('acc-dependents').value,
       deduction:   document.getElementById('acc-deduction').value,
