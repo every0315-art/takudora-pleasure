@@ -2976,6 +2976,45 @@
     '横浜スタジアム':       { lat: 35.4439, lon: 139.6383 },
   };
 
+  function initVenueLinks() {
+    // data-venue付き event-item → .event-meta をMapsリンクに
+    document.querySelectorAll('#tab-event .event-item[data-venue]').forEach(item => {
+      const venue = item.dataset.venue;
+      if (!venue || venue === '都内各所') return;
+      const metaEl = item.querySelector('.event-meta');
+      if (!metaEl || metaEl.querySelector('a')) return;
+      const text = metaEl.textContent.trim();
+      if (/開演|終演|開始|終了|スタート/.test(text)) return;
+      const vc = VENUE_COORDS[venue];
+      const url = vc
+        ? `https://maps.google.com/?q=${vc.lat},${vc.lon}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`;
+      metaEl.innerHTML = `<a href="${url}" target="_blank" rel="noopener" style="color:var(--gray);text-decoration:underline dotted;text-underline-offset:2px;" onclick="event.stopPropagation();">${text}</a>`;
+    });
+
+    // 会場別カード（東京ドーム等）→ card-title に「地図」バッジを挿入
+    document.querySelectorAll('#tab-event .card').forEach(card => {
+      const titleEl = card.querySelector('.card-title');
+      if (!titleEl || titleEl.querySelector('a.venue-map-link')) return;
+      const textNode = [...titleEl.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+      const titleText = textNode?.textContent?.trim();
+      if (!titleText) return;
+      const vc = VENUE_COORDS[titleText];
+      if (!vc) return;
+      const url = `https://maps.google.com/?q=${vc.lat},${vc.lon}`;
+      const badge = document.createElement('a');
+      badge.href = url;
+      badge.target = '_blank';
+      badge.rel = 'noopener';
+      badge.className = 'venue-map-link';
+      badge.textContent = '地図';
+      badge.style.cssText = 'font-size:10px;color:var(--gray);font-weight:400;text-decoration:none;border:1px solid rgba(255,255,255,.15);padding:1px 7px;border-radius:4px;margin-left:8px;vertical-align:middle;';
+      badge.addEventListener('click', e => e.stopPropagation());
+      textNode.after(badge);
+    });
+  }
+  initVenueLinks();
+
   // Haversine距離計算（km）
   function haversineKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
