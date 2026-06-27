@@ -2046,6 +2046,11 @@
             <input type="checkbox" id="acc-has-spouse" style="width:16px;height:16px;accent-color:var(--gold);">
             <span style="font-size:12px;color:var(--white);">配偶者控除あり（配偶者の年収103万以下）</span>
           </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:10px;">
+            <input type="checkbox" id="acc-is-otsu" style="width:16px;height:16px;accent-color:#e08080;">
+            <span style="font-size:12px;color:var(--white);">乙欄（扶養控除等申告書を会社に提出していない）</span>
+          </label>
+          <div style="font-size:9px;color:var(--gray);margin-top:4px;margin-left:24px;">乙欄は基礎控除・扶養控除・配偶者控除が適用されず税額が高くなります</div>
         </div>
         <div style="margin-top:16px;">
           <div style="font-size:11px;color:var(--white);margin-bottom:2px;">社会保険 1〜8月の適用等級</div>
@@ -5175,6 +5180,7 @@
     const dep1922     = Number(sal.dep1922) || 0; // 19〜22歳：63万（特定扶養）
     const dep23p      = Number(sal.dep23p)  || 0; // 23歳以上：38万
     const hasSpouse   = !!sal.hasSpouse;
+    const isOtsu      = !!sal.isOtsu; // 乙欄：基礎控除・扶養控除・配偶者控除なし
     // 各控除年額
     const dedLife     = Number(sal.dedLife)     || 0; // 生命保険料控除（証明書額そのまま、上限は後処理）
     const dedQuake    = Math.min(Number(sal.dedQuake)    || 0, 50000); // 地震保険料控除（上限5万）
@@ -5204,8 +5210,12 @@
     const dependents    = depU16 + dep1618 + dep1922 + dep23p; // 表示用合計
 
     const kyuyoIncome = Math.max(0, projectedAnnual - empDeduction(projectedAnnual));
-    const taxableIT   = Math.max(0, kyuyoIncome - siTotal.total - 480000 - spouseDedIT - depDedIT - extraDedIT);
-    const taxableMuni = Math.max(0, kyuyoIncome - siTotal.total - 430000 - spouseDedMuni - depDedMuni - extraDedMuni);
+    const taxableIT   = isOtsu
+      ? Math.max(0, kyuyoIncome - siTotal.total)
+      : Math.max(0, kyuyoIncome - siTotal.total - 480000 - spouseDedIT - depDedIT - extraDedIT);
+    const taxableMuni = isOtsu
+      ? Math.max(0, kyuyoIncome - siTotal.total)
+      : Math.max(0, kyuyoIncome - siTotal.total - 430000 - spouseDedMuni - depDedMuni - extraDedMuni);
     const annualIT_ref  = incomeTaxCalc(taxableIT);
     const annualMuni_ref = Math.max(0, Math.round(taxableMuni * 0.1) - 2500);
 
@@ -5238,7 +5248,9 @@
       if (k <= 0) { monthlyITMap[m] = 0; monthlyMuniMap[m] = 0; continue; }
       const ann = Math.max(0, k - siM) * 12;
       const eDed = empDeduction(ann);
-      const itTaxable = Math.max(0, ann - eDed - 480000 - spouseDedIT - depDedIT - extraDedIT);
+      const itTaxable = isOtsu
+        ? Math.max(0, ann - eDed)
+        : Math.max(0, ann - eDed - 480000 - spouseDedIT - depDedIT - extraDedIT);
       monthlyITMap[m] = Math.round(incomeTaxCalc(itTaxable) / 12);
       if (m >= muniChangeM && muniNew  != null) { monthlyMuniMap[m] = muniNew; }
       else if (m < muniChangeM && muniPrev != null) { monthlyMuniMap[m] = muniPrev; }
@@ -5437,7 +5449,7 @@
       </div>` : ''}
       <!-- 年間合計シミュレーション -->
       <div style="margin-top:14px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;">
-        <div style="font-size:11px;font-weight:700;color:var(--white);margin-bottom:10px;">年間控除・税金シミュレーション</div>
+        <div style="font-size:11px;font-weight:700;color:var(--white);margin-bottom:10px;">年間控除・税金シミュレーション${isOtsu ? '<span style="margin-left:6px;font-size:9px;background:#e08080;color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;">乙欄</span>' : ''}</div>
         <table style="width:100%;font-size:11px;border-collapse:collapse;">
           <tr><td style="padding:3px 0;color:var(--gray);">年収見込み</td><td style="text-align:right;color:var(--gold);font-weight:700;">${fmt(projectedAnnual)}</td></tr>
           <tr><td style="padding:3px 0;color:var(--gray);">給与所得控除</td><td style="text-align:right;color:#e08080;">-${fmt(empDeduction(projectedAnnual))}</td></tr>
@@ -5447,11 +5459,13 @@
           </tr>
           <tr style="border-top:1px solid rgba(255,255,255,.08);"><td colspan="2" style="padding:4px 0 2px;color:var(--gray);font-size:10px;">▼ 所得控除</td></tr>
           <tr><td style="padding:2px 0 2px 8px;color:var(--gray);">社会保険料控除</td><td style="text-align:right;color:#e08080;">-${fmt(siTotal.total)}</td></tr>
+          ${isOtsu ? `<tr><td colspan="2" style="padding:2px 0 2px 8px;color:#e08080;font-size:10px;">乙欄：基礎控除・扶養控除・配偶者控除は適用外</td></tr>` : `
           <tr><td style="padding:2px 0 2px 8px;color:var(--gray);">基礎控除</td><td style="text-align:right;color:#e08080;">-${fmt(480000)}</td></tr>
           ${hasSpouse ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">配偶者控除</td><td style="text-align:right;color:#e08080;">-${fmt(380000)}</td></tr>` : ''}
           ${dep1618 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（16〜18歳 ${dep1618}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep1618)}</td></tr>` : ''}
           ${dep1922 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gold);">特定扶養控除（19〜22歳 ${dep1922}人）</td><td style="text-align:right;color:#e08080;">-${fmt(630000*dep1922)}</td></tr>` : ''}
           ${dep23p  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（23歳以上 ${dep23p}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep23p)}</td></tr>` : ''}
+          `}
           ${depU16  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">16歳未満（${depU16}人・所得税控除なし）</td><td style="text-align:right;color:var(--gray);">—</td></tr>` : ''}
           ${dedLifeIT > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">生命保険料控除</td><td style="text-align:right;color:#e08080;">-${fmt(dedLifeIT)}</td></tr>` : ''}
           ${dedQuake  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">地震保険料控除</td><td style="text-align:right;color:#e08080;">-${fmt(dedQuake)}</td></tr>` : ''}
@@ -5956,6 +5970,8 @@
     set('acc-deduction',   s.deduction);
     const spCb = document.getElementById('acc-has-spouse');
     if (spCb) spCb.checked = !!s.hasSpouse;
+    const otsuCb = document.getElementById('acc-is-otsu');
+    if (otsuCb) otsuCb.checked = !!s.isOtsu;
     set('acc-muni-prev',   s.muniPrev);
     set('acc-muni-new',    s.muniNew);
     const muniChEl = document.getElementById('acc-muni-change-month');
@@ -6036,6 +6052,7 @@
       dedFurusato:    document.getElementById('acc-ded-furusato').value,
       dedMedical:     document.getElementById('acc-ded-medical').value,
       hasSpouse:      document.getElementById('acc-has-spouse').checked,
+      isOtsu:         document.getElementById('acc-is-otsu').checked,
       muniPrev:       document.getElementById('acc-muni-prev').value,
       muniNew:        document.getElementById('acc-muni-new').value,
       muniChangeMonth: document.getElementById('acc-muni-change-month').value,
