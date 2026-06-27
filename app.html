@@ -5172,6 +5172,15 @@
     const annualIT_ref  = incomeTaxCalc(taxableIT);
     const annualMuni_ref = Math.max(0, Math.round(taxableMuni * 0.1) - 2500);
 
+    // ふるさと納税上限計算
+    const marginalRate = taxableIT <= 1950000 ? 0.05
+      : taxableIT <= 3300000 ? 0.10
+      : taxableIT <= 6950000 ? 0.20
+      : taxableIT <= 9000000 ? 0.23
+      : taxableIT <= 18000000 ? 0.33 : 0.40;
+    const muniIncomeTax = taxableMuni * 0.1; // 住民税所得割
+    const furusatoLimit = Math.max(0, Math.round(muniIncomeTax * 0.2 / Math.max(0.001, 0.9 - marginalRate * 1.021)) + 2000);
+
     const fmt = n => '¥' + Math.round(n).toLocaleString();
     const pct = (n, d) => Math.round(n / d * 100) + '%';
 
@@ -5392,6 +5401,13 @@
             <td style="text-align:right;color:var(--green);font-weight:700;font-size:13px;">${fmt(annualNet)}</td>
           </tr>
         </table>
+        <div style="margin-top:12px;padding:10px 12px;background:rgba(126,200,160,.08);border:1px solid rgba(126,200,160,.25);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:10px;color:var(--green);font-weight:700;margin-bottom:2px;">ふるさと納税 上限目安</div>
+            <div style="font-size:9px;color:var(--gray);">所得税率 ${Math.round(marginalRate*100)}%・住民税所得割 ${fmt(Math.round(muniIncomeTax))} ベース</div>
+          </div>
+          <div style="font-size:18px;font-weight:900;color:var(--green);">${fmt(furusatoLimit)}</div>
+        </div>
       </div>
       <div style="font-size:9px;color:var(--gray);margin-top:10px;line-height:1.6;">
         ※ 協会けんぽ東京2026年度。月給は標準報酬月額等級で計算、プール金は賞与扱い（1,000円未満切捨て・厚年上限150万/回）。<br>
