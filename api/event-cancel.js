@@ -1,13 +1,12 @@
 // イベント中止チェックAPI
-// 今日・明日のイベント名でGoogle News RSSを検索し「中止」記事があれば返す
+// ?items=イベント名:月:日,イベント名:月:日,...
+// → cancelled: ["イベント名:月:日", ...] で個別日程の中止を返す
 
 export const config = { maxDuration: 30 };
 
-// キャッシュは30分（中止情報は速報性が重要）
 const CACHE_SEC = 1800;
 
-async function checkCancelled(name) {
-  // Google News RSS で「{name} 中止」を検索
+async function checkCancelled(name, month, day) {
   const q = encodeURIComponent(`${name} 中止`);
   const url = `https://news.google.com/rss/search?q=${q}&hl=ja&gl=JP&ceid=JP:ja`;
   try {
@@ -18,7 +17,6 @@ async function checkCancelled(name) {
     if (!r.ok) return false;
     const xml = await r.text();
 
-    // 直近48時間以内の記事のみ対象
     const cutoff = Date.now() - 48 * 60 * 60 * 1000;
     const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
 
@@ -30,9 +28,22 @@ async function checkCancelled(name) {
       const desc  = item.match(/<description>([^<]*)<\/description>/)?.[1] || '';
       const text  = (title + ' ' + desc).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/<[^>]+>/g,'');
 
-      // 「中止」「延期」「雨天」が含まれ、かつイベント名が含まれる
-      if (/中止|延期|雨天中止|台風|中断/.test(text)) {
-        console.log(`[event-cancel] detected: ${name} → "${title.slice(0,60)}"`);
+      if (!/中止|延期|雨天中止|台風|中断/.test(text)) continue;
+
+      // 記事内に特定日付（X月Y日）の言及があるか確認
+      const dateMentions = [...text.matchAll(/(\d{1,2})月(\d{1,2})日/g)].map(m => ({
+        m: parseInt(m[1]), d: parseInt(m[2]),
+      }));
+
+      if (dateMentions.length === 0) {
+        // 日付指定なし → 全体中止 → この日も対象
+        console.log(`[event-cancel] general: ${name} → "${title.slice(0,60)}"`);
+        return true;
+      }
+
+      // 日付指定あり → 対象日が含まれる場合のみ中止
+      if (dateMentions.some(dt => dt.m === month && dt.d === day)) {
+        console.log(`[event-cancel] date-specific: ${name} ${month}/${day} → "${title.slice(0,60)}"`);
         return true;
       }
     }
@@ -46,17 +57,23 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', `public, s-maxage=${CACHE_SEC}, stale-while-revalidate=300`);
 
-  // クエリパラメータでイベント名リストを受け取る（カンマ区切り）
-  const names = (req.query.names || '').split(',').map(s => s.trim()).filter(Boolean);
-  if (names.length === 0) return res.json({ cancelled: [] });
+  // items=名前:月:日,名前:月:日,...
+  const rawItems = (req.query.items || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (rawItems.length === 0) return res.json({ cancelled: [] });
 
-  // 最大10件まで並列チェック
-  const targets = names.slice(0, 10);
-  const results = await Promise.allSettled(targets.map(n => checkCancelled(n)));
+  const targets = rawItems.slice(0, 15).map(s => {
+    const parts = s.split(':');
+    const day   = parseInt(parts.pop());
+    const month = parseInt(parts.pop());
+    const name  = parts.join(':').trim();
+    return { key: s, name, month, day };
+  }).filter(t => t.name && t.month && t.day);
 
-  const cancelled = targets.filter((_, i) =>
-    results[i].status === 'fulfilled' && results[i].value === true
-  );
+  const results = await Promise.allSettled(targets.map(t => checkCancelled(t.name, t.month, t.day)));
+
+  const cancelled = targets
+    .filter((_, i) => results[i].status === 'fulfilled' && results[i].value === true)
+    .map(t => t.key);
 
   return res.json({ cancelled, checkedAt: new Date().toISOString() });
 }

@@ -3485,37 +3485,38 @@
     }
   })();
 
-  // 今日・明日のイベント中止チェック
+  // 今日・明日のイベント中止チェック（日程単位）
   (async function checkEventCancellations() {
     const now = new Date();
     const todayM = now.getMonth() + 1, todayD = now.getDate();
     const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
     const tomorrowM = tomorrow.getMonth() + 1, tomorrowD = tomorrow.getDate();
 
-    // 今日・明日に該当するイベント名を収集（重複なし）
-    const nameSet = new Set();
+    // 今日・明日の {name:月:日} を収集（重複なし）
+    const keySet = new Set();
     document.querySelectorAll('#tab-event .event-item').forEach(item => {
       const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
       const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
       if ((m === todayM && d === todayD) || (m === tomorrowM && d === tomorrowD)) {
         const name = item.querySelector('.event-name')?.textContent?.trim();
-        if (name) nameSet.add(name);
+        if (name) keySet.add(`${name}:${m}:${d}`);
       }
     });
-    if (nameSet.size === 0) return;
+    if (keySet.size === 0) return;
 
     try {
-      const names = [...nameSet].join(',');
-      const r = await fetch(`/api/event-cancel?names=${encodeURIComponent(names)}`, { signal: AbortSignal.timeout(20000) });
+      const items = [...keySet].join(',');
+      const r = await fetch(`/api/event-cancel?items=${encodeURIComponent(items)}`, { signal: AbortSignal.timeout(20000) });
       if (!r.ok) return;
       const { cancelled } = await r.json();
       if (!cancelled || cancelled.length === 0) return;
 
-      // 中止イベントに「中止」バッジを付与
+      // 中止イベントに「中止」バッジを付与（日程単位でマッチ）
       document.querySelectorAll('#tab-event .event-item').forEach(item => {
+        const m = parseInt(item.querySelector('.event-month')?.textContent || '0');
+        const d = parseInt(item.querySelector('.event-day')?.textContent || '0');
         const name = item.querySelector('.event-name')?.textContent?.trim();
-        if (!cancelled.includes(name)) return;
-        // 中止スタイル
+        if (!cancelled.includes(`${name}:${m}:${d}`)) return;
         item.style.opacity = '0.5';
         const demandEl = item.querySelector('.event-demand');
         if (demandEl) demandEl.innerHTML = '<span class="badge" style="background:rgba(100,100,100,.3);color:#999;">中止</span>';
