@@ -4845,10 +4845,8 @@
           const dispSales = ovSales != null ? ovSales : sales;
           const dispDays  = ovDays  != null ? ovDays  : days;
           const taxExcluded = Math.max(0, dispSales - (hasOverride ? 0 : (tax || 0)));
-          // override に給与/プール金が入力されていればそれを使用、なければ計算
-          const isPoolMonth = poolMonths.length === 0 || poolMonths.includes(m);
           const kyuyo = ovKyuyo != null ? ovKyuyo : (hasOverride ? Math.round(taxExcluded * stepRate / 100) : (kyuyo_map || 0));
-          const pool  = !isPoolMonth ? 0 : ovPool  != null ? ovPool  : (hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map  || 0));
+          const pool  = ovPool  != null ? ovPool  : (hasOverride ? Math.round(taxExcluded * poolRate / 100) : (pool_map  || 0));
           const takehome = kyuyo + pool;
           annualTaxExcluded += taxExcluded;
           annualTakehome += takehome;
@@ -5142,9 +5140,13 @@
           <tbody>
             ${Array.from({length:12},(_,i)=>i+1).map(m => {
               const isFuture = m > currentMonth;
-              const kyuyo = isFuture ? (monthlyKyuyo[m] || avgKyuyo) : monthlyKyuyo[m];
+              const hasPoolConfig = sortedPoolMonths.length > 0;
+              const g = hasPoolConfig
+                ? (isFuture ? (monthlyKyuyo[m] || avgKyuyo) : monthlyKyuyo[m])
+                : (isFuture ? (monthlyGross[m] || avgMonthly) : monthlyGross[m]);
+              const kyuyo = g;
               const si = monthlySI[m];
-              const siM = sortedPoolMonths.length > 0 ? si.totalM : si.total;
+              const siM = hasPoolConfig ? si.totalM : si.total;
               const net = kyuyo > 0 ? kyuyo - siM - monthlyIT - monthlyMuni : 0;
               const color = isFuture ? 'var(--gray)' : 'var(--white)';
               const goldC = isFuture ? 'var(--gray)' : 'var(--gold)';
@@ -5160,7 +5162,7 @@
               const poolAmt = poolPayments[m];
               const poolSI  = poolPaymentSI[m] || 0;
               const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);">
-                <td style="padding:4px 6px;color:var(--gold);font-size:10px;">　プール金</td>
+                <td style="padding:4px 6px;color:var(--gold);font-size:10px;">　賞与</td>
                 <td style="text-align:right;padding:4px 6px;color:var(--gold);font-size:10px;">${fmt(poolAmt)}</td>
                 <td style="text-align:right;padding:4px 6px;color:#e08080;font-size:10px;">-${fmt(poolSI)}</td>
                 <td style="text-align:right;padding:4px 6px;color:var(--gray);font-size:10px;">—</td>
