@@ -2048,6 +2048,18 @@
           </label>
         </div>
         <div style="margin-top:16px;">
+          <div style="font-size:11px;color:var(--white);margin-bottom:2px;">社会保険 1〜8月の適用等級</div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">前年の算定基礎届で決まった等級を入力（空欄は給与から自動算出）</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;">
+            <div>
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">等級（1〜50）</div>
+              <input type="number" id="acc-si-grade" min="1" max="50" placeholder="自動"
+                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+            </div>
+            <div id="acc-si-grade-preview" style="font-size:10px;color:var(--gold);padding-bottom:8px;"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
           <div style="font-size:11px;color:var(--white);margin-bottom:2px;">住民税（実額入力・空欄は自動計算）</div>
           <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">6月など更新月に通知書の金額を入力してください</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
@@ -4989,8 +5001,11 @@
     const payday     = Number(sal.payday) || 0;
     const poolMonths = sal.poolMonths ? sal.poolMonths.split(',').map(Number).filter(Boolean) : [];
     const poolPrevMonth = !!sal.poolPrevMonth;
-    // 前年算定基礎届の標準報酬月額（1〜8月に適用）
-    const prevYearSanteiHH = (() => {
+    // 1〜8月の社保等級（設定入力 > 前年算定保存値 の優先順）
+    const HYOJUN_AMOUNTS_SIM = [58,68,78,88,98,104,110,118,126,134,142,150,160,170,180,190,200,220,240,260,280,300,320,340,360,380,410,440,470,500,530,560,590,620,650,680,710,750,790,830,880,930,980,1030,1090,1150,1210,1270,1330,1390].map(v=>v*1000);
+    const manualGrade = parseInt(sal.siGrade, 10);
+    const manualSiHH  = (manualGrade >= 1 && manualGrade <= 50) ? HYOJUN_AMOUNTS_SIM[manualGrade - 1] : null;
+    const prevYearSanteiHH = manualSiHH || (() => {
       try {
         const v = localStorage.getItem(`santeiHH_${thisYear - 1}`);
         return v ? Number(v) : null;
@@ -5413,7 +5428,7 @@
         <div style="font-size:9px;color:var(--gray);margin-top:6px;">※ この等級は翌年1〜8月にも自動適用されます</div>
       </div>` : ''}
       ${prevYearSanteiHH ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:8px;font-size:10px;color:var(--gray);">
-        前年算定適用中（1〜8月）：標準報酬月額 <span style="color:var(--gold);font-weight:700;">${(prevYearSanteiHH/10000).toFixed(0)}万円</span>　第${HYOJUN_AMOUNTS.indexOf(prevYearSanteiHH)+1}等級
+        1〜8月適用中${manualSiHH ? '（手入力）' : '（前年自動）'}：標準報酬月額 <span style="color:var(--gold);font-weight:700;">${(prevYearSanteiHH/10000).toFixed(0)}万円</span>　第${HYOJUN_AMOUNTS.indexOf(prevYearSanteiHH)+1}等級
       </div>` : ''}
       <!-- 年間合計シミュレーション -->
       <div style="margin-top:14px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;">
@@ -5940,6 +5955,8 @@
     set('acc-muni-new',    s.muniNew);
     const muniChEl = document.getElementById('acc-muni-change-month');
     if (muniChEl) muniChEl.value = s.muniChangeMonth || '6';
+    set('acc-si-grade', s.siGrade);
+    updateSiGradePreview();
     // 締め日カレンダー選択状態を反映
     renderClosingDayCalendar(s.closingDay);
     // 支払日カレンダー選択状態を反映
@@ -6016,6 +6033,7 @@
       muniPrev:       document.getElementById('acc-muni-prev').value,
       muniNew:        document.getElementById('acc-muni-new').value,
       muniChangeMonth: document.getElementById('acc-muni-change-month').value,
+      siGrade:        document.getElementById('acc-si-grade').value,
     };
     localStorage.setItem(SALARY_KEY, JSON.stringify(s));
     sbPush(SALARY_KEY, JSON.stringify(s));
@@ -6472,6 +6490,22 @@
       setTimeout(() => document.getElementById('pw-reset-modal')?.remove(), 1500);
     }
   }
+
+  // ── 社保等級プレビュー ──
+  const HYOJUN_AMOUNTS_SETTINGS = [58,68,78,88,98,104,110,118,126,134,142,150,160,170,180,190,200,220,240,260,280,300,320,340,360,380,410,440,470,500,530,560,590,620,650,680,710,750,790,830,880,930,980,1030,1090,1150,1210,1270,1330,1390].map(v=>v*1000);
+  function updateSiGradePreview() {
+    const inp = document.getElementById('acc-si-grade');
+    const prev = document.getElementById('acc-si-grade-preview');
+    if (!inp || !prev) return;
+    const grade = parseInt(inp.value, 10);
+    if (!grade || grade < 1 || grade > 50) { prev.textContent = ''; return; }
+    const hh = HYOJUN_AMOUNTS_SETTINGS[grade - 1];
+    const kenko = Math.round(hh * 0.0589);
+    const kosei = Math.round(Math.min(hh, 650000) * 0.0915);
+    const koyo  = Math.round(hh * 0.006);
+    prev.innerHTML = `標準報酬 ${(hh/10000).toFixed(0)}万円<br>社保 -${(kenko+kosei+koyo).toLocaleString()}円/月`;
+  }
+  document.getElementById('acc-si-grade')?.addEventListener('input', updateSiGradePreview);
 
   // ── 締め日カレンダー ──
   function renderClosingDayCalendar(selected) {
