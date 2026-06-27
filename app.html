@@ -5122,8 +5122,9 @@
       const totalM = kenkoM + koseiM + koyoM;
       const totalB = kenkoB + koseiB + koyoB;
       monthlySI[m] = { kenko, kosei, koyo, total, hh, totalM, totalB };
-      siTotal.kenko += kenko; siTotal.kosei += kosei;
-      siTotal.koyo  += koyo;  siTotal.total += total;
+      // siTotalには給与分のみ積算。プール金分は poolPaymentSI 確定後に加算する
+      siTotal.kenko += kenkoM; siTotal.kosei += koseiM;
+      siTotal.koyo  += koyoM;  siTotal.total += totalM;
     }
 
     // 給与所得控除
@@ -5248,6 +5249,15 @@
       const koyoB  = Math.round(bonusBase * KOYO_RATE);
       poolPaymentSI[Number(pm)] = kenkoB + koseiB + koyoB;
     }
+    // プール金社保（累積ベース）をsiTotalに加算
+    for (const [pm, amount] of Object.entries(poolPayments)) {
+      const bonusBase = Math.floor(amount / 1000) * 1000;
+      siTotal.kenko += Math.round(bonusBase * KENKO_RATE);
+      siTotal.kosei += Math.round(Math.min(bonusBase, KOSEI_CAP_BONUS) * KOSEI_RATE);
+      siTotal.koyo  += Math.round(bonusBase * KOYO_RATE);
+      siTotal.total += poolPaymentSI[Number(pm)];
+    }
+
     // 賞与源泉徴収税率（国税庁・甲欄・扶養0人）
     const bonusTaxRate = net => {
       if (net <   68000) return 0;
