@@ -1981,15 +1981,29 @@
           <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:12px;">🧾 税務・控除</div>
           <div style="display:grid;gap:10px;">
             <div>
-              <div style="font-size:11px;color:var(--white);margin-bottom:2px;">扶養家族数</div>
-              <select id="acc-dependents"
-                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
-                <option value="0">0人（本人のみ）</option>
-                <option value="1">1人</option>
-                <option value="2">2人</option>
-                <option value="3">3人</option>
-                <option value="4">4人以上</option>
-              </select>
+              <div style="font-size:11px;color:var(--white);margin-bottom:6px;">扶養親族（年齢別・人数）</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
+                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">16歳未満（控除なし）</div>
+                  <input type="number" id="acc-dep-u16" min="0" max="9" placeholder="0"
+                    style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
+                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">16〜18歳（38万/人）</div>
+                  <input type="number" id="acc-dep-1618" min="0" max="9" placeholder="0"
+                    style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
+                  <div style="font-size:9px;color:var(--gold);margin-bottom:4px;">19〜22歳（63万/人・特定）</div>
+                  <input type="number" id="acc-dep-1922" min="0" max="9" placeholder="0"
+                    style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
+                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">23歳以上（38万/人）</div>
+                  <input type="number" id="acc-dep-23p" min="0" max="9" placeholder="0"
+                    style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
+                </div>
+              </div>
             </div>
             <div>
               <div style="font-size:11px;color:var(--white);margin-bottom:2px;">その他控除（月額 ¥）</div>
@@ -5089,17 +5103,23 @@
     }
 
     // 扶養・配偶者・その他控除
-    const dependents  = Number(sal.dependents) || 0;
+    const depU16      = Number(sal.depU16)  || 0; // 16歳未満：所得税控除なし
+    const dep1618     = Number(sal.dep1618) || 0; // 16〜18歳：38万
+    const dep1922     = Number(sal.dep1922) || 0; // 19〜22歳：63万（特定扶養）
+    const dep23p      = Number(sal.dep23p)  || 0; // 23歳以上：38万
     const hasSpouse   = !!sal.hasSpouse;
     const otherDedM   = Number(sal.deduction) || 0;
     const muniPrev    = sal.muniPrev  != null && sal.muniPrev  !== '' ? Number(sal.muniPrev)  : null;
     const muniNew     = sal.muniNew   != null && sal.muniNew   !== '' ? Number(sal.muniNew)   : null;
     const muniChangeM = Number(sal.muniChangeMonth) || 6;
 
-    const spouseDedIT   = hasSpouse ? 380000 : 0;
-    const depDedIT      = 380000 * dependents;
+    // 所得税控除（16歳未満は0）
+    const spouseDedIT = hasSpouse ? 380000 : 0;
+    const depDedIT    = 380000 * dep1618 + 630000 * dep1922 + 380000 * dep23p;
+    // 住民税控除（16歳未満も33万）
     const spouseDedMuni = hasSpouse ? 330000 : 0;
-    const depDedMuni    = 330000 * dependents;
+    const depDedMuni    = 330000 * depU16 + 330000 * dep1618 + 450000 * dep1922 + 330000 * dep23p;
+    const dependents    = depU16 + dep1618 + dep1922 + dep23p; // 表示用合計
 
     const kyuyoIncome = Math.max(0, projectedAnnual - empDeduction(projectedAnnual));
     const taxableIT   = Math.max(0, kyuyoIncome - siTotal.total - 480000 - spouseDedIT - depDedIT - otherDedM * 12);
@@ -5300,7 +5320,10 @@
           <tr><td style="padding:2px 0 2px 8px;color:var(--gray);">社会保険料控除</td><td style="text-align:right;color:#e08080;">-${fmt(siTotal.total)}</td></tr>
           <tr><td style="padding:2px 0 2px 8px;color:var(--gray);">基礎控除</td><td style="text-align:right;color:#e08080;">-${fmt(480000)}</td></tr>
           ${hasSpouse ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">配偶者控除</td><td style="text-align:right;color:#e08080;">-${fmt(380000)}</td></tr>` : ''}
-          ${dependents > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（${dependents}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000 * dependents)}</td></tr>` : ''}
+          ${dep1618 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（16〜18歳 ${dep1618}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep1618)}</td></tr>` : ''}
+          ${dep1922 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gold);">特定扶養控除（19〜22歳 ${dep1922}人）</td><td style="text-align:right;color:#e08080;">-${fmt(630000*dep1922)}</td></tr>` : ''}
+          ${dep23p  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（23歳以上 ${dep23p}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep23p)}</td></tr>` : ''}
+          ${depU16  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">16歳未満（${depU16}人・所得税控除なし）</td><td style="text-align:right;color:var(--gray);">—</td></tr>` : ''}
           ${otherDedM > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">その他控除</td><td style="text-align:right;color:#e08080;">-${fmt(otherDedM * 12)}</td></tr>` : ''}
           <tr style="border-top:1px solid rgba(255,255,255,.08);">
             <td style="padding:4px 0;color:var(--white);font-weight:600;">課税所得（所得税）</td>
@@ -5780,7 +5803,10 @@
     set('acc-payday',      s.payday);
     set('acc-step-rate',   s.stepRate);
     set('acc-pool-rate',   s.poolRate ?? s.pool ?? '');
-    set('acc-dependents',  s.dependents);
+    set('acc-dep-u16',  s.depU16);
+    set('acc-dep-1618', s.dep1618);
+    set('acc-dep-1922', s.dep1922);
+    set('acc-dep-23p',  s.dep23p);
     set('acc-deduction',   s.deduction);
     const spCb = document.getElementById('acc-has-spouse');
     if (spCb) spCb.checked = !!s.hasSpouse;
@@ -5850,7 +5876,10 @@
       poolMonths:  document.getElementById('acc-pool-months').value,
       poolPrevMonth: document.getElementById('acc-pool-prev-month').checked,
       pool:        document.getElementById('acc-pool-rate').value, // 後方互換
-      dependents:     document.getElementById('acc-dependents').value,
+      depU16:         document.getElementById('acc-dep-u16').value,
+      dep1618:        document.getElementById('acc-dep-1618').value,
+      dep1922:        document.getElementById('acc-dep-1922').value,
+      dep23p:         document.getElementById('acc-dep-23p').value,
       deduction:      document.getElementById('acc-deduction').value,
       hasSpouse:      document.getElementById('acc-has-spouse').checked,
       muniPrev:       document.getElementById('acc-muni-prev').value,
