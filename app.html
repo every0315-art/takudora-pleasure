@@ -2068,6 +2068,11 @@
             </div>
           </div>
           <div id="acc-si-grade-preview" style="font-size:10px;color:var(--gold);min-height:14px;"></div>
+          <div style="margin-top:10px;">
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">実際の社保合計額 ¥/月（給与明細の健保+厚年+雇保の合計・入力すると等級より優先）</div>
+            <input type="number" id="acc-si-actual" min="0" placeholder="例: 51128"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
         </div>
         <div style="margin-top:16px;">
           <div style="font-size:11px;color:var(--white);margin-bottom:2px;">住民税（実額入力・空欄は自動計算）</div>
@@ -5119,6 +5124,7 @@
     const santeiKosei = santeiHH ? Math.round(Math.min(santeiHH, KOSEI_CAP_MONTHLY) * KOSEI_RATE) : 0;
     const santeiKoyo  = santeiHH ? Math.round(santeiAvg * KOYO_RATE) : 0;
 
+    const siActualAmt = Number(sal.siActual) || 0; // 実際の社保月額（1〜8月、入力時優先）
     const monthlySI = {};
     let siTotal = { kenko: 0, kosei: 0, koyo: 0, total: 0 };
     for (let m = 1; m <= 12; m++) {
@@ -5145,12 +5151,17 @@
       const kosei = koseiM + koseiB;
       const koyo  = koyoM  + koyoB;
       const total = kenko + kosei + koyo;
-      const totalM = kenkoM + koseiM + koyoM;
+      // 1〜8月は実額入力があれば給与社保をそちらで上書き
+      const totalM = (siActualAmt > 0 && m <= 8) ? siActualAmt : (kenkoM + koseiM + koyoM);
       const totalB = kenkoB + koseiB + koyoB;
       monthlySI[m] = { kenko, kosei, koyo, total, hh, totalM, totalB };
       // siTotalには給与分のみ積算。プール金分は poolPaymentSI 確定後に加算する
-      siTotal.kenko += kenkoM; siTotal.kosei += koseiM;
-      siTotal.koyo  += koyoM;  siTotal.total += totalM;
+      if (siActualAmt > 0 && m <= 8) {
+        siTotal.total += siActualAmt; // 実額入力時はそのまま加算
+      } else {
+        siTotal.kenko += kenkoM; siTotal.kosei += koseiM;
+        siTotal.koyo  += koyoM;  siTotal.total += totalM;
+      }
     }
 
     // 給与所得控除
@@ -5444,7 +5455,9 @@
         </table>
         <div style="font-size:9px;color:var(--gray);margin-top:6px;">※ この等級は翌年1〜8月にも自動適用されます</div>
       </div>` : ''}
-      ${prevYearSanteiHH ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:8px;font-size:10px;color:var(--gray);">
+      ${siActualAmt > 0 ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:8px;font-size:10px;color:var(--gray);">
+        1〜8月 実額適用中：社保 <span style="color:var(--gold);font-weight:700;">${fmt(siActualAmt)}/月</span>
+      </div>` : prevYearSanteiHH ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:8px;font-size:10px;color:var(--gray);">
         1〜8月適用中${manualSiHH ? '（手入力）' : '（前年自動）'}：標準報酬月額 <span style="color:var(--gold);font-weight:700;">${(prevYearSanteiHH/10000).toFixed(0)}万円</span>　第${HYOJUN_AMOUNTS.indexOf(prevYearSanteiHH)+1}等級
       </div>` : ''}
       <!-- 年間合計シミュレーション -->
@@ -5976,8 +5989,9 @@
     set('acc-muni-new',    s.muniNew);
     const muniChEl = document.getElementById('acc-muni-change-month');
     if (muniChEl) muniChEl.value = s.muniChangeMonth || '6';
-    set('acc-si-koyo',  s.siKoyo);
-    set('acc-si-grade', s.siGrade);
+    set('acc-si-koyo',   s.siKoyo);
+    set('acc-si-grade',  s.siGrade);
+    set('acc-si-actual', s.siActual);
     updateSiGradePreview();
     // 締め日カレンダー選択状態を反映
     renderClosingDayCalendar(s.closingDay);
@@ -6058,6 +6072,7 @@
       muniChangeMonth: document.getElementById('acc-muni-change-month').value,
       siKoyo:         document.getElementById('acc-si-koyo').value,
       siGrade:        document.getElementById('acc-si-grade').value,
+      siActual:       document.getElementById('acc-si-actual').value,
     };
     localStorage.setItem(SALARY_KEY, JSON.stringify(s));
     sbPush(SALARY_KEY, JSON.stringify(s));
