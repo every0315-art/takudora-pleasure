@@ -4945,8 +4945,8 @@
       const ovPool  = ovObj?.pool;
       const dispSales   = ovSales != null ? Number(ovSales) : v.sales;
       const taxExcluded = Math.max(0, dispSales - (ov != null ? 0 : v.tax));
-      const kyuyo = ovKyuyo != null ? Number(ovKyuyo) : (stepRate > 0 ? v.kyuyo : 0);
-      const pool  = ovPool  != null ? Number(ovPool)  : (poolRate > 0 ? v.pool  : 0);
+      const kyuyo = ovKyuyo != null ? Number(ovKyuyo) : (ov != null && stepRate > 0) ? Math.round(taxExcluded * stepRate / 100) : (stepRate > 0 ? v.kyuyo : 0);
+      const pool  = ovPool  != null ? Number(ovPool)  : (ov != null && poolRate > 0) ? Math.round(taxExcluded * poolRate / 100) : (poolRate > 0 ? v.pool  : 0);
       const gross = (stepRate + poolRate > 0) ? (kyuyo + pool) : taxExcluded;
       monthlyGross[m] = gross;
       monthlyKyuyo[m] = (stepRate + poolRate > 0) ? kyuyo : taxExcluded;
