@@ -5100,8 +5100,14 @@
     const annualIT_ref  = incomeTaxCalc(taxableIT);
     const annualMuni_ref = Math.max(0, Math.round(taxableMuni * 0.1) - 2500);
 
-    // 月ごとの源泉徴収・住民税（月別給与・社保ベース）
+    const fmt = n => '¥' + Math.round(n).toLocaleString();
+    const pct = (n, d) => Math.round(n / d * 100) + '%';
+
+    // プール金累積支給額の計算（支給月ごとに前回支給月+1〜今回支給月を合算）
+    const sortedPoolMonths = [...poolMonths].sort((a,b) => a-b);
     const hasPoolConfig = sortedPoolMonths.length > 0;
+
+    // 月ごとの源泉徴収・住民税（月別給与・社保ベース）
     const monthlyITMap = {}, monthlyMuniMap = {};
     for (let m = 1; m <= 12; m++) {
       const si = monthlySI[m];
@@ -5112,12 +5118,10 @@
       const k  = hasReal ? monthlyKyuyo[m] : avgKyuyo;
       const siM = hasPoolConfig ? si.totalM : si.total;
       if (k <= 0) { monthlyITMap[m] = 0; monthlyMuniMap[m] = 0; continue; }
-      // 源泉徴収: 月給×12換算で累進計算（甲欄近似）
       const ann = Math.max(0, k - siM - otherDedM) * 12;
       const eDed = empDeduction(ann);
       const itTaxable = Math.max(0, ann - eDed - 480000 - spouseDedIT - depDedIT);
       monthlyITMap[m] = Math.round(incomeTaxCalc(itTaxable) / 12);
-      // 住民税: 手入力優先、なければ年額÷12
       if (m >= muniChangeM && muniNew  != null) { monthlyMuniMap[m] = muniNew; }
       else if (m < muniChangeM && muniPrev != null) { monthlyMuniMap[m] = muniPrev; }
       else { monthlyMuniMap[m] = Math.round(annualMuni_ref / 12); }
@@ -5126,12 +5130,6 @@
     const annualMuni = Object.values(monthlyMuniMap).reduce((a,b)=>a+b,0);
     const annualTax  = annualIT + annualMuni;
     const annualNet  = projectedAnnual - siTotal.total - annualTax;
-
-    const fmt = n => '¥' + Math.round(n).toLocaleString();
-    const pct = (n, d) => Math.round(n / d * 100) + '%';
-
-    // プール金累積支給額の計算（支給月ごとに前回支給月+1〜今回支給月を合算）
-    const sortedPoolMonths = [...poolMonths].sort((a,b) => a-b);
     const poolPayments = {}; // 支給月 → 累積プール金額
     if (sortedPoolMonths.length > 0) {
       for (let i = 0; i < sortedPoolMonths.length; i++) {
