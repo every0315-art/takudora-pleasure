@@ -4946,8 +4946,9 @@
           // 例：7月度（締め日10日）= 前月11日〜当月10日
           // 支払日ベースの場合はさらに1ヶ月前の締め期間
           const cdDay = Number(closingDay) || 0;
-          const dispM = payday ? (m === 1 ? 12 : m - 1) : m;
-          const dispY = payday && m === 1 ? thisYear - 1 : thisYear;
+          const isNextMonthPay = payday && closingDay && payday <= closingDay;
+          const dispM = isNextMonthPay ? (m === 1 ? 12 : m - 1) : m;
+          const dispY = isNextMonthPay && m === 1 ? thisYear - 1 : thisYear;
           const endDay = cdDay === 0 ? new Date(dispY, dispM, 0).getDate() : cdDay;
           const startM2 = dispM === 1 ? 12 : dispM - 1;
           const startDay2 = cdDay === 0 ? 1 : cdDay + 1;
