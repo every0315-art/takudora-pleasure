@@ -4921,6 +4921,13 @@
   }
 
   function renderTaxSimulation() {
+    try { _renderTaxSimulation(); } catch(e) {
+      console.error('[renderTaxSimulation]', e);
+      const el = document.getElementById('tax-sim-content');
+      if (el) el.innerHTML = `<div style="color:#e08080;font-size:11px;padding:8px;">シミュレーションエラー: ${e.message}</div>`;
+    }
+  }
+  function _renderTaxSimulation() {
     const el = document.getElementById('tax-sim-content');
     if (!el) return;
 
