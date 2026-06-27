@@ -5162,12 +5162,12 @@
               const poolAmt = poolPayments[m];
               const poolSI  = poolPaymentSI[m] || 0;
               const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);">
-                <td style="padding:4px 6px;color:var(--gold);font-size:10px;">　賞与</td>
-                <td style="text-align:right;padding:4px 6px;color:var(--gold);font-size:10px;">${fmt(poolAmt)}</td>
-                <td style="text-align:right;padding:4px 6px;color:#e08080;font-size:10px;">-${fmt(poolSI)}</td>
-                <td style="text-align:right;padding:4px 6px;color:var(--gray);font-size:10px;">—</td>
-                <td style="text-align:right;padding:4px 6px;color:var(--gray);font-size:10px;">—</td>
-                <td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--green);font-size:10px;">${fmt(poolAmt - poolSI)}</td>
+                <td style="padding:5px 6px;color:var(--gold);">　賞与</td>
+                <td style="text-align:right;padding:5px 6px;color:var(--gold);">${fmt(poolAmt)}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolSI)}</td>
+                <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
+                <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
+                <td style="text-align:right;padding:5px 6px;font-weight:700;color:var(--green);">${fmt(poolAmt - poolSI)}</td>
               </tr>` : '';
               return salaryRow + poolRow;
             }).join('')}
