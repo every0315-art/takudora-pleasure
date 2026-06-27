@@ -5090,6 +5090,31 @@
       const koyoB  = Math.round(bonusBase * KOYO_RATE);
       poolPaymentSI[Number(pm)] = kenkoB + koseiB + koyoB;
     }
+    // 賞与源泉徴収税率（国税庁・甲欄・扶養0人）
+    const bonusTaxRate = net => {
+      if (net <   68000) return 0;
+      if (net <  135000) return 0.02042;
+      if (net <  270000) return 0.04084;
+      if (net <  540000) return 0.06126;
+      if (net <  696000) return 0.08168;
+      if (net <  900000) return 0.10210;
+      if (net < 1800000) return 0.12252;
+      if (net < 3600000) return 0.20420;
+      if (net < 7000000) return 0.23483;
+      return 0.45945;
+    };
+    // 各支給月の賞与所得税（前月給与-社保 を基準に税率決定）
+    const poolPaymentIT = {};
+    for (const [pm, amount] of Object.entries(poolPayments)) {
+      const payM  = Number(pm);
+      const prevM = payM - 1;
+      const prevKyuyo = (prevM >= 1 && monthlyKyuyo[prevM]) ? monthlyKyuyo[prevM] : avgKyuyo;
+      const prevSI    = (monthlySI[prevM] ? monthlySI[prevM].totalM : 0);
+      const prevNet   = Math.max(0, prevKyuyo - prevSI - monthlyIT);
+      const rate      = bonusTaxRate(prevNet);
+      const taxBase   = Math.max(0, amount - (poolPaymentSI[payM] || 0));
+      poolPaymentIT[payM] = Math.round(taxBase * rate);
+    }
 
     el.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
@@ -5161,13 +5186,14 @@
               </tr>`;
               const poolAmt = poolPayments[m];
               const poolSI  = poolPaymentSI[m] || 0;
+              const poolIT  = poolPaymentIT[m] || 0;
               const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);">
                 <td style="padding:5px 6px;color:var(--gold);">　賞与</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gold);">${fmt(poolAmt)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolSI)}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolIT)}</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
-                <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
-                <td style="text-align:right;padding:5px 6px;font-weight:700;color:var(--green);">${fmt(poolAmt - poolSI)}</td>
+                <td style="text-align:right;padding:5px 6px;font-weight:700;color:var(--green);">${fmt(poolAmt - poolSI - poolIT)}</td>
               </tr>` : '';
               return salaryRow + poolRow;
             }).join('')}
