@@ -1997,6 +1997,33 @@
                 style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
             </div>
           </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:12px;">
+            <input type="checkbox" id="acc-has-spouse" style="width:16px;height:16px;accent-color:var(--gold);">
+            <span style="font-size:12px;color:var(--white);">配偶者控除あり（配偶者の年収103万以下）</span>
+          </label>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:11px;color:var(--white);margin-bottom:2px;">住民税（実額入力・空欄は自動計算）</div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">6月など更新月に通知書の金額を入力してください</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div>
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替前 ¥/月</div>
+              <input type="number" id="acc-muni-prev" placeholder="自動"
+                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替後 ¥/月</div>
+              <input type="number" id="acc-muni-new" placeholder="自動"
+                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替月</div>
+              <select id="acc-muni-change-month"
+                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 6px;cursor:pointer;">
+                ${Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}月</option>`).join('')}
+              </select>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -5051,16 +5078,51 @@
       return Math.max(0, Math.round(t * 1.021));
     }
 
-    const kyuyoIncome = Math.max(0, projectedAnnual - empDeduction(projectedAnnual));
-    const taxableIT   = Math.max(0, kyuyoIncome - siTotal.total - 480000);
-    const taxableMuni = Math.max(0, kyuyoIncome - siTotal.total - 430000);
-    const annualIT    = incomeTaxCalc(taxableIT);
-    const annualMuni  = Math.max(0, Math.round(taxableMuni * 0.1) - 2500);
-    const annualTax   = annualIT + annualMuni;
-    const annualNet   = projectedAnnual - siTotal.total - annualTax;
+    // 扶養・配偶者・その他控除
+    const dependents  = Number(sal.dependents) || 0;
+    const hasSpouse   = !!sal.hasSpouse;
+    const otherDedM   = Number(sal.deduction) || 0;
+    const muniPrev    = sal.muniPrev  != null && sal.muniPrev  !== '' ? Number(sal.muniPrev)  : null;
+    const muniNew     = sal.muniNew   != null && sal.muniNew   !== '' ? Number(sal.muniNew)   : null;
+    const muniChangeM = Number(sal.muniChangeMonth) || 6;
 
-    const monthlyIT   = Math.round(annualIT / 12);
-    const monthlyMuni = Math.round(annualMuni / 12);
+    const spouseDedIT   = hasSpouse ? 380000 : 0;
+    const depDedIT      = 380000 * dependents;
+    const spouseDedMuni = hasSpouse ? 330000 : 0;
+    const depDedMuni    = 330000 * dependents;
+
+    const kyuyoIncome = Math.max(0, projectedAnnual - empDeduction(projectedAnnual));
+    const taxableIT   = Math.max(0, kyuyoIncome - siTotal.total - 480000 - spouseDedIT - depDedIT - otherDedM * 12);
+    const taxableMuni = Math.max(0, kyuyoIncome - siTotal.total - 430000 - spouseDedMuni - depDedMuni - otherDedM * 12);
+    const annualIT_ref  = incomeTaxCalc(taxableIT);
+    const annualMuni_ref = Math.max(0, Math.round(taxableMuni * 0.1) - 2500);
+
+    // 月ごとの源泉徴収・住民税（月別給与・社保ベース）
+    const hasPoolConfig = sortedPoolMonths.length > 0;
+    const monthlyITMap = {}, monthlyMuniMap = {};
+    for (let m = 1; m <= 12; m++) {
+      const si = monthlySI[m];
+      const hasReal = monthlyGross[m] > 0 && (() => {
+        const k2 = `${thisYear}-${String(m).padStart(2,'0')}`;
+        return (monthlyMap[k2]?.sales > 0) || (overrideYear[m] != null);
+      })();
+      const k  = hasReal ? monthlyKyuyo[m] : avgKyuyo;
+      const siM = hasPoolConfig ? si.totalM : si.total;
+      if (k <= 0) { monthlyITMap[m] = 0; monthlyMuniMap[m] = 0; continue; }
+      // 源泉徴収: 月給×12換算で累進計算（甲欄近似）
+      const ann = Math.max(0, k - siM - otherDedM) * 12;
+      const eDed = empDeduction(ann);
+      const itTaxable = Math.max(0, ann - eDed - 480000 - spouseDedIT - depDedIT);
+      monthlyITMap[m] = Math.round(incomeTaxCalc(itTaxable) / 12);
+      // 住民税: 手入力優先、なければ年額÷12
+      if (m >= muniChangeM && muniNew  != null) { monthlyMuniMap[m] = muniNew; }
+      else if (m < muniChangeM && muniPrev != null) { monthlyMuniMap[m] = muniPrev; }
+      else { monthlyMuniMap[m] = Math.round(annualMuni_ref / 12); }
+    }
+    const annualIT   = Object.values(monthlyITMap).reduce((a,b)=>a+b,0);
+    const annualMuni = Object.values(monthlyMuniMap).reduce((a,b)=>a+b,0);
+    const annualTax  = annualIT + annualMuni;
+    const annualNet  = projectedAnnual - siTotal.total - annualTax;
 
     const fmt = n => '¥' + Math.round(n).toLocaleString();
     const pct = (n, d) => Math.round(n / d * 100) + '%';
@@ -5164,14 +5226,15 @@
           <tbody>
             ${Array.from({length:12},(_,i)=>i+1).map(m => {
               const isFuture = m > currentMonth;
-              const hasPoolConfig = sortedPoolMonths.length > 0;
               const g = hasPoolConfig
                 ? (isFuture ? (monthlyKyuyo[m] || avgKyuyo) : monthlyKyuyo[m])
                 : (isFuture ? (monthlyGross[m] || avgMonthly) : monthlyGross[m]);
               const kyuyo = g;
               const si = monthlySI[m];
               const siM = hasPoolConfig ? si.totalM : si.total;
-              const net = kyuyo > 0 ? kyuyo - siM - monthlyIT - monthlyMuni : 0;
+              const mIT   = monthlyITMap[m]   || 0;
+              const mMuni = monthlyMuniMap[m] || 0;
+              const net = kyuyo > 0 ? kyuyo - siM - mIT - mMuni : 0;
               const color = isFuture ? 'var(--gray)' : 'var(--white)';
               const goldC = isFuture ? 'var(--gray)' : 'var(--gold)';
               const greenC = isFuture ? 'var(--gray)' : 'var(--green)';
@@ -5179,8 +5242,8 @@
                 <td style="padding:5px 6px;color:${color};font-weight:${isFuture?400:600};white-space:nowrap;">${m}月${isFuture?'<span style="font-size:8px;margin-left:2px;">推</span>':''}</td>
                 <td style="text-align:right;padding:5px 6px;color:${goldC};">${kyuyo>0?fmt(kyuyo):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(siM):'—'}</td>
-                <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(monthlyIT):'—'}</td>
-                <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(monthlyMuni):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(mIT):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(mMuni):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;font-weight:700;color:${greenC};">${kyuyo>0?fmt(net):'—'}</td>
               </tr>`;
               const poolAmt = poolPayments[m];
@@ -5207,6 +5270,45 @@
               <td style="text-align:right;padding:6px;font-weight:700;color:var(--green);">${fmt(annualNet)}</td>
             </tr>
           </tfoot>
+        </table>
+      </div>
+      <!-- 算定基礎届 等級表示 -->
+      ${santeiHH ? `<div style="margin-top:12px;padding:10px 12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:8px;">
+        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:4px;">算定基礎届（4〜6月平均）</div>
+        <div style="font-size:11px;color:var(--white);">標準報酬月額 <span style="font-weight:700;color:var(--gold);">${(santeiHH/10000).toFixed(0)}万円</span>　→　9月〜12月に適用</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:2px;">4〜6月給与平均: ${fmt(Math.round(santeiSrc.reduce((a,b)=>a+b,0)/santeiSrc.length))}</div>
+      </div>` : ''}
+      <!-- 年間合計シミュレーション -->
+      <div style="margin-top:14px;padding:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;">
+        <div style="font-size:11px;font-weight:700;color:var(--white);margin-bottom:10px;">年間控除・税金シミュレーション</div>
+        <table style="width:100%;font-size:11px;border-collapse:collapse;">
+          <tr><td style="padding:3px 0;color:var(--gray);">年収見込み</td><td style="text-align:right;color:var(--gold);font-weight:700;">${fmt(projectedAnnual)}</td></tr>
+          <tr><td style="padding:3px 0;color:var(--gray);">給与所得控除</td><td style="text-align:right;color:#e08080;">-${fmt(empDeduction(projectedAnnual))}</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.08);">
+            <td style="padding:3px 0;color:var(--gray);">給与所得</td>
+            <td style="text-align:right;color:var(--white);">${fmt(kyuyoIncome)}</td>
+          </tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.08);"><td colspan="2" style="padding:4px 0 2px;color:var(--gray);font-size:10px;">▼ 所得控除</td></tr>
+          <tr><td style="padding:2px 0 2px 8px;color:var(--gray);">社会保険料控除</td><td style="text-align:right;color:#e08080;">-${fmt(siTotal.total)}</td></tr>
+          <tr><td style="padding:2px 0 2px 8px;color:var(--gray);">基礎控除</td><td style="text-align:right;color:#e08080;">-${fmt(480000)}</td></tr>
+          ${hasSpouse ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">配偶者控除</td><td style="text-align:right;color:#e08080;">-${fmt(380000)}</td></tr>` : ''}
+          ${dependents > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（${dependents}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000 * dependents)}</td></tr>` : ''}
+          ${otherDedM > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">その他控除</td><td style="text-align:right;color:#e08080;">-${fmt(otherDedM * 12)}</td></tr>` : ''}
+          <tr style="border-top:1px solid rgba(255,255,255,.08);">
+            <td style="padding:4px 0;color:var(--white);font-weight:600;">課税所得（所得税）</td>
+            <td style="text-align:right;color:var(--white);font-weight:600;">${fmt(taxableIT)}</td>
+          </tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.08);">
+            <td style="padding:3px 0;color:var(--gray);">所得税（年間・復興税込）</td>
+            <td style="text-align:right;color:#e08080;">-${fmt(annualIT)}</td>
+          </tr>
+          <tr><td style="padding:3px 0;color:var(--gray);">住民税（年間）${muniNew != null || muniPrev != null ? '<span style="font-size:9px;color:var(--gold);">実額</span>' : ''}</td>
+            <td style="text-align:right;color:#e08080;">-${fmt(annualMuni)}</td>
+          </tr>
+          <tr style="border-top:2px solid rgba(255,255,255,.15);">
+            <td style="padding:5px 0;color:var(--white);font-weight:700;">年間手取り見込み</td>
+            <td style="text-align:right;color:var(--green);font-weight:700;font-size:13px;">${fmt(annualNet)}</td>
+          </tr>
         </table>
       </div>
       <div style="font-size:9px;color:var(--gray);margin-top:10px;line-height:1.6;">
@@ -5672,6 +5774,12 @@
     set('acc-pool-rate',   s.poolRate ?? s.pool ?? '');
     set('acc-dependents',  s.dependents);
     set('acc-deduction',   s.deduction);
+    const spCb = document.getElementById('acc-has-spouse');
+    if (spCb) spCb.checked = !!s.hasSpouse;
+    set('acc-muni-prev',   s.muniPrev);
+    set('acc-muni-new',    s.muniNew);
+    const muniChEl = document.getElementById('acc-muni-change-month');
+    if (muniChEl) muniChEl.value = s.muniChangeMonth || '6';
     // 締め日カレンダー選択状態を反映
     renderClosingDayCalendar(s.closingDay);
     // 支払日カレンダー選択状態を反映
@@ -5734,8 +5842,12 @@
       poolMonths:  document.getElementById('acc-pool-months').value,
       poolPrevMonth: document.getElementById('acc-pool-prev-month').checked,
       pool:        document.getElementById('acc-pool-rate').value, // 後方互換
-      dependents:  document.getElementById('acc-dependents').value,
-      deduction:   document.getElementById('acc-deduction').value,
+      dependents:     document.getElementById('acc-dependents').value,
+      deduction:      document.getElementById('acc-deduction').value,
+      hasSpouse:      document.getElementById('acc-has-spouse').checked,
+      muniPrev:       document.getElementById('acc-muni-prev').value,
+      muniNew:        document.getElementById('acc-muni-new').value,
+      muniChangeMonth: document.getElementById('acc-muni-change-month').value,
     };
     localStorage.setItem(SALARY_KEY, JSON.stringify(s));
     sbPush(SALARY_KEY, JSON.stringify(s));
