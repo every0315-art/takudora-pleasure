@@ -5179,7 +5179,7 @@
       const prevM = payM - 1;
       const prevKyuyo = (prevM >= 1 && monthlyKyuyo[prevM]) ? monthlyKyuyo[prevM] : avgKyuyo;
       const prevSI    = (monthlySI[prevM] ? monthlySI[prevM].totalM : 0);
-      const prevNet   = Math.max(0, prevKyuyo - prevSI - monthlyIT);
+      const prevNet   = Math.max(0, prevKyuyo - prevSI - (monthlyITMap[prevM] || 0));
       const rate      = bonusTaxRate(prevNet);
       const taxBase   = Math.max(0, amount - (poolPaymentSI[payM] || 0));
       poolPaymentIT[payM] = Math.round(taxBase * rate);
