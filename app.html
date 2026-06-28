@@ -338,22 +338,11 @@
       transform: translateY(-2px);
     }
 
-    /* ── SLOT 変更ボタン ── */
-    .slot-edit-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 6px;
-      color: var(--gray);
-      font-size: 11px;
-      padding: 2px 7px;
-      cursor: pointer;
-      z-index: 2;
-      line-height: 1.5;
+    /* 長押し中のフィードバック */
+    .tile.longpress-active {
+      border-color: rgba(201,168,76,.7) !important;
+      transform: scale(0.97) !important;
     }
-    .slot-edit-btn:hover { background: rgba(255,255,255,.15); color: var(--white); }
 
     /* ── SLOT セレクターモーダル ── */
     .slot-modal {
@@ -726,7 +715,6 @@
     <!-- 2×2 グリッド（選択式） -->
     <div class="top-layout" id="top-grid">
       <div class="tile tile-train" id="tile-train" data-tab="train">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(0)">変更</button>
         <div class="tile-label">電車・交通</div>
         <div id="top-train-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
@@ -734,7 +722,6 @@
       </div>
 
       <div class="tile tile-haneda" id="tile-haneda-arr" style="display:flex;flex-direction:column;padding:10px 10px 8px;">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(1)">変更</button>
         <div class="tile-label" style="cursor:pointer;" onclick="switchTab('haneda')">羽田空港・到着便 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
         <div id="top-haneda-summary" style="margin-top:6px;cursor:pointer;flex:1;overflow:hidden;" onclick="goHanedaSection('haneda-arr-card')">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
@@ -743,7 +730,6 @@
       </div>
 
       <div class="tile tile-haneda tile-hidden" id="tile-haneda-cam" style="display:flex;flex-direction:column;padding:8px 8px 6px;">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label" style="margin-bottom:6px;cursor:pointer;" onclick="goHanedaSection('haneda-cam-card')">羽田空港・カメラ</div>
         <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
           <img id="top-haneda-img1" src="" alt="国内線待機場" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'国内線待機場')">
@@ -752,20 +738,17 @@
       </div>
 
       <div class="tile tile-event" id="tile-event" data-tab="event" style="overflow:hidden;display:flex;flex-direction:column;">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(2)">変更</button>
         <div class="tile-label">イベント</div>
         <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
       </div>
 
       <div class="tile tile-community" id="tile-community" data-tab="community">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(3)">変更</button>
         <div class="tile-label">みんなの投稿</div>
         <div id="top-community-list" style="display:flex;flex-direction:column;gap:0;margin-top:6px;flex:1;overflow:hidden;">読込中…</div>
       </div>
 
       <!-- 非表示プール（選ばれていないタイル） -->
       <div class="tile tile-stand tile-hidden" id="tile-stand" data-tab="stand" style="padding:8px 8px 6px;">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label" style="margin-bottom:6px;">街の様子</div>
         <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
           <img id="top-pcounter-img-a" src="" alt="八重洲待機所" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲待機所')">
@@ -775,20 +758,17 @@
       </div>
 
       <div class="tile tile-traffic tile-hidden" id="tile-traffic" data-tab="traffic">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label">道路情報</div>
         <img id="top-shutoko-img" alt="首都高交通規制マップ" style="width:100%;border-radius:4px;display:block;margin-top:6px;">
       </div>
 
       <div class="tile tile-sales tile-hidden" id="tile-sales" data-tab="sales">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label">売上管理</div>
         <div id="top-sales-main">—</div>
         <div id="top-sales-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
 
       <div class="tile tile-news tile-hidden" id="tile-news" data-tab="news">
-        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label">業界ニュース</div>
         <div id="top-news-main" style="margin-top:6px;display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text);line-height:1.4;">読込中…</div>
         <div id="top-news-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
@@ -2614,16 +2594,52 @@
 
   function applyGridSlots() {
     const grid = document.getElementById('top-grid');
-    // 全タイルを表示して順番通りに並べ替え
-    topGridSlots.forEach(id => {
+    topGridSlots.forEach((id, idx) => {
       const el = document.getElementById('tile-' + id);
       if (!el) return;
       el.classList.remove('tile-hidden');
-      const btn = el.querySelector('.slot-edit-btn');
-      if (btn) btn.setAttribute('onclick', `event.stopPropagation();openSlotSelector(${topGridSlots.indexOf(id)})`);
+      el.dataset.slotIndex = idx;
       grid.appendChild(el);
     });
   }
+
+  // 長押し検出（500ms）
+  let _lpTimer = null;
+  function setupLongPress() {
+    document.getElementById('top-grid').addEventListener('touchstart', e => {
+      const tile = e.target.closest('.tile');
+      if (!tile || tile.dataset.slotIndex === undefined) return;
+      tile.classList.add('longpress-active');
+      _lpTimer = setTimeout(() => {
+        tile.classList.remove('longpress-active');
+        navigator.vibrate?.(30);
+        openSlotSelector(+tile.dataset.slotIndex);
+      }, 500);
+    }, { passive: true });
+    document.getElementById('top-grid').addEventListener('touchend', () => {
+      clearTimeout(_lpTimer);
+      document.querySelectorAll('.tile.longpress-active').forEach(t => t.classList.remove('longpress-active'));
+    }, { passive: true });
+    document.getElementById('top-grid').addEventListener('touchmove', () => {
+      clearTimeout(_lpTimer);
+      document.querySelectorAll('.tile.longpress-active').forEach(t => t.classList.remove('longpress-active'));
+    }, { passive: true });
+    // PC用マウス長押し
+    document.getElementById('top-grid').addEventListener('mousedown', e => {
+      const tile = e.target.closest('.tile');
+      if (!tile || tile.dataset.slotIndex === undefined) return;
+      tile.classList.add('longpress-active');
+      _lpTimer = setTimeout(() => {
+        tile.classList.remove('longpress-active');
+        openSlotSelector(+tile.dataset.slotIndex);
+      }, 500);
+    });
+    document.getElementById('top-grid').addEventListener('mouseup', () => {
+      clearTimeout(_lpTimer);
+      document.querySelectorAll('.tile.longpress-active').forEach(t => t.classList.remove('longpress-active'));
+    });
+  }
+  setupLongPress();
 
   function openSlotSelector(slotIndex) {
     _slotEditIndex = slotIndex;
