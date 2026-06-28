@@ -3139,12 +3139,31 @@
       const intlT3 = (terminals[3] || []).length;
       // 1時間以上遅延便カウント
       const toMin = s => { const m = s && s.match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]*60 + +m[2] : null; };
-      _hanedaBigDelayCount = [1,2,3].flatMap(t => terminals[t] || []).filter(f => {
+      const allFlights = [1,2,3].flatMap(t => terminals[t] || []);
+      _hanedaBigDelayCount = allFlights.filter(f => {
         if (f.statusCode === 'landed' || f.statusCode === 'baggage' || f.statusCode === 'canceled') return false;
         if (!f.onTime || f.onTime === f.arrStr) return false;
         const diff = toMin(f.arrStr) - toMin(f.onTime);
         return diff !== null && diff >= 60;
       }).length;
+
+      // 深夜（22時〜翌3時）に60分以上遅延して到着予定の便を検知
+      const nowH = new Date().getHours();
+      const isLateNight = nowH >= 22 || nowH < 3;
+      const lateNightDelayed = allFlights.filter(f => {
+        if (f.statusCode === 'canceled') return false;
+        if (!f.onTime || !f.arrStr) return false;
+        const arrM = toMin(f.arrStr);
+        if (arrM === null) return false;
+        // 22:00〜03:00 = 1320〜1440+180分 に換算
+        const inLateWindow = arrM >= 22*60 || arrM < 3*60;
+        if (!inLateWindow) return false;
+        const diff = arrM - toMin(f.onTime);
+        // 日またぎ考慮（差が極端に負なら+1440）
+        const adjDiff = diff !== null && diff < -120 ? diff + 24*60 : diff;
+        return adjDiff !== null && adjDiff >= 60;
+      });
+      window._hanedaLateNightDelayed = lateNightDelayed;
       const standMeta = {
         '❶': { terminal: '第1T', color: '#c9a84c' },
         '❷': { terminal: '第1T', color: '#c9a84c' },
@@ -3688,6 +3707,23 @@
         tag: '✈️ 羽田空港 大規模遅延',
         main: `${_hanedaBigDelayCount}便が1時間以上遅延`,
         sub: '到着ラッシュ・需要増の可能性',
+        serious: true,
+        tab: 'tab-haneda',
+      });
+    }
+
+    // 深夜帯（22時〜翌3時）に遅延便が集中
+    const lnFlights = window._hanedaLateNightDelayed || [];
+    if (lnFlights.length >= 3) {
+      // 最も遅い到着時刻を取得
+      const toMin2 = s => { const m = s && s.match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]*60 + +m[2] : 0; };
+      const latest = lnFlights.reduce((a, b) => toMin2(b.arrStr) > toMin2(a.arrStr) ? b : a, lnFlights[0]);
+      const latestH = Math.floor(toMin2(latest.arrStr) / 60);
+      const latestM = String(toMin2(latest.arrStr) % 60).padStart(2, '0');
+      alerts.push({
+        tag: '🌙 羽田 深夜大量到着',
+        main: `${lnFlights.length}便が深夜に遅延到着予定`,
+        sub: `最遅 ${latestH}:${latestM}頃 → 空港タクシー乗り場に乗客集中の可能性`,
         serious: true,
         tab: 'tab-haneda',
       });
