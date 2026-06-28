@@ -2671,7 +2671,7 @@
   }
 
   // ── 並び替えモーダル ──
-  let _sortOrder = []; // モーダル内の一時並び順
+  let _sortOrder = [];
   let _sortDrag = null;
 
   function openSortModal() {
@@ -2683,6 +2683,7 @@
   }
 
   function closeSortModal(save) {
+    if (_sortDrag) { _sortDrag.clone.remove(); _sortDrag = null; }
     if (save) {
       topGridSlots = [..._sortOrder];
       localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
@@ -2703,16 +2704,37 @@
         <span class="sort-num">${i + 1}</span>
       </div>`;
     }).join('');
-    setupSortDrag();
   }
 
-  function setupSortDrag() {
+  // ドラッグ中にリストのラベル・番号だけ更新（innerHTML は触らない）
+  function refreshSortLabels() {
     const list = document.getElementById('sort-list');
-    const items = () => [...list.querySelectorAll('.sort-item')];
+    [...list.querySelectorAll('.sort-item')].forEach((el, i) => {
+      const w = SLOT_WIDGETS.find(w => w.id === _sortOrder[i]);
+      el.dataset.idx = i;
+      el.querySelector('.sort-label').textContent = w?.label || _sortOrder[i];
+      el.querySelector('.sort-num').textContent = i + 1;
+      el.style.opacity = (i === (_sortDrag?.idx ?? -1)) ? '0.3' : '';
+    });
+  }
 
-    function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+  // document レベルのリスナーは1回だけ登録
+  (function initSortDrag() {
+    function getY(e) { return (e.touches || e.changedTouches)?.[0]?.clientY ?? e.clientY; }
 
-    function onStart(e, item) {
+    function sortItemAt(y) {
+      const list = document.getElementById('sort-list');
+      if (!list) return -1;
+      for (const el of list.querySelectorAll('.sort-item')) {
+        const r = el.getBoundingClientRect();
+        if (y >= r.top && y <= r.bottom) return +el.dataset.idx;
+      }
+      return -1;
+    }
+
+    document.getElementById('sort-modal').addEventListener('touchstart', e => {
+      const item = e.target.closest('.sort-item');
+      if (!item) return;
       e.preventDefault();
       const idx = +item.dataset.idx;
       const rect = item.getBoundingClientRect();
@@ -2722,70 +2744,55 @@
         pointer-events:none;background:#1a2d4a;border:1px solid rgba(201,168,76,.7);
         border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:none;`;
       document.body.appendChild(clone);
-      item.style.opacity = '0.3';
       navigator.vibrate?.(20);
-      _sortDrag = { idx, item, clone, startY: getY(e), offY: getY(e) - rect.top, overIdx: idx };
-    }
+      _sortDrag = { idx, clone, offY: getY(e) - rect.top };
+      refreshSortLabels();
+    }, { passive: false });
+
+    document.getElementById('sort-modal').addEventListener('mousedown', e => {
+      const item = e.target.closest('.sort-item');
+      if (!item) return;
+      const idx = +item.dataset.idx;
+      const rect = item.getBoundingClientRect();
+      const clone = item.cloneNode(true);
+      clone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;
+        width:${rect.width}px;height:${rect.height}px;z-index:600;opacity:.92;
+        pointer-events:none;background:#1a2d4a;border:1px solid rgba(201,168,76,.7);
+        border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:none;`;
+      document.body.appendChild(clone);
+      _sortDrag = { idx, clone, offY: getY(e) - rect.top };
+      refreshSortLabels();
+    });
 
     function onMove(e) {
       if (!_sortDrag) return;
       e.preventDefault();
       const y = getY(e);
       _sortDrag.clone.style.top = (y - _sortDrag.offY) + 'px';
-
-      // どのアイテムの上にいるか判定
-      let newOver = _sortDrag.idx;
-      items().forEach(el => {
-        const r = el.getBoundingClientRect();
-        if (y >= r.top && y <= r.bottom) newOver = +el.dataset.idx;
-      });
-
-      if (newOver !== _sortDrag.overIdx) {
-        // 一時的に並び替えてリスト再描画
+      const over = sortItemAt(y);
+      if (over !== -1 && over !== _sortDrag.idx) {
         const arr = [..._sortOrder];
         const [moved] = arr.splice(_sortDrag.idx, 1);
-        arr.splice(newOver, 0, moved);
+        arr.splice(over, 0, moved);
         _sortOrder = arr;
-        _sortDrag.idx = newOver;
-        _sortDrag.overIdx = newOver;
-        renderSortListQuiet(); // クローンを消さずリスト更新
-        const newItem = list.querySelectorAll('.sort-item')[newOver];
-        if (newItem) { newItem.style.opacity = '0.3'; _sortDrag.item = newItem; }
+        _sortDrag.idx = over;
+        refreshSortLabels();
       }
     }
 
     function onEnd() {
       if (!_sortDrag) return;
       _sortDrag.clone.remove();
-      _sortDrag.item.style.opacity = '';
       _sortDrag = null;
-      renderSortList();
+      refreshSortLabels();
     }
 
-    list.addEventListener('touchstart', e => {
-      const item = e.target.closest('.sort-item');
-      if (item) onStart(e, item);
-    }, { passive: false });
-    list.addEventListener('mousedown', e => {
-      const item = e.target.closest('.sort-item');
-      if (item) onStart(e, item);
-    });
-    document.addEventListener('touchmove', e => { if (_sortDrag) onMove(e); }, { passive: false });
-    document.addEventListener('mousemove',  e => { if (_sortDrag) onMove(e); });
-    document.addEventListener('touchend',  onEnd);
-    document.addEventListener('mouseup',   onEnd);
-  }
-
-  function renderSortListQuiet() {
-    // ドラッグ中にクローンを消さずリストだけ更新
-    const list = document.getElementById('sort-list');
-    [...list.querySelectorAll('.sort-item')].forEach((el, i) => {
-      const w = SLOT_WIDGETS.find(w => w.id === _sortOrder[i]);
-      el.dataset.idx = i;
-      el.querySelector('.sort-label').textContent = w?.label || _sortOrder[i];
-      el.querySelector('.sort-num').textContent = i + 1;
-    });
-  }
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+  })();
 
   function swapSlots(i, j) {
     [topGridSlots[i], topGridSlots[j]] = [topGridSlots[j], topGridSlots[i]];
