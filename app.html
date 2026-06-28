@@ -2357,6 +2357,12 @@
   </div>
 </div>
 
+<!-- 使用量アラートバナー -->
+<div id="usage-alert-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1500;background:#7f1d1d;border-bottom:1px solid #f87171;padding:10px 16px;text-align:center;">
+  <div style="font-size:13px;font-weight:700;color:#fca5a5;" id="usage-alert-text">⚠️ Vercel使用量が80%を超えています</div>
+  <div style="font-size:10px;color:rgba(252,165,165,.7);margin-top:2px;" id="usage-alert-sub"></div>
+  <button onclick="document.getElementById('usage-alert-banner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fca5a5;font-size:18px;cursor:pointer;">×</button>
+</div>
 <!-- 初回セットアップモーダル -->
 <!-- 報告モーダル -->
 <div id="login-gate" style="position:fixed;inset:0;z-index:2000;background:var(--navy-dark);display:none;align-items:center;justify-content:center;padding:24px;">
@@ -7025,6 +7031,24 @@
     location.reload();
   }
 
+  async function checkUsageAlert() {
+    if (!_sb) return;
+    try {
+      const { data } = await _sb.from('user_data').select('value').eq('key', 'usage_alert').maybeSingle();
+      if (!data?.value) return;
+      const alert = JSON.parse(data.value);
+      if (!alert.alert) return;
+      const banner = document.getElementById('usage-alert-banner');
+      const text = document.getElementById('usage-alert-text');
+      const sub = document.getElementById('usage-alert-sub');
+      if (alert.pct) text.textContent = `⚠️ Vercel関数の使用量が${alert.pct}%に達しています`;
+      if (alert.invocations && alert.limit) {
+        sub.textContent = `今月 ${alert.invocations.toLocaleString()} / ${alert.limit.toLocaleString()} 回 — Proプランへの移行を検討してください`;
+      }
+      banner.style.display = 'block';
+    } catch (_) {}
+  }
+
   if (_sb) {
     _sb.auth.onAuthStateChange(async (event, session) => {
       _sbToken = session?.access_token || null;
@@ -7038,6 +7062,7 @@
           document.getElementById('setup-modal').style.display = 'none';
         }
         refreshCommunityPosts();
+        checkUsageAlert();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
       }
@@ -7057,6 +7082,7 @@
         }
         document.getElementById('login-gate').style.display = 'none';
         refreshCommunityPosts();
+        checkUsageAlert();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
         refreshCommunityPosts();
