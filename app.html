@@ -2884,6 +2884,38 @@
           { dir: '上り', status: '平常運転' },
           { dir: '下り', status: '平常運転' },
         ];
+
+        // 異常ステータスの方向を代表として取得（見合わせ > 遅延 > 平常）
+        const abnormal = dirs.find(d => d.status.includes('見合わせ') || d.status.includes('運休'))
+                      || dirs.find(d => d.status.includes('遅延'));
+        const repStatus = abnormal?.status || '平常運転';
+        const repDir    = abnormal?.dir    || '';
+        const stKey     = line.name;
+        const prev      = _shinkansenState[stKey];
+        const isNormalNow = repStatus === '平常運転';
+        const wasAbnormal = prev && (prev.status === '運転見合わせ' || prev.status === '運休' || prev.status === '遅延');
+
+        if (!isNormalNow) {
+          const isStopped = repStatus.includes('見合わせ') || repStatus.includes('運休');
+          if (!prev || prev.status !== repStatus) {
+            _shinkansenState[stKey] = {
+              status: repStatus, dir: repDir,
+              stoppedAt: isStopped ? (prev?.stoppedAt || Date.now()) : null,
+              resumedAt: null,
+            };
+          }
+        } else if (wasAbnormal && (prev.status.includes('見合わせ') || prev.status.includes('運休'))) {
+          // 見合わせ→再開を検知
+          _shinkansenState[stKey] = {
+            status: '平常運転', dir: '',
+            stoppedAt: prev.stoppedAt,
+            resumedAt: prev.resumedAt || Date.now(),
+          };
+        } else if (!wasAbnormal) {
+          // 平常のままなら状態削除
+          delete _shinkansenState[stKey];
+        }
+
         return `
           <a href="${line.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);padding:10px 0;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -2895,6 +2927,8 @@
             </div>
           </a>`;
       }).join('');
+
+      updatePickupAlerts();
     } catch(e) {
       if (updEl) updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
       el.innerHTML = lines.map(line => `
@@ -3511,6 +3545,10 @@
   let _communityPosts = []; // みんなの投稿（位置情報アラート用）
   let _nearPostAlertAt = 0; // 近隣投稿アラート最初の検知timestamp
 
+  // 新幹線アラート管理
+  // { name: { stoppedAt: timestamp|null, resumedAt: timestamp|null, prevStatus: string } }
+  let _shinkansenState = {};
+
   function updatePickupAlerts() {
     const area = document.getElementById('pickup-alert-area');
     const list = document.getElementById('pickup-alert-list');
@@ -3520,6 +3558,48 @@
     let nowMin = now.getHours() * 60 + now.getMinutes();
     if (nowMin < 4 * 60) nowMin += 24 * 60;
     const pos = window._currentPos;
+
+    // 新幹線 遅延・見合わせ・再開アラート
+    for (const [lineName, st] of Object.entries(_shinkansenState)) {
+      if (st.status === '運転見合わせ' || st.status === '運休') {
+        const stoppedMin = st.stoppedAt ? Math.floor((Date.now() - st.stoppedAt) / 60000) : 0;
+        const stopLabel = stoppedMin >= 60
+          ? `${Math.floor(stoppedMin/60)}時間${stoppedMin%60}分停止中`
+          : `${stoppedMin}分停止中`;
+        alerts.push({
+          tag: '🚨 新幹線 運転見合わせ',
+          main: lineName,
+          sub: `${st.dir || ''}${st.status}（${stopLabel}）→ 再開後に東京駅へ乗客集中の恐れ`,
+          serious: true,
+          tab: 'tab-train',
+        });
+      } else if (st.status === '遅延') {
+        alerts.push({
+          tag: '⚠️ 新幹線 遅延',
+          main: lineName,
+          sub: `${st.dir || ''}遅延運転中`,
+          serious: false,
+          delay: true,
+          tab: 'tab-train',
+        });
+      } else if (st.status === '平常運転' && st.resumedAt) {
+        // 見合わせ→再開から2時間以内はアラート継続
+        const elapsed = Date.now() - st.resumedAt;
+        if (elapsed < 2 * 60 * 60 * 1000) {
+          const stoppedMin = st.stoppedAt ? Math.floor((st.resumedAt - st.stoppedAt) / 60000) : 0;
+          alerts.push({
+            tag: '🔔 新幹線 運転再開',
+            main: `${lineName} 運転再開`,
+            sub: `約${stoppedMin}分の停止後に再開 → 東京駅に乗客が大量流入する可能性`,
+            serious: true,
+            tab: 'tab-train',
+          });
+        } else {
+          // 2時間経過でリセット
+          delete _shinkansenState[lineName];
+        }
+      }
+    }
 
     // 鉄道遅延・運転見合わせ
     for (const l of _trainAlerts) {
