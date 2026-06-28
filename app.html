@@ -252,6 +252,7 @@
       gap: 5px;
       max-width: 960px;
       margin: 0 auto 10px;
+      position: relative;
     }
     .top-fixed-cards {
       display: grid;
@@ -337,12 +338,48 @@
       transform: translateY(-2px);
     }
 
-    /* ドラッグ中のドロップ先ハイライト */
+    /* ── 並び替えモーダル ── */
+    #sort-modal {
+      display: none; position: fixed; inset: 0; z-index: 550;
+      background: rgba(0,0,0,.6); align-items: flex-end; justify-content: center;
+      opacity: 0; transition: opacity .28s;
+    }
+    #sort-modal.open { opacity: 1; }
+    #sort-modal.open .sort-sheet { transform: translateY(0); }
+    .sort-sheet {
+      background: #0d1f38; border-radius: 18px 18px 0 0;
+      padding: 16px 16px 32px; width: 100%; max-width: 540px;
+      transform: translateY(60px); transition: transform .28s;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .sort-sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .sort-sheet-title { font-size: 15px; font-weight: 700; color: var(--white); }
+    .sort-done-btn {
+      background: var(--gold); border: none; border-radius: 8px;
+      color: #000; font-size: 13px; font-weight: 800;
+      padding: 7px 20px; cursor: pointer;
+    }
+    .sort-cancel-btn {
+      background: none; border: none; color: var(--gray);
+      font-size: 13px; cursor: pointer; padding: 7px 8px;
+    }
+    .sort-item {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px; padding: 14px 14px; margin-bottom: 8px;
+      cursor: grab; user-select: none; touch-action: none;
+    }
+    .sort-handle { font-size: 18px; color: var(--gray); flex-shrink: 0; }
+    .sort-label { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+    .sort-num { font-size: 12px; color: var(--gray); flex-shrink: 0; }
+
+    /* ドラッグ中のドロップ先ハイライト（旧機能の名残、残しておく） */
     .tile.longpress-active {
       border-color: rgba(201,168,76,.8) !important;
       background: rgba(201,168,76,.08) !important;
-      transform: scale(1.02) !important;
-      transition: transform .1s, border-color .1s !important;
     }
 
     /* ── SLOT セレクターモーダル ── */
@@ -702,6 +739,9 @@
         </div>
       </div>
 
+      <!-- 並び替えボタン -->
+      <button onclick="openSortModal()" style="position:absolute;top:6px;right:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:var(--gray);font-size:10px;padding:3px 8px;cursor:pointer;z-index:10;">並び替え</button>
+
       <!-- トピックス ticker -->
       <div class="top-ticker">
         <span class="ticker-badge">新着</span>
@@ -771,6 +811,18 @@
         <div class="tile-label">業界ニュース</div>
         <div id="top-news-main" style="margin-top:6px;display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text);line-height:1.4;">読込中…</div>
         <div id="top-news-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- 並び替えモーダル -->
+    <div id="sort-modal" onclick="if(event.target===this)closeSortModal(false)">
+      <div class="sort-sheet">
+        <div class="sort-sheet-header">
+          <button class="sort-cancel-btn" onclick="closeSortModal(false)">キャンセル</button>
+          <span class="sort-sheet-title">タイルを並び替え</span>
+          <button class="sort-done-btn" onclick="closeSortModal(true)">完了</button>
+        </div>
+        <div id="sort-list"></div>
       </div>
     </div>
 
@@ -2602,109 +2654,122 @@
     });
   }
 
-  // ── ドラッグ&ドロップ並び替え（長押し後にドラッグ） ──
-  let _drag = null;
-  let _lpTimer = null;
+  // ── 並び替えモーダル ──
+  let _sortOrder = []; // モーダル内の一時並び順
+  let _sortDrag = null;
 
-  function setupDragSort() {
-    const grid = document.getElementById('top-grid');
+  function openSortModal() {
+    _sortOrder = [...topGridSlots];
+    renderSortList();
+    const modal = document.getElementById('sort-modal');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('open'));
+  }
 
-    function getXY(e) {
-      return e.touches ? [e.touches[0].clientX, e.touches[0].clientY]
-                       : [e.clientX, e.clientY];
+  function closeSortModal(save) {
+    if (save) {
+      topGridSlots = [..._sortOrder];
+      localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
+      applyGridSlots();
     }
-    function tileAt(x, y) {
-      return document.elementFromPoint(x, y)?.closest('#top-grid .tile') || null;
-    }
+    const modal = document.getElementById('sort-modal');
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 280);
+  }
 
-    function enterDragMode(tile, x, y) {
-      const rect = tile.getBoundingClientRect();
-      const clone = tile.cloneNode(true);
+  function renderSortList() {
+    const list = document.getElementById('sort-list');
+    list.innerHTML = _sortOrder.map((id, i) => {
+      const w = SLOT_WIDGETS.find(w => w.id === id);
+      return `<div class="sort-item" data-idx="${i}">
+        <span class="sort-handle">☰</span>
+        <span class="sort-label">${w?.label || id}</span>
+        <span class="sort-num">${i + 1}</span>
+      </div>`;
+    }).join('');
+    setupSortDrag();
+  }
+
+  function setupSortDrag() {
+    const list = document.getElementById('sort-list');
+    const items = () => [...list.querySelectorAll('.sort-item')];
+
+    function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+
+    function onStart(e, item) {
+      e.preventDefault();
+      const idx = +item.dataset.idx;
+      const rect = item.getBoundingClientRect();
+      const clone = item.cloneNode(true);
       clone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;
-        width:${rect.width}px;height:${rect.height}px;opacity:.88;z-index:500;
-        pointer-events:none;border:1px solid rgba(201,168,76,.9);border-radius:10px;
-        box-shadow:0 10px 28px rgba(0,0,0,.55);transition:none;
-        background:var(--navy-mid);padding:16px 18px;overflow:hidden;`;
+        width:${rect.width}px;height:${rect.height}px;z-index:600;opacity:.92;
+        pointer-events:none;background:#1a2d4a;border:1px solid rgba(201,168,76,.7);
+        border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:none;`;
       document.body.appendChild(clone);
-      tile.style.opacity = '0.25';
-      navigator.vibrate?.(30);
-      _drag = { srcTile: tile, srcIdx: +tile.dataset.slotIndex,
-                clone, offX: x - rect.left, offY: y - rect.top, overTile: null };
-    }
-
-    function cancelLp() {
-      clearTimeout(_lpTimer);
-      _lpTimer = null;
+      item.style.opacity = '0.3';
+      navigator.vibrate?.(20);
+      _sortDrag = { idx, item, clone, startY: getY(e), offY: getY(e) - rect.top, overIdx: idx };
     }
 
     function onMove(e) {
-      if (!_drag) return;
+      if (!_sortDrag) return;
       e.preventDefault();
-      const [x, y] = getXY(e);
-      _drag.clone.style.left = (x - _drag.offX) + 'px';
-      _drag.clone.style.top  = (y - _drag.offY) + 'px';
-      const over = tileAt(x, y);
-      if (over !== _drag.overTile) {
-        _drag.overTile?.classList.remove('longpress-active');
-        _drag.overTile = (over && over !== _drag.srcTile) ? over : null;
-        _drag.overTile?.classList.add('longpress-active');
+      const y = getY(e);
+      _sortDrag.clone.style.top = (y - _sortDrag.offY) + 'px';
+
+      // どのアイテムの上にいるか判定
+      let newOver = _sortDrag.idx;
+      items().forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (y >= r.top && y <= r.bottom) newOver = +el.dataset.idx;
+      });
+
+      if (newOver !== _sortDrag.overIdx) {
+        // 一時的に並び替えてリスト再描画
+        const arr = [..._sortOrder];
+        const [moved] = arr.splice(_sortDrag.idx, 1);
+        arr.splice(newOver, 0, moved);
+        _sortOrder = arr;
+        _sortDrag.idx = newOver;
+        _sortDrag.overIdx = newOver;
+        renderSortListQuiet(); // クローンを消さずリスト更新
+        const newItem = list.querySelectorAll('.sort-item')[newOver];
+        if (newItem) { newItem.style.opacity = '0.3'; _sortDrag.item = newItem; }
       }
     }
 
-    function onEnd(e) {
-      cancelLp();
-      if (!_drag) return;
-      _drag.clone.remove();
-      _drag.srcTile.style.opacity = '';
-      _drag.overTile?.classList.remove('longpress-active');
-      if (_drag.overTile) {
-        const dstIdx = +_drag.overTile.dataset.slotIndex;
-        [topGridSlots[_drag.srcIdx], topGridSlots[dstIdx]] =
-          [topGridSlots[dstIdx], topGridSlots[_drag.srcIdx]];
-        localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
-        navigator.vibrate?.(20);
-        applyGridSlots();
-      }
-      _drag = null;
+    function onEnd() {
+      if (!_sortDrag) return;
+      _sortDrag.clone.remove();
+      _sortDrag.item.style.opacity = '';
+      _sortDrag = null;
+      renderSortList();
     }
 
-    // タッチ：長押し400ms後にドラッグ開始
-    // passive:false にして、ドラッグ中は preventDefault でスクロールを止める
-    grid.addEventListener('touchstart', e => {
-      const tile = e.target.closest('.tile');
-      if (!tile || tile.dataset.slotIndex === undefined) return;
-      const [startX, startY] = getXY(e);
-      cancelLp();
-      _lpTimer = setTimeout(() => {
-        if (!_drag) enterDragMode(tile, startX, startY);
-      }, 400);
+    list.addEventListener('touchstart', e => {
+      const item = e.target.closest('.sort-item');
+      if (item) onStart(e, item);
     }, { passive: false });
-
-    document.addEventListener('touchmove', e => {
-      if (_drag) {
-        e.preventDefault(); // ドラッグ中はスクロール禁止
-        onMove(e);
-      } else {
-        // 長押し前に指が動いたらタイマーキャンセル（通常スクロール）
-        cancelLp();
-      }
-    }, { passive: false });
-
-    document.addEventListener('touchend', onEnd);
-    // touchcancel はドラッグ中でなければキャンセルのみ
-    document.addEventListener('touchcancel', () => { cancelLp(); if (_drag) onEnd(); });
-
-    // マウス（PC）：即座にドラッグ開始
-    grid.addEventListener('mousedown', e => {
-      const tile = e.target.closest('.tile');
-      if (!tile || tile.dataset.slotIndex === undefined) return;
-      const [x, y] = getXY(e);
-      enterDragMode(tile, x, y);
+    list.addEventListener('mousedown', e => {
+      const item = e.target.closest('.sort-item');
+      if (item) onStart(e, item);
     });
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', e => { if (_sortDrag) onMove(e); }, { passive: false });
+    document.addEventListener('mousemove',  e => { if (_sortDrag) onMove(e); });
+    document.addEventListener('touchend',  onEnd);
+    document.addEventListener('mouseup',   onEnd);
   }
-  setupDragSort();
+
+  function renderSortListQuiet() {
+    // ドラッグ中にクローンを消さずリストだけ更新
+    const list = document.getElementById('sort-list');
+    [...list.querySelectorAll('.sort-item')].forEach((el, i) => {
+      const w = SLOT_WIDGETS.find(w => w.id === _sortOrder[i]);
+      el.dataset.idx = i;
+      el.querySelector('.sort-label').textContent = w?.label || _sortOrder[i];
+      el.querySelector('.sort-num').textContent = i + 1;
+    });
+  }
 
   function swapSlots(i, j) {
     [topGridSlots[i], topGridSlots[j]] = [topGridSlots[j], topGridSlots[i]];
@@ -2713,7 +2778,7 @@
   }
 
   function closeSlotSelector() {
-    document.getElementById('slot-modal').classList.remove('open');
+    document.getElementById('slot-modal')?.classList.remove('open');
   }
 
   applyGridSlots();
