@@ -3749,8 +3749,10 @@
       }
     }
 
-    // 八重洲待機所・乗場 車両なし（検知から5分間継続）
-    if (Date.now() < _yaesuAlertUntil) {
+    // 八重洲待機所・乗場 車両なし（23時〜7時は抑制）
+    const yaesuH = now.getHours();
+    const yaesuSuppressed = yaesuH >= 23 || yaesuH < 7;
+    if (Date.now() < _yaesuAlertUntil && !yaesuSuppressed) {
       alerts.push({
         tag: '📷 八重洲',
         main: '車両なし',
@@ -3817,7 +3819,7 @@
       });
     }
 
-    // 終電±15分 かつ 出発駅1km以内
+    // 終電±15分 かつ 到着駅2km以内
     for (const t of LAST_TRAINS) {
       let tMin = t.h * 60 + t.m;
       if (tMin < 4 * 60) tMin += 24 * 60;
