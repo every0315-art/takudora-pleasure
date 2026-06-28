@@ -2671,25 +2671,31 @@
       _drag = null;
     }
 
-    // タッチ：長押し400msでドラッグ開始、動いたらキャンセル
+    // タッチ：長押し400ms後にドラッグ開始
+    // passive:false にして、ドラッグ中は preventDefault でスクロールを止める
     grid.addEventListener('touchstart', e => {
       const tile = e.target.closest('.tile');
       if (!tile || tile.dataset.slotIndex === undefined) return;
-      const [x, y] = getXY(e);
-      let startX = x, startY = y;
+      const [startX, startY] = getXY(e);
       cancelLp();
-      _lpTimer = setTimeout(() => { enterDragMode(tile, x, y); }, 400);
-      // 指が動いたら長押しキャンセル
-      const onTouchMove = ev => {
-        const [cx, cy] = [ev.touches[0].clientX, ev.touches[0].clientY];
-        if (Math.abs(cx - startX) > 8 || Math.abs(cy - startY) > 8) cancelLp();
-      };
-      tile.addEventListener('touchmove', onTouchMove, { once: true, passive: true });
-    }, { passive: true });
+      _lpTimer = setTimeout(() => {
+        if (!_drag) enterDragMode(tile, startX, startY);
+      }, 400);
+    }, { passive: false });
 
-    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchmove', e => {
+      if (_drag) {
+        e.preventDefault(); // ドラッグ中はスクロール禁止
+        onMove(e);
+      } else {
+        // 長押し前に指が動いたらタイマーキャンセル（通常スクロール）
+        cancelLp();
+      }
+    }, { passive: false });
+
     document.addEventListener('touchend', onEnd);
-    document.addEventListener('touchcancel', onEnd);
+    // touchcancel はドラッグ中でなければキャンセルのみ
+    document.addEventListener('touchcancel', () => { cancelLp(); if (_drag) onEnd(); });
 
     // マウス（PC）：即座にドラッグ開始
     grid.addEventListener('mousedown', e => {
