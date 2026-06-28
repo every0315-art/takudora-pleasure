@@ -130,5 +130,55 @@ export default async function handler(req, res) {
   const results = await Promise.allSettled(events.map(ev => verifyEvent(ev, anthropicKey)));
   const verified = results.map((r, i) => r.status === 'fulfilled' ? r.value : { ...events[i], verified: false });
 
+  // Vercel使用量チェック（毎日のcron実行時に一緒に確認）
+  checkVercelUsage().catch(() => {});
+
   return res.json({ events: verified, updatedAt: new Date().toISOString(), total: verified.length });
+}
+
+const SUPABASE_URL = 'https://wfbxkhjpgquyfnqlwbwy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmYnhraGpwZ3F1eWZucWx3Ynd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxOTYxNDgsImV4cCI6MjA2NDc3MjE0OH0.nFNUkqFpkt98UmgdBenBxG7vRBtJZw-pUuM1f0kByTY';
+
+async function checkVercelUsage() {
+  const token = process.env.VERCEL_TOKEN;
+  if (!token) return;
+
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  const teamId = process.env.VERCEL_ORG_ID;
+  const HOBBY_LIMIT = 100000;
+  const THRESHOLD = 0.8;
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const params = new URLSearchParams({ from: monthStart, to: Date.now(), granularity: 'month' });
+  if (teamId) params.set('teamId', teamId);
+
+  let invocations = null;
+  try {
+    const r = await fetch(`https://api.vercel.com/v2/projects/${projectId}/metrics?${params}`,
+      { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) });
+    if (r.ok) {
+      const d = await r.json();
+      invocations = d?.data?.invocations ?? d?.invocations ?? d?.total ?? null;
+    }
+  } catch (_) {}
+
+  const pct = invocations > 0 ? invocations / HOBBY_LIMIT : null;
+  const alertData = {
+    invocations, limit: HOBBY_LIMIT,
+    pct: pct !== null ? Math.round(pct * 100) : null,
+    alert: pct !== null && pct >= THRESHOLD,
+    checkedAt: new Date().toISOString(),
+  };
+
+  await fetch(`${SUPABASE_URL}/rest/v1/user_data`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ key: 'usage_alert', value: JSON.stringify(alertData) }),
+  });
 }

@@ -12,10 +12,6 @@
       "path": "/api/events",
       "schedule": "0 20 * * *"
     },
-    {
-      "path": "/api/usage-check",
-      "schedule": "0 0 * * *"
-    }
   ],
   "rewrites": [
     { "source": "/app", "destination": "/app.html" },
