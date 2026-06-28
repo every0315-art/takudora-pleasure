@@ -81,6 +81,43 @@ async function taxiAssocNews() {
     .slice(0, 10);
 }
 
+// タイトルをキーワードセットに変換（助詞・記号・短い語を除去）
+function toKeywords(title) {
+  return new Set(
+    title
+      .replace(/[【】「」『』（）()、。・\s]/g, ' ')
+      .split(' ')
+      .filter(w => w.length >= 3)
+      .filter(w => !['について', 'ついて', 'に関して', 'のため', 'による', 'として', 'します', 'された', 'される', 'ました', 'ません', 'タクシー'].includes(w))
+  );
+}
+
+// 2記事が類似しているか判定（共通キーワード3語以上）
+function isSimilar(a, b) {
+  const ka = toKeywords(a.title);
+  const kb = toKeywords(b.title);
+  let common = 0;
+  for (const w of ka) { if (kb.has(w)) common++; }
+  return common >= 3;
+}
+
+// 全ソースをまとめて類似除外（優先度: 協会 > センター > Google）
+function dedup(association, center, taxi) {
+  const result = [];
+  const all = [...association, ...center, ...taxi]; // 優先度順に並べる
+  for (const item of all) {
+    if (!result.some(r => isSimilar(r, item))) {
+      result.push(item);
+    }
+  }
+  // ソースごとに分けて返す
+  return {
+    association: result.filter(i => i.source === '東京ハイヤー・タクシー協会'),
+    center:      result.filter(i => i.source === '東京タクシーセンター'),
+    taxi:        result.filter(i => !['東京ハイヤー・タクシー協会','東京タクシーセンター'].includes(i.source)),
+  };
+}
+
 export default async function handler(req, res) {
   try {
     const [r1, r2, r3] = await Promise.allSettled([
@@ -89,13 +126,15 @@ export default async function handler(req, res) {
       taxiAssocNews(),
     ]);
 
+    const taxi        = r1.status === 'fulfilled' ? r1.value.slice(0, 12) : [];
+    const center      = r2.status === 'fulfilled' ? r2.value : [];
+    const association = r3.status === 'fulfilled' ? r3.value.slice(0, 5) : [];
+
+    const deduped = dedup(association, center, taxi);
+
     res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=120');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json({
-      taxi:        r1.status === 'fulfilled' ? r1.value.slice(0, 12) : [],
-      center:      r2.status === 'fulfilled' ? r2.value : [],
-      association: r3.status === 'fulfilled' ? r3.value.slice(0,  5) : [],
-    });
+    res.json(deduped);
   } catch(e) {
     res.status(502).json({ error: e.message });
   }
