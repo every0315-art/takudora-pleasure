@@ -5328,9 +5328,10 @@
     el.innerHTML = `${(() => {
         const today = new Date();
         const endDate = new Date(period.end);
-        const remainDays = Math.max(0, Math.ceil((endDate - today) / 86400000));
-        const sal = JSON.parse(localStorage.getItem('userSalarySettings') || '{}');
-        const closingDaySet = Number(sal.closingDay) || loadClosingDay();
+        const autoRemainDays = Math.max(0, Math.ceil((endDate - today) / 86400000));
+        const overrideKey = 'takudora_remain_days_override';
+        const overrideVal = localStorage.getItem(overrideKey);
+        const remainDays = overrideVal !== null ? Number(overrideVal) : autoRemainDays;
         const projectedExTax = salesCount && remainDays >= 0
           ? Math.round(totalSalesExTax + (totalSalesExTax / salesCount) * remainDays) : null;
         const TOTAL_H = 277;
@@ -5338,6 +5339,8 @@
         const remainH2 = Math.max(0, TOTAL_H - usedH2);
         const hPerDay = timeCount && remainDays > 0 ? remainH2 / remainDays : null;
         const fmtH = h => `${Math.floor(h)}h${String(Math.round((h%1)*60)).padStart(2,'0')}m`;
+        const dayOptions = Array.from({length: autoRemainDays + 1}, (_,i) => i)
+          .map(i => `<option value="${i}" ${remainDays===i?'selected':''}>${i}日${i===autoRemainDays&&overrideVal===null?' (自動)':''}</option>`).join('');
         return `
       <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:12px 14px;margin-top:4px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:6px;">
@@ -5356,13 +5359,11 @@
             ${avgSales != null ? `<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px;">税込 ¥${avgSales.toLocaleString()}</div>` : ''}
           </div>
           <div style="text-align:right;">
-            ${closingDaySet ? `
-            <div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end;">
+            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
               <div style="font-size:10px;color:var(--gray);">残り</div>
-              <div style="font-size:20px;font-weight:800;color:var(--white);">${remainDays}<span style="font-size:11px;font-weight:400;color:var(--gray);margin-left:1px;">日</span></div>
+              <select onchange="localStorage.setItem('${overrideKey}',this.value);renderMonthlySummary()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:var(--white);font-size:16px;font-weight:800;padding:2px 4px;text-align:right;">${dayOptions}</select>
             </div>
             ${hPerDay != null ? `<div style="font-size:10px;color:var(--gray);margin-top:2px;">1日 <span style="color:var(--white);font-weight:600;">${fmtH(hPerDay)}</span> ペース</div>` : ''}
-            ` : `<div style="font-size:10px;color:rgba(255,255,255,.35);">締日未設定 — <span style="color:var(--gold);cursor:pointer;text-decoration:underline;" onclick="switchTab('account')">設定画面へ</span></div>`}
           </div>
         </div>
         ${projectedExTax ? `<div style="margin-top:8px;font-size:11px;color:var(--gray);">月末着地予測（税抜）<span style="color:var(--gold);font-weight:700;margin-left:8px;">¥${projectedExTax.toLocaleString()}</span><span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:8px;">税込 ¥${Math.round(projectedExTax*1.1).toLocaleString()}</span></div>` : ''}
