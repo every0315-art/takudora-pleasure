@@ -4588,23 +4588,25 @@
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'sw-toast';
-      toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
-        background:rgba(15,30,55,.97);border:1px solid rgba(201,168,76,.4);border-radius:12px;
-        padding:12px 20px;font-size:13px;font-weight:600;color:var(--white);z-index:400;
-        white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;
-        max-width:90vw;white-space:normal;text-align:center;line-height:1.5;`;
+      toast.style.cssText = `position:fixed;top:50%;left:50%;
+        transform:translate(-50%,-50%) scale(.9);
+        background:rgba(10,22,40,.96);border:1px solid rgba(201,168,76,.5);border-radius:18px;
+        padding:28px 32px;font-size:20px;font-weight:800;color:var(--white);z-index:400;
+        opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;
+        width:82vw;max-width:420px;text-align:center;line-height:1.6;
+        box-shadow:0 16px 48px rgba(0,0,0,.6);letter-spacing:.02em;`;
       document.body.appendChild(toast);
     }
     clearTimeout(_swToastTimer);
     toast.textContent = msg;
     requestAnimationFrame(() => {
       toast.style.opacity = '1';
-      toast.style.transform = 'translateX(-50%) translateY(0)';
+      toast.style.transform = 'translate(-50%,-50%) scale(1)';
     });
     _swToastTimer = setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(10px)';
-    }, 3000);
+      toast.style.transform = 'translate(-50%,-50%) scale(.95)';
+    }, 3500);
   }
 
   function swAction() {
