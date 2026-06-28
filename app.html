@@ -7033,6 +7033,8 @@
 
   async function checkUsageAlert() {
     if (!_sb) return;
+    const session = await _sb.auth.getSession();
+    if (session?.data?.session?.user?.email !== 'every0315@gmail.com') return;
     try {
       const { data } = await _sb.from('user_data').select('value').eq('key', 'usage_alert').maybeSingle();
       if (!data?.value) return;
