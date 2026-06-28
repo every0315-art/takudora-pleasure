@@ -736,15 +736,20 @@
         </div>
       </div>
 
-      <div class="tile tile-haneda" id="tile-haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
+      <div class="tile tile-haneda" id="tile-haneda-arr" style="display:flex;flex-direction:column;padding:10px 10px 8px;">
         <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(1)">変更</button>
-        <div class="tile-label" style="cursor:pointer;" onclick="switchTab('haneda')">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
-        <div id="top-haneda-summary" style="margin-top:6px;cursor:pointer;" onclick="goHanedaSection('haneda-arr-card')">
+        <div class="tile-label" style="cursor:pointer;" onclick="switchTab('haneda')">羽田空港・到着便 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
+        <div id="top-haneda-summary" style="margin-top:6px;cursor:pointer;flex:1;overflow:hidden;" onclick="goHanedaSection('haneda-arr-card')">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
         </div>
-        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:calc(100% + 20px);margin:8px -10px 0;display:block;object-fit:cover;cursor:pointer;" onclick="goHanedaSection('haneda-cam-card')">
         <img id="top-haneda-img2" src="" alt="" crossorigin="anonymous" style="display:none;" aria-hidden="true">
         <img id="top-haneda-img-real02" src="" alt="" crossorigin="anonymous" style="display:none;" aria-hidden="true">
+      </div>
+
+      <div class="tile tile-haneda tile-hidden" id="tile-haneda-cam" style="display:flex;flex-direction:column;padding:8px 0 0;overflow:hidden;">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
+        <div class="tile-label" style="padding:0 10px 6px;cursor:pointer;" onclick="goHanedaSection('haneda-cam-card')">羽田空港・カメラ</div>
+        <img id="top-haneda-img1" src="" alt="待機場状況" style="width:100%;flex:1;display:block;object-fit:cover;cursor:pointer;" onclick="goHanedaSection('haneda-cam-card')">
       </div>
 
       <div class="tile tile-event" id="tile-event" data-tab="event" style="overflow:hidden;display:flex;flex-direction:column;">
@@ -2591,16 +2596,17 @@
 
   // ── グリッドスロット管理 ──
   const SLOT_WIDGETS = [
-    { id: 'train',     label: '電車・交通' },
-    { id: 'haneda',    label: '羽田空港' },
-    { id: 'event',     label: 'イベント' },
-    { id: 'stand',     label: '街の様子' },
-    { id: 'sales',     label: '売上管理' },
-    { id: 'traffic',   label: '道路情報' },
-    { id: 'community', label: 'みんなの投稿' },
-    { id: 'news',      label: '業界ニュース' },
+    { id: 'train',       label: '電車・交通' },
+    { id: 'haneda-arr',  label: '羽田・到着便' },
+    { id: 'haneda-cam',  label: '羽田・カメラ' },
+    { id: 'event',       label: 'イベント' },
+    { id: 'stand',       label: '街の様子' },
+    { id: 'sales',       label: '売上管理' },
+    { id: 'traffic',     label: '道路情報' },
+    { id: 'community',   label: 'みんなの投稿' },
+    { id: 'news',        label: '業界ニュース' },
   ];
-  const DEFAULT_SLOTS = ['train', 'haneda', 'event', 'community'];
+  const DEFAULT_SLOTS = ['train', 'haneda-arr', 'event', 'community'];
   let topGridSlots = JSON.parse(localStorage.getItem('topGridSlots') || 'null') || [...DEFAULT_SLOTS];
   let _slotEditIndex = 0;
 
