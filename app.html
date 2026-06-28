@@ -3851,7 +3851,7 @@
         if (diff < -15 || diff > 15) return;
         if (item.dataset.cancelled === '1') return;
         const vc = VENUE_COORDS[venueTitle];
-        const isNearby = vc && pos && haversineKm(pos.lat, pos.lon, vc.lat, vc.lon) <= 5;
+        const isNearby = vc && pos && haversineKm(pos.lat, pos.lon, vc.lat, vc.lon) <= 4;
         if (!isNearby) return;
         const name = item.querySelector('.event-name')?.textContent?.trim() || '';
         const timeStr = `${endMatch[1]}:${endMatch[2]}`;
