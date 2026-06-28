@@ -132,7 +132,7 @@ export default async function handler(req, res) {
 
     const deduped = dedup(association, center, taxi);
 
-    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=120');
+    res.setHeader('Cache-Control', 'public, s-maxage=10800, stale-while-revalidate=600');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json(deduped);
   } catch(e) {
