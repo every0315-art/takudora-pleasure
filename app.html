@@ -5330,23 +5330,34 @@
     const salesCount = reports.filter(r => r.sales != null).length;
     const avgSales = salesCount ? Math.round(totalSales / salesCount) : null;
     const avgSalesExTax = salesCount ? Math.round(totalSalesExTax / salesCount) : null;
-    el.innerHTML = `
+    ${(() => {
+        const today = new Date();
+        const endDate = new Date(period.end);
+        const remainDays = Math.max(0, Math.ceil((endDate - today) / 86400000));
+        const projectedExTax = salesCount && remainDays >= 0
+          ? Math.round(totalSalesExTax + (totalSalesExTax / salesCount) * remainDays) : null;
+        return `
       <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:12px 14px;margin-top:4px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:6px;">
           <div>
-            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">売上合計（税込）</div>
-            <div style="font-size:24px;font-weight:700;color:var(--gold);">¥${totalSales.toLocaleString()}</div>
+            <div style="font-size:10px;color:rgba(201,168,76,.6);margin-bottom:3px;">売上合計（税抜）</div>
+            <div style="font-size:26px;font-weight:800;color:var(--gold);">¥${totalSalesExTax.toLocaleString()}</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">売上合計（税抜）</div>
-            <div style="font-size:20px;font-weight:600;color:var(--white);">¥${totalSalesExTax.toLocaleString()}</div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">税込</div>
+            <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.45);">¥${totalSales.toLocaleString()}</div>
           </div>
         </div>
-        <div style="border-top:1px solid rgba(201,168,76,.2);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;">
-          <div style="font-size:11px;color:var(--gray);">1日平均（税込）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSales != null ? '¥'+avgSales.toLocaleString() : '—'}</span></div>
-          <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--white);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
+        <div style="border-top:1px solid rgba(201,168,76,.2);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:10px;color:var(--gray);">残り</div>
+            <div style="font-size:18px;font-weight:800;color:var(--white);">${remainDays}<span style="font-size:11px;font-weight:400;color:var(--gray);margin-left:2px;">日</span></div>
+          </div>
         </div>
-      </div>
+        ${projectedExTax ? `<div style="margin-top:8px;font-size:11px;color:var(--gray);">月末着地予測（税抜）<span style="color:var(--gold);font-weight:700;margin-left:8px;">¥${projectedExTax.toLocaleString()}</span></div>` : ''}
+      </div>`;
+      })()}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
         <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
           <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">走行距離</div>
@@ -5406,34 +5417,49 @@
       </div>
       <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:right;">${reports.length}日分のデータより集計</div>
       ${(() => {
-        const salesData = reports.filter(r => r.sales != null).map(r => ({ date: r.date, sales: Number(r.sales) })).sort((a,b) => a.date.localeCompare(b.date));
+        const salesData = reports.filter(r => r.sales != null).map(r => {
+          const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
+          return { date: r.date, sales: Number(r.sales) - tax }; // 税抜で描画
+        }).sort((a,b) => a.date.localeCompare(b.date));
         if (salesData.length < 2) return '';
         const maxS = Math.max(...salesData.map(d => d.sales));
         const avg = salesData.reduce((s,d) => s+d.sales, 0) / salesData.length;
         const avgPct = Math.round(avg / maxS * 100);
         const dow = d => ['日','月','火','水','木','金','土'][new Date(d).getDay()];
         const dowC = d => { const w=new Date(d).getDay(); return w===0?'#f87171':w===6?'#60a5fa':'rgba(255,255,255,.45)'; };
+        // Y軸メモリ（0%・50%・100%）
+        const fmtMan = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
+        const yLabels = [
+          { pct: 100, val: maxS },
+          { pct: 50,  val: Math.round(maxS * 0.5) },
+          { pct: 0,   val: 0 },
+        ];
+        const yAxis = yLabels.map(({pct, val}) =>
+          `<div style="position:absolute;right:0;top:${100-pct}%;transform:translateY(${pct===100?'0':pct===0?'-100%':'-50%'});font-size:8px;color:rgba(255,255,255,.3);white-space:nowrap;">${pct===0?'0':fmtMan(val)}</div>`
+        ).join('');
+        const gridLines = [100, 50].map(pct =>
+          `<div style="position:absolute;top:${100-pct}%;left:0;right:30px;border-top:1px solid rgba(255,255,255,.06);"></div>`
+        ).join('');
         const bars = salesData.map(d => {
           const pct = Math.round(d.sales / maxS * 100);
           const aboveAvg = d.sales >= avg;
           const md = d.date.slice(5).replace('-','/');
-          const man = (d.sales/10000).toFixed(1);
           return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;">
-            <div style="font-size:9px;font-weight:600;color:${aboveAvg?'var(--gold)':'rgba(255,255,255,.35)'};white-space:nowrap;">${man}万</div>
-            <div style="width:100%;display:flex;align-items:flex-end;height:64px;">
+            <div style="width:100%;display:flex;align-items:flex-end;height:80px;">
               <div style="width:100%;height:${pct}%;background:${aboveAvg?'linear-gradient(to top,var(--gold),rgba(201,168,76,.6))':'rgba(255,255,255,.15)'};border-radius:3px 3px 0 0;transition:height .3s;"></div>
             </div>
             <div style="font-size:9px;color:${dowC(d.date)};font-weight:600;line-height:1;">${md.slice(3)}</div>
             <div style="font-size:8px;color:${dowC(d.date)};line-height:1;">${dow(d.date)}</div>
           </div>`;
         }).join('');
-        return `<div style="margin-top:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 10px 8px;position:relative;">
-          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">日別売上</div>
-          <div style="position:relative;">
-            <div style="position:absolute;top:${100-avgPct}%;left:0;right:0;border-top:1px dashed rgba(201,168,76,.4);z-index:1;">
-              <span style="position:absolute;right:0;top:-14px;font-size:8px;color:rgba(201,168,76,.6);">平均</span>
-            </div>
-            <div style="display:flex;gap:3px;align-items:flex-end;height:64px;">${bars}</div>
+        return `<div style="margin-top:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 10px 8px;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">日別売上（税抜）</div>
+          <div style="position:relative;padding-right:32px;">
+            ${gridLines}
+            <div style="position:absolute;top:${100-avgPct}%;left:0;right:32px;border-top:1px dashed rgba(201,168,76,.4);z-index:1;"></div>
+            <div style="position:absolute;right:0;top:0;bottom:0;width:30px;">${yAxis}</div>
+            <span style="position:absolute;right:0;top:${100-avgPct}%;transform:translateY(-50%);font-size:8px;color:rgba(201,168,76,.7);line-height:1;">avg</span>
+            <div style="display:flex;gap:3px;align-items:flex-end;height:80px;">${bars}</div>
           </div>
         </div>`;
       })()}`;
