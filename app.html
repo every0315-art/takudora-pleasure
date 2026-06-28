@@ -672,9 +672,9 @@
       <div class="top-fixed-cards">
         <!-- 天気（横長・案D） -->
         <div class="fixed-card fixed-card-weather" onclick="openRadarModal()" style="cursor:pointer;background:linear-gradient(160deg,#112240 0%,#1a3560 100%);border-color:rgba(201,168,76,.25);gap:5px;">
-          <!-- 上段：日時 + 需要 -->
+          <!-- 上段：日時（大）+ 需要 -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-            <div id="weather-datetime" style="font-size:9px;color:var(--white);font-weight:600;white-space:nowrap;"></div>
+            <div id="weather-datetime" style="font-size:13px;color:var(--white);font-weight:700;white-space:nowrap;letter-spacing:.02em;"></div>
             <div class="weather-demand" style="font-size:7px;padding:1px 5px;flex-shrink:0;">
               <svg width="7" height="7" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
               需要：<strong style="color:var(--yellow);">—</strong>
@@ -682,25 +682,25 @@
           </div>
           <!-- 下段：アイコン+気温+天気 | 予報4件 -->
           <div style="display:flex;align-items:center;gap:0;flex:1;">
-            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;padding-right:8px;border-right:1px solid rgba(255,255,255,.1);">
-              <div class="weather-icon-wrap" style="font-size:20px;line-height:1;">…</div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;padding-right:7px;border-right:1px solid rgba(255,255,255,.1);">
+              <div class="weather-icon-wrap" style="font-size:16px;line-height:1;">…</div>
               <div style="display:flex;flex-direction:column;gap:0;">
-                <div class="weather-temp" style="font-size:18px;line-height:1;">—<span>℃</span></div>
-                <div class="weather-desc" style="font-size:9px;color:var(--text);white-space:nowrap;"></div>
+                <div class="weather-temp" style="font-size:15px;line-height:1;">—<span>℃</span></div>
+                <div class="weather-desc" style="font-size:8px;color:var(--text);white-space:nowrap;"></div>
               </div>
             </div>
             <div class="weather-forecast" style="flex:1;padding-left:4px;">
-              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:11px;">—</div><div class="fc-tmp" style="font-size:9px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
-              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:11px;">—</div><div class="fc-tmp" style="font-size:9px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
-              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:11px;">—</div><div class="fc-tmp" style="font-size:9px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
-              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:11px;">—</div><div class="fc-tmp" style="font-size:9px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
+              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:10px;">—</div><div class="fc-tmp" style="font-size:8px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
+              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:10px;">—</div><div class="fc-tmp" style="font-size:8px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
+              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:10px;">—</div><div class="fc-tmp" style="font-size:8px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
+              <div class="fc-item"><div class="fc-time" style="font-size:8px;">—</div><div class="fc-icon" style="font-size:10px;">—</div><div class="fc-tmp" style="font-size:8px;">—</div><div class="fc-rain" style="font-size:7px;"></div></div>
             </div>
           </div>
         </div>
-        <!-- 現在地投稿（天気の右） -->
+        <!-- 現在地投稿（丸ボタン） -->
         <div class="fixed-card fixed-card-location">
-          <button onclick="openReportModal()" style="width:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--red);border:none;border-radius:6px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1.2;">
-            <span style="font-size:16px;line-height:1;">📢</span>現在地<br>投稿
+          <button onclick="openReportModal()" style="width:44px;height:44px;border-radius:50%;background:var(--red);border:none;cursor:pointer;color:var(--white);font-size:10px;font-weight:700;line-height:1.2;flex-shrink:0;">
+            現在地<br>投稿
           </button>
         </div>
         <!-- タイマー（下段・全幅） -->
