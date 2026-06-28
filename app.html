@@ -5366,7 +5366,10 @@
           </div>
         </div>
         <div style="border-top:1px solid rgba(201,168,76,.2);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
+          <div>
+            <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
+            ${avgSales != null ? `<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px;">税込 ¥${avgSales.toLocaleString()}</div>` : ''}
+          </div>
           <div style="text-align:right;">
             <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
               <div style="font-size:10px;color:var(--gray);">残り</div>
@@ -5375,7 +5378,7 @@
             ${hPerDay != null ? `<div style="font-size:10px;color:var(--gray);margin-top:2px;">1日 <span style="color:var(--white);font-weight:600;">${fmtH(hPerDay)}</span> ペース</div>` : ''}
           </div>
         </div>
-        ${projectedExTax ? `<div style="margin-top:8px;font-size:11px;color:var(--gray);">月末着地予測（税抜）<span style="color:var(--gold);font-weight:700;margin-left:8px;">¥${projectedExTax.toLocaleString()}</span></div>` : ''}
+        ${projectedExTax ? `<div style="margin-top:8px;font-size:11px;color:var(--gray);">月末着地予測（税抜）<span style="color:var(--gold);font-weight:700;margin-left:8px;">¥${projectedExTax.toLocaleString()}</span><span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:8px;">税込 ¥${Math.round(projectedExTax*1.1).toLocaleString()}</span></div>` : ''}
       </div>`;
       })()}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
