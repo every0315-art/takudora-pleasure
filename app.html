@@ -35,6 +35,9 @@
       background: var(--navy);
       color: var(--text);
       min-height: 100vh;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      line-break: strict;
     }
 
     /* ── HEADER ── */
@@ -242,15 +245,88 @@
     /* ── SECTION TITLE ── */
     .sec-title { font-size:15px; font-weight:700; color:var(--white); margin-bottom:14px; }
 
-    /* ── TOP LAYOUT ── */
+    /* ── FIXED PANEL ── */
+    .top-fixed-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 960px;
+      margin: 0 auto 14px;
+    }
+    .top-fixed-cards {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 0.9fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .fixed-card {
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .fixed-card-timer {
+      justify-content: center;
+      gap: 6px;
+    }
+    .fixed-card-location {
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── TICKER ── */
+    .top-ticker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,.2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 8px;
+      padding: 6px 10px;
+      overflow: hidden;
+    }
+    .ticker-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--navy);
+      background: var(--gold);
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .ticker-scroll {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .ticker-inner {
+      display: inline-block;
+      white-space: nowrap;
+      font-size: 11px;
+      color: var(--text);
+      padding-left: 100%;
+      animation: ticker-move 35s linear infinite;
+    }
+    .ticker-inner:hover { animation-play-state: paused; }
+    @keyframes ticker-move {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* ── TOP LAYOUT (2×2) ── */
     .top-layout {
       display: grid;
-      grid-template-columns: 1fr 1.6fr 1fr;
-      grid-template-rows: 240px 160px 240px;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: minmax(210px, auto);
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
     }
+    .tile-hidden { display: none !important; }
 
     .tile {
       background: var(--navy-mid);
@@ -260,10 +336,87 @@
       cursor: pointer;
       transition: border-color .2s, transform .15s;
       overflow: hidden;
+      position: relative;
     }
     .tile:hover {
       border-color: rgba(201,168,76,.35);
       transform: translateY(-2px);
+    }
+
+    /* ── SLOT 変更ボタン ── */
+    .slot-edit-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 6px;
+      color: var(--gray);
+      font-size: 11px;
+      padding: 2px 7px;
+      cursor: pointer;
+      z-index: 2;
+      line-height: 1.5;
+    }
+    .slot-edit-btn:hover { background: rgba(255,255,255,.15); color: var(--white); }
+
+    /* ── SLOT セレクターモーダル ── */
+    .slot-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(0,0,0,.6);
+      align-items: flex-end;
+    }
+    .slot-modal.open { display: flex; }
+    .slot-modal-sheet {
+      background: var(--navy-mid);
+      border-top: 1px solid rgba(201,168,76,.2);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      padding: 20px 16px 32px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .slot-modal-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 14px;
+      letter-spacing: .08em;
+    }
+    .slot-widget-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .slot-widget-item {
+      padding: 13px 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+    }
+    .slot-widget-item.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201,168,76,.1);
+    }
+    .slot-widget-item:hover { background: rgba(255,255,255,.1); }
+    .slot-modal-cancel {
+      width: 100%;
+      padding: 13px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      color: var(--gray);
+      font-size: 13px;
+      cursor: pointer;
     }
 
     .tile-label {
@@ -332,20 +485,6 @@
     .radar-modal-close:hover { color: var(--white); }
     .radar-modal iframe { flex: 1; width: 100%; border: none; }
 
-    /* タイル位置
-       行1: 電車    / 羽田 / 街の様子
-       行2: イベント / 天気 / コミュニティ
-       行3: 売上    / 道路 / ニュース
-    */
-    .tile-event      { grid-column:1; grid-row:2; }
-    .tile-haneda     { grid-column:2; grid-row:1; }
-    .tile-stand      { grid-column:3; grid-row:2; }
-    .tile-train      { grid-column:1; grid-row:1; }
-    .tile-weather    { grid-column:2; grid-row:2; }
-    .tile-traffic    { grid-column:2; grid-row:3; }
-    .tile-sales      { grid-column:1; grid-row:3; }
-    .tile-community  { grid-column:3; grid-row:1; }
-    .tile-news       { grid-column:3; grid-row:3; }
 
     .weather-main { display:flex; flex-direction:row; align-items:center; gap:10px; flex-shrink:0; justify-content:center; }
     .weather-location { font-size: 10px; color: var(--gray); letter-spacing: .1em; }
@@ -373,60 +512,33 @@
     .news-mini { display:flex; flex-direction:column; gap:4px; }
     .news-mini-title { font-size:12px; color:var(--text); line-height:1.4; }
 
-    /* スマホ：タイルを画面の72%幅にしてスワイプ感UP */
     @media(max-width:700px) {
       .tab-pane { padding: 12px 10px; }
-      .top-layout {
-        grid-template-columns: 1fr 1.4fr 1fr;
-        grid-template-rows: repeat(3, 250px);
-        gap: 8px;
-      }
+      .top-layout { grid-auto-rows: minmax(180px, auto); gap: 8px; }
+      .top-fixed-cards { grid-template-columns: 1fr 1.3fr 0.8fr; gap: 6px; }
+      .fixed-card { padding: 8px 10px; }
       .tile { padding: 10px 10px; border-radius: 8px; }
       .tile-label { font-size: 9px; margin-bottom: 5px; }
       .tile-main { font-size: 14px; }
       .tile-sub { font-size: 10px; }
 
-      /* 天気タイル — mobile: 縦積み */
-      .tile-weather {
-        flex-direction: column;
-        align-items: center;
-        padding: 6px 8px;
-        gap: 0;
-        overflow: visible;
-      }
+      /* 天気 fixed-card — compact */
       .weather-dt { font-size: 10px; margin-bottom: 2px; }
-      .weather-body {
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        flex: 1;
-        width: 100%;
-        overflow: visible;
-      }
+      .weather-body { gap: 2px; }
       .weather-main { gap: 6px; flex-wrap: wrap; justify-content: center; }
       .weather-icon-wrap { font-size: 22px !important; }
       .weather-temp { font-size: 20px; }
       .weather-temp span { font-size: 11px; }
       .weather-desc { font-size: 10px; }
       .weather-demand { font-size: 8px; padding: 2px 5px; margin-top: 0; }
-      .weather-forecast {
-        width: 100%; flex-direction: row; gap: 0;
-        justify-content: space-around;
-        border-top: 1px solid rgba(255,255,255,.08);
-        padding-top: 3px; margin-top: 3px;
-      }
-      .fc-item { flex-direction: column; align-items: center; padding: 2px 0; gap: 1px; border-right: 1px solid rgba(255,255,255,.05); }
-      .fc-item:last-child { border-right: none; }
+      .weather-forecast { border-top: 1px solid rgba(255,255,255,.08); padding-top: 3px; margin-top: 3px; }
+      .fc-item { padding: 2px 0; gap: 1px; }
       .fc-time { font-size: 9px; width: auto; }
-      .fc-icon { font-size: 18px; width: auto; }
+      .fc-icon { font-size: 16px; width: auto; }
       .fc-tmp { font-size: 10px; width: auto; }
       .fc-rain { font-size: 8px; }
 
-      /* 売上タイル — 縦中央寄せ */
-      .tile-sales {
-        display: flex; flex-direction: column; justify-content: center;
-      }
-
+      .tile-sales { display: flex; flex-direction: column; justify-content: center; }
       .alert { padding: 5px 8px; font-size: 10px; }
       .news-mini-title { font-size: 11px; }
     }
@@ -560,73 +672,73 @@
       <div id="pickup-alert-list"></div>
     </div>
 
-    <!-- ストップウォッチ固定バー -->
-    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch;">
-      <div style="flex:2;display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;">
-        <button id="sw-btn" onclick="swAction()" style="font-size:13px;font-weight:700;padding:8px 16px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;">乗務開始</button>
-        <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div id="sw-display" style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;">00:00:00</div>
-            <div id="sw-label" style="font-size:10px;color:var(--gray);">乗務開始前</div>
-          </div>
-          <div id="sw-projected" style="display:none;font-size:11px;color:var(--green);font-weight:600;"></div>
-        </div>
-      </div>
-      <button onclick="openReportModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 4px;background:var(--red);border:none;border-radius:10px;cursor:pointer;color:var(--white);font-size:11px;font-weight:700;line-height:1.3;">
-        <span style="font-size:16px;">📢</span>現在地投稿
-      </button>
-    </div>
-    <div class="top-layout">
-
-      <!-- 行1左：イベント -->
-      <div class="tile tile-event" data-tab="event" id="top-event-tile" style="overflow:hidden;display:flex;flex-direction:column;">
-        <div class="tile-label">イベント</div>
-        <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
-      </div>
-
-      <!-- 行1中央：天気（横長） -->
-      <div class="tile tile-weather">
-        <div id="weather-datetime" class="weather-dt"></div>
-        <div class="weather-body">
-          <div class="weather-main">
-            <div class="weather-icon-wrap">…</div>
-            <div class="weather-temp">28<span>℃</span></div>
-            <div class="weather-desc">晴れ</div>
-            <div class="weather-demand">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
-              需要：<strong style="color:var(--yellow);">やや低め</strong>
+    <!-- 固定パネル -->
+    <div class="top-fixed-panel">
+      <div class="top-fixed-cards">
+        <!-- 天気 -->
+        <div class="fixed-card fixed-card-weather" onclick="openRadarModal()" style="cursor:pointer;background:linear-gradient(160deg,#112240 0%,#1a3560 100%);border-color:rgba(201,168,76,.25);">
+          <div id="weather-datetime" class="weather-dt"></div>
+          <div class="weather-body">
+            <div class="weather-main">
+              <div class="weather-icon-wrap">…</div>
+              <div class="weather-temp">—<span>℃</span></div>
+              <div class="weather-desc" style="font-size:11px;"></div>
+              <div class="weather-demand" style="font-size:9px;">
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
+                需要：<strong style="color:var(--yellow);">—</strong>
+              </div>
+            </div>
+            <div class="weather-forecast">
+              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
+              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
+              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
+              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
             </div>
           </div>
-          <div class="weather-forecast">
-            <div class="fc-item"><div class="fc-time">15時</div><div class="fc-icon">☀</div><div class="fc-tmp">29°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-            <div class="fc-item"><div class="fc-time">18時</div><div class="fc-icon">⛅</div><div class="fc-tmp">26°</div><div class="fc-rain" style="color:var(--gray);">—</div></div>
-            <div class="fc-item"><div class="fc-time">21時</div><div class="fc-icon">🌧</div><div class="fc-tmp">23°</div><div class="fc-rain s-green">需要↑</div></div>
-            <div class="fc-item"><div class="fc-time">24時</div><div class="fc-icon">🌧</div><div class="fc-tmp">21°</div><div class="fc-rain s-green">需要↑</div></div>
+        </div>
+        <!-- 業務開始タイマー -->
+        <div class="fixed-card fixed-card-timer">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;">
+            <button id="sw-btn" onclick="swAction()" style="font-size:12px;font-weight:700;padding:7px 13px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;flex-shrink:0;">乗務開始</button>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
+                <div id="sw-display" style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;white-space:nowrap;">00:00:00</div>
+                <div id="sw-label" style="font-size:9px;color:var(--gray);white-space:nowrap;">乗務開始前</div>
+              </div>
+              <div id="sw-projected" style="display:none;font-size:10px;color:var(--green);font-weight:600;"></div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- 行1右：街の様子 -->
-      <div class="tile tile-stand" data-tab="stand" style="padding:8px 8px 6px;">
-        <div class="tile-label" style="margin-bottom:6px;">街の様子</div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
-          <img id="top-pcounter-img-a" src="" alt="八重洲待機所" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲待機所')">
-          <img id="top-pcounter-img-b" src="" alt="八重洲乗場" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲乗場')">
+        <!-- 現在地投稿 -->
+        <div class="fixed-card fixed-card-location" style="padding:8px;">
+          <button onclick="openReportModal()" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:11px;font-weight:700;line-height:1.3;">
+            <span style="font-size:18px;">📢</span>現在地投稿
+          </button>
         </div>
-        <div id="top-pcounter-upd" style="font-size:9px;color:var(--gray);text-align:right;margin-top:4px;"></div>
       </div>
 
-      <!-- 行2左：電車・交通 -->
-      <div class="tile tile-train" data-tab="train">
+      <!-- トピックス ticker -->
+      <div class="top-ticker">
+        <span class="ticker-badge">新着</span>
+        <div class="ticker-scroll">
+          <div class="ticker-inner" id="top-ticker-inner">読込中…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2×2 グリッド（選択式） -->
+    <div class="top-layout" id="top-grid">
+      <div class="tile tile-train" id="tile-train" data-tab="train">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(0)">変更</button>
         <div class="tile-label">電車・交通</div>
         <div id="top-train-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
         </div>
       </div>
 
-      <!-- 行2中央：羽田空港 -->
-      <div class="tile tile-haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
-        <div class="tile-label" style="padding:0 0 0;cursor:pointer;" onclick="switchTab('haneda')">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
+      <div class="tile tile-haneda" id="tile-haneda" style="display:flex;flex-direction:column;padding:10px 10px 0;">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(1)">変更</button>
+        <div class="tile-label" style="cursor:pointer;" onclick="switchTab('haneda')">羽田空港 <span id="top-haneda-updated" style="font-size:9px;color:var(--gray);font-weight:400;margin-left:4px;"></span></div>
         <div id="top-haneda-summary" style="margin-top:6px;cursor:pointer;" onclick="goHanedaSection('haneda-arr-card')">
           <div style="font-size:11px;color:var(--gray);">読込中…</div>
         </div>
@@ -635,33 +747,57 @@
         <img id="top-haneda-img-real02" src="" alt="" crossorigin="anonymous" style="display:none;" aria-hidden="true">
       </div>
 
-      <!-- 行2右：道路情報 -->
-      <div class="tile tile-traffic" data-tab="traffic">
-        <div class="tile-label">道路情報</div>
-        <img id="top-shutoko-img" alt="首都高交通規制マップ"
-          style="width:100%;border-radius:4px;display:block;margin-top:6px;">
+      <div class="tile tile-event" id="tile-event" data-tab="event" style="overflow:hidden;display:flex;flex-direction:column;">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(2)">変更</button>
+        <div class="tile-label">イベント</div>
+        <div id="top-event-list" style="display:flex;flex-direction:column;gap:5px;margin-top:4px;flex:1;overflow:hidden;"></div>
       </div>
 
-      <!-- 行3左：売上 -->
-      <div class="tile tile-sales" data-tab="sales">
+      <div class="tile tile-community" id="tile-community" data-tab="community">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(3)">変更</button>
+        <div class="tile-label">みんなの投稿</div>
+        <div id="top-community-list" style="display:flex;flex-direction:column;gap:0;margin-top:6px;flex:1;overflow:hidden;">読込中…</div>
+      </div>
+
+      <!-- 非表示プール（選ばれていないタイル） -->
+      <div class="tile tile-stand tile-hidden" id="tile-stand" data-tab="stand" style="padding:8px 8px 6px;">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
+        <div class="tile-label" style="margin-bottom:6px;">街の様子</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+          <img id="top-pcounter-img-a" src="" alt="八重洲待機所" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲待機所')">
+          <img id="top-pcounter-img-b" src="" alt="八重洲乗場" style="width:100%;border-radius:6px;display:block;cursor:pointer;" onclick="openImgFullscreen(this.src,'八重洲乗場')">
+        </div>
+        <div id="top-pcounter-upd" style="font-size:9px;color:var(--gray);text-align:right;margin-top:4px;"></div>
+      </div>
+
+      <div class="tile tile-traffic tile-hidden" id="tile-traffic" data-tab="traffic">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
+        <div class="tile-label">道路情報</div>
+        <img id="top-shutoko-img" alt="首都高交通規制マップ" style="width:100%;border-radius:4px;display:block;margin-top:6px;">
+      </div>
+
+      <div class="tile tile-sales tile-hidden" id="tile-sales" data-tab="sales">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label">売上管理</div>
         <div id="top-sales-main">—</div>
         <div id="top-sales-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
 
-      <!-- 行3中央：コミュニティ -->
-      <div class="tile tile-community" data-tab="community">
-        <div class="tile-label">みんなの投稿</div>
-        <div id="top-community-list" style="display:flex;flex-direction:column;gap:0;margin-top:6px;flex:1;overflow:hidden;">読込中…</div>
-      </div>
-
-      <!-- 行3右：ニュース -->
-      <div class="tile tile-news" data-tab="news">
+      <div class="tile tile-news tile-hidden" id="tile-news" data-tab="news">
+        <button class="slot-edit-btn" onclick="event.stopPropagation();openSlotSelector(-1)">変更</button>
         <div class="tile-label">業界ニュース</div>
         <div id="top-news-main" style="margin-top:6px;display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text);line-height:1.4;">読込中…</div>
         <div id="top-news-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
+    </div>
 
+    <!-- スロットセレクターモーダル -->
+    <div class="slot-modal" id="slot-modal" onclick="if(event.target===this)closeSlotSelector()">
+      <div class="slot-modal-sheet">
+        <div class="slot-modal-title">表示するコンテンツを選択</div>
+        <div class="slot-widget-list" id="slot-widget-list"></div>
+        <button class="slot-modal-cancel" onclick="closeSlotSelector()">キャンセル</button>
+      </div>
     </div>
   </div>
 
@@ -2435,23 +2571,99 @@
 
   loadWeather();
 
-  // 天気タイルタップ → 雨雲レーダーモーダル
+  // 雨雲レーダーモーダル
   const radarSrc = 'https://embed.windy.com/embed2.html?lat=35.67&lon=139.75&width=650&height=800&zoom=11&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1';
   const radarModal = document.getElementById('radarModal');
   const radarIframe = document.getElementById('radarIframe');
   const radarClose = document.getElementById('radarClose');
 
-  document.querySelector('.tile-weather').addEventListener('click', () => {
+  function openRadarModal() {
     radarIframe.src = radarSrc;
     radarModal.classList.add('open');
     document.body.style.overflow = 'hidden';
-  });
+  }
 
   radarClose.addEventListener('click', () => {
     radarModal.classList.remove('open');
     radarIframe.src = '';
     document.body.style.overflow = '';
   });
+
+  // ── グリッドスロット管理 ──
+  const SLOT_WIDGETS = [
+    { id: 'train',     label: '電車・交通' },
+    { id: 'haneda',    label: '羽田空港' },
+    { id: 'event',     label: 'イベント' },
+    { id: 'stand',     label: '街の様子' },
+    { id: 'sales',     label: '売上管理' },
+    { id: 'traffic',   label: '道路情報' },
+    { id: 'community', label: 'みんなの投稿' },
+    { id: 'news',      label: '業界ニュース' },
+  ];
+  const DEFAULT_SLOTS = ['train', 'haneda', 'event', 'community'];
+  let topGridSlots = JSON.parse(localStorage.getItem('topGridSlots') || 'null') || [...DEFAULT_SLOTS];
+  let _slotEditIndex = 0;
+
+  function applyGridSlots() {
+    SLOT_WIDGETS.forEach(w => {
+      const el = document.getElementById('tile-' + w.id);
+      if (!el) return;
+      const idx = topGridSlots.indexOf(w.id);
+      if (idx === -1) {
+        el.classList.add('tile-hidden');
+        const btn = el.querySelector('.slot-edit-btn');
+        if (btn) btn.setAttribute('onclick', `event.stopPropagation();openSlotSelector(-1)`);
+      } else {
+        el.classList.remove('tile-hidden');
+        const btn = el.querySelector('.slot-edit-btn');
+        if (btn) btn.setAttribute('onclick', `event.stopPropagation();openSlotSelector(${idx})`);
+      }
+    });
+    // グリッド内の順序を選択順に並べ替え
+    const grid = document.getElementById('top-grid');
+    topGridSlots.forEach(id => {
+      const el = document.getElementById('tile-' + id);
+      if (el) grid.appendChild(el);
+    });
+    SLOT_WIDGETS.forEach(w => {
+      if (!topGridSlots.includes(w.id)) {
+        const el = document.getElementById('tile-' + w.id);
+        if (el) grid.appendChild(el);
+      }
+    });
+  }
+
+  function openSlotSelector(slotIndex) {
+    _slotEditIndex = slotIndex;
+    const list = document.getElementById('slot-widget-list');
+    const currentId = slotIndex >= 0 ? topGridSlots[slotIndex] : null;
+    list.innerHTML = SLOT_WIDGETS.map(w => {
+      const isActive = w.id === currentId;
+      const isUsed = topGridSlots.includes(w.id) && !isActive;
+      return `<button class="slot-widget-item${isActive ? ' active' : ''}" onclick="selectSlotWidget('${w.id}')"
+        style="${isUsed ? 'opacity:.4;pointer-events:none;' : ''}">${w.label}</button>`;
+    }).join('');
+    document.getElementById('slot-modal').classList.add('open');
+  }
+
+  function selectSlotWidget(widgetId) {
+    if (_slotEditIndex >= 0) {
+      topGridSlots[_slotEditIndex] = widgetId;
+    } else {
+      // 非表示スロットから呼ばれた場合：最初の空きスロットは存在しないので末尾置換
+      const unused = topGridSlots.findIndex(id => id === widgetId);
+      if (unused === -1) topGridSlots.push(widgetId);
+    }
+    localStorage.setItem('topGridSlots', JSON.stringify(topGridSlots));
+    applyGridSlots();
+    closeSlotSelector();
+  }
+
+  function closeSlotSelector() {
+    document.getElementById('slot-modal').classList.remove('open');
+  }
+
+  applyGridSlots();
 
 
   const week = ['日','月','火','水','木','金','土'];
@@ -2579,6 +2791,7 @@
       const topList2 = document.getElementById('top-train-list');
       if (topList2) topList2.innerHTML = '<div style="font-size:11px;color:var(--gray);">取得失敗</div>';
     }
+    updateTicker();
   }
   loadTrainInfo();
   setInterval(loadTrainInfo, 60000);
@@ -3467,6 +3680,7 @@
         topMain.innerHTML = `<span style="font-size:11px;line-height:1.4;">${all[0].title}</span>`;
         if (topSub) topSub.textContent = all[1]?.title?.slice(0, 28) + '…' || '';
       }
+      updateTicker();
     } catch(e) {
       const allEl = document.getElementById('news-all');
       if (allEl) allEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
@@ -3474,6 +3688,38 @@
   }
   loadNews();
   setInterval(loadNews, 600000); // 10分ごと更新
+
+  // ── トピックスティッカー ──
+  function updateTicker() {
+    const el = document.getElementById('top-ticker-inner');
+    if (!el) return;
+    const items = [];
+
+    // ニュース
+    document.querySelectorAll('#news-all .news-title, #news-all .news-mini-title').forEach((n, i) => {
+      if (i < 3) items.push('📰 ' + n.textContent.trim().slice(0, 40));
+    });
+    // イベント（top-event-listから）
+    document.querySelectorAll('#top-event-list [data-event-name]').forEach((n, i) => {
+      if (i < 2) items.push('📅 ' + n.dataset.eventName?.slice(0, 30));
+    });
+    // コミュニティ
+    document.querySelectorAll('#top-community-list div[style*="color:var(--text)"]').forEach((n, i) => {
+      if (i < 2 && n.textContent.trim()) items.push('💬 ' + n.textContent.trim().slice(0, 30));
+    });
+    // 電車
+    document.querySelectorAll('#top-train-list .alert, #top-train-list [style*="red"], #top-train-list [style*="yellow"]').forEach((n, i) => {
+      if (i < 2 && n.textContent.trim()) items.push('🚆 ' + n.textContent.trim().slice(0, 30));
+    });
+
+    if (items.length === 0) { el.textContent = '新着情報を読込中…'; return; }
+    el.textContent = items.join('　　　　');
+    // アニメーション速度をテキスト長に応じて調整
+    const duration = Math.max(20, items.join('').length * 0.3);
+    el.style.animationDuration = duration + 's';
+  }
+  // 30秒ごとにティッカーを再構築
+  setInterval(updateTicker, 30000);
 
   // 客船入港スケジュール（APIから自動取得）
   async function loadShips() {
@@ -4158,6 +4404,7 @@
         });
       }, 200);
     }
+    updateTicker();
   }
 
   // 管理者の場合、静的投稿に削除ボタンを追加
@@ -5149,25 +5396,36 @@
       }
     }
 
-    // 給与所得控除
+    // 給与所得控除（国税庁 令和6年度 正規ブラケット）
     function empDeduction(a) {
-      if (a <= 1625000) return 550000;
-      if (a <= 3600000) return Math.round(a * 0.4) - 100000;
-      if (a <= 6600000) return Math.round(a * 0.3) + 80000;
-      if (a <= 8500000) return Math.round(a * 0.2) + 440000;
+      if (a <= 1625000)  return 550000;
+      if (a <= 1800000)  return Math.floor(a * 0.4 - 100000);
+      if (a <= 3600000)  return Math.floor(a * 0.3 + 80000);
+      if (a <= 6600000)  return Math.floor(a * 0.2 + 440000);
+      if (a <= 8500000)  return Math.floor(a * 0.1 + 1100000);
       return 1950000;
     }
 
-    // 所得税（累進）
+    // 所得税（累進）+ 復興特別所得税 ※月額表方式：千円未満切捨て後の課税所得に適用
     function incomeTaxCalc(ti) {
       let t;
-      if (ti <= 1950000)  t = ti * 0.05;
+      if (ti <= 1950000)       t = ti * 0.05;
       else if (ti <= 3300000)  t = ti * 0.10 - 97500;
       else if (ti <= 6950000)  t = ti * 0.20 - 427500;
       else if (ti <= 9000000)  t = ti * 0.23 - 636000;
       else if (ti <= 18000000) t = ti * 0.33 - 1536000;
-      else t = ti * 0.40 - 2796000;
-      return Math.max(0, Math.round(t * 1.021));
+      else                     t = ti * 0.40 - 2796000;
+      return Math.max(0, Math.floor(t * 1.021));
+    }
+
+    // 国税庁月額表方式で月額源泉徴収を計算
+    // 給与所得を千円未満切捨て → 年税額計算 → 月割り端数切捨て
+    function monthlyIT(annualGross, annualSI, personalDed) {
+      const ann = annualGross - annualSI;
+      const ded = empDeduction(ann);
+      const kyuyoShotoku = Math.floor((ann - ded) / 1000) * 1000; // 千円未満切捨て
+      const taxable = Math.max(0, kyuyoShotoku - personalDed);
+      return Math.floor(incomeTaxCalc(taxable) / 12); // 端数切捨て
     }
 
     // 扶養・配偶者・その他控除
@@ -5242,12 +5500,9 @@
       const k  = hasReal ? monthlyKyuyo[m] : avgKyuyo;
       const siM = hasPoolConfig ? si.totalM : si.total;
       if (k <= 0) { monthlyITMap[m] = 0; monthlyMuniMap[m] = 0; continue; }
-      const ann = Math.max(0, k - siM) * 12;
-      const eDed = empDeduction(ann);
-      const itTaxable = isOtsu
-        ? Math.max(0, ann - eDed)
-        : Math.max(0, ann - eDed - 480000 - spouseDedIT - depDedIT - extraDedIT);
-      monthlyITMap[m] = Math.round(incomeTaxCalc(itTaxable) / 12);
+      const annSI = siM * 12;
+      const personalDed = isOtsu ? 0 : (480000 + spouseDedIT + depDedIT + extraDedIT);
+      monthlyITMap[m] = monthlyIT(k * 12, annSI, personalDed);
       if (m >= muniChangeM && muniNew  != null) { monthlyMuniMap[m] = muniNew; }
       else if (m < muniChangeM && muniPrev != null) { monthlyMuniMap[m] = muniPrev; }
       else { monthlyMuniMap[m] = Math.round(annualMuni_ref / 12); }
