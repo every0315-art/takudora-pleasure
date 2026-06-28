@@ -3951,22 +3951,25 @@
     document.querySelectorAll('#news-all .news-title, #news-all .news-mini-title').forEach((n, i) => {
       if (i < 3) items.push('📰 ' + n.textContent.trim().slice(0, 40));
     });
-    // イベント（top-event-listから）
+    // イベント
     document.querySelectorAll('#top-event-list [data-event-name]').forEach((n, i) => {
       if (i < 2) items.push('📅 ' + n.dataset.eventName?.slice(0, 30));
     });
-    // コミュニティ
-    document.querySelectorAll('#top-community-list div[style*="color:var(--text)"]').forEach((n, i) => {
-      if (i < 2 && n.textContent.trim()) items.push('💬 ' + n.textContent.trim().slice(0, 30));
+    // コミュニティ（3時間以内のみ）
+    const THREE_H = 3 * 60 * 60 * 1000;
+    const now = Date.now();
+    _communityPosts.filter(p => now - new Date(p.created_at).getTime() < THREE_H).slice(0, 2).forEach(p => {
+      const body = (p.body || '').slice(0, 30);
+      const loc = p.location ? `（${p.location.slice(0, 8)}）` : '';
+      if (body) items.push(`💬 ${body}${loc}`);
     });
-    // 電車
-    document.querySelectorAll('#top-train-list .alert, #top-train-list [style*="red"], #top-train-list [style*="yellow"]').forEach((n, i) => {
-      if (i < 2 && n.textContent.trim()) items.push('🚆 ' + n.textContent.trim().slice(0, 30));
+    // 電車遅延（路線名＋状況）
+    _trainAlerts.slice(0, 3).forEach(l => {
+      items.push(`🚆 ${l.name} ${l.status}`);
     });
 
     if (items.length === 0) { el.textContent = '新着情報を読込中…'; return; }
     el.textContent = items.join('　　　　');
-    // アニメーション速度をテキスト長に応じて調整
     const duration = Math.max(20, items.join('').length * 0.3);
     el.style.animationDuration = duration + 's';
   }
