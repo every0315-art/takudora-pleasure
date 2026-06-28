@@ -5336,6 +5336,11 @@
         const remainDays = Math.max(0, Math.ceil((endDate - today) / 86400000));
         const projectedExTax = salesCount && remainDays >= 0
           ? Math.round(totalSalesExTax + (totalSalesExTax / salesCount) * remainDays) : null;
+        const TOTAL_H = 277;
+        const usedH2 = totalMinutes / 60;
+        const remainH2 = Math.max(0, TOTAL_H - usedH2);
+        const hPerDay = timeCount && remainDays > 0 ? remainH2 / remainDays : null;
+        const fmtH = h => `${Math.floor(h)}h${String(Math.round((h%1)*60)).padStart(2,'0')}m`;
         return `
       <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:12px 14px;margin-top:4px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:6px;">
@@ -5350,9 +5355,12 @@
         </div>
         <div style="border-top:1px solid rgba(201,168,76,.2);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <div style="font-size:10px;color:var(--gray);">残り</div>
-            <div style="font-size:18px;font-weight:800;color:var(--white);">${remainDays}<span style="font-size:11px;font-weight:400;color:var(--gray);margin-left:2px;">日</span></div>
+          <div style="text-align:right;">
+            <div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end;">
+              <div style="font-size:10px;color:var(--gray);">残り</div>
+              <div style="font-size:20px;font-weight:800;color:var(--white);">${remainDays}<span style="font-size:11px;font-weight:400;color:var(--gray);margin-left:1px;">日</span></div>
+            </div>
+            ${hPerDay != null ? `<div style="font-size:10px;color:var(--gray);margin-top:2px;">1日 <span style="color:var(--white);font-weight:600;">${fmtH(hPerDay)}</span> ペース</div>` : ''}
           </div>
         </div>
         ${projectedExTax ? `<div style="margin-top:8px;font-size:11px;color:var(--gray);">月末着地予測（税抜）<span style="color:var(--gold);font-weight:700;margin-left:8px;">¥${projectedExTax.toLocaleString()}</span></div>` : ''}
