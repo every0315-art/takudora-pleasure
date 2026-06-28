@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       };
     });
 
-    res.setHeader('Cache-Control', 's-maxage=600'); // 10分キャッシュ
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=120');
     res.json({ temp, desc, icon, rain, demand, hours });
   } catch (e) {
     res.status(500).json({ error: 'weather fetch failed' });

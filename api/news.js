@@ -89,7 +89,7 @@ export default async function handler(req, res) {
       taxiAssocNews(),
     ]);
 
-    res.setHeader('Cache-Control', 's-maxage=600');
+    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=120');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({
       taxi:        r1.status === 'fulfilled' ? r1.value.slice(0, 12) : [],

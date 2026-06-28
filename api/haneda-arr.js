@@ -154,7 +154,7 @@ export default async function handler(req, res) {
     const byTerminal = { 1: [], 2: [], 3: [] };
     for (const f of result) byTerminal[f.terminal <= 2 ? f.terminal : 3].push(f);
 
-    res.setHeader('Cache-Control', 's-maxage=60');
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ terminals: byTerminal, total: result.length, updatedAt: new Date().toISOString() });
   } catch (e) {

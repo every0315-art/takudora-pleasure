@@ -125,7 +125,7 @@ export default async function handler(req, res) {
       })
       .filter(l => debug || TOKYO_LINES.has(l.name) || [...TOKYO_LINES].some(t => l.name.includes(t)));
 
-    res.setHeader('Cache-Control', 's-maxage=60');
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ lines, updateDate, ...(debug ? { _debug: true, _total: troubleRails.length } : {}) });
   } catch(e) {

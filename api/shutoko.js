@@ -11,7 +11,7 @@ export default async function handler(req, res) {
         headers: { 'Referer': 'https://search.shutoko-eng.jp/' },
       });
       if (!r.ok) throw new Error('fetch failed');
-      res.setHeader('Cache-Control', 's-maxage=60');
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
       res.setHeader('Access-Control-Allow-Origin', '*');
       return res.json(await r.json());
     } catch (e) {
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     });
     if (!r.ok) throw new Error('fetch failed');
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 's-maxage=60');
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
     res.send(Buffer.from(await r.arrayBuffer()));
   } catch (e) {
     res.status(502).json({ error: 'image fetch failed' });
