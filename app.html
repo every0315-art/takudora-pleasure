@@ -54,10 +54,16 @@
     .header-right { display:flex; align-items:center; gap:16px; }
     .live-badge {
       display:flex; align-items:center; gap:6px;
-      font-size:11px; color:var(--green); font-weight:600; letter-spacing:.1em;
+      font-size:11px; font-weight:600; letter-spacing:.1em;
+      color:var(--gray); opacity:.4; transition: color .3s, opacity .3s;
     }
+    .live-badge.is-live { color:var(--green); opacity:1; }
     .live-dot {
-      width:7px; height:7px; border-radius:50%; background:var(--green);
+      width:7px; height:7px; border-radius:50%; background:var(--gray);
+      transition: background .3s;
+    }
+    .live-badge.is-live .live-dot {
+      background:var(--green);
       animation: pulse 1.8s ease-in-out infinite;
     }
     @keyframes pulse {
@@ -666,7 +672,7 @@
 <div class="header">
   <div class="logo">タクドラ<span>PLEASURE</span></div>
   <div class="header-right">
-    <div class="live-badge" style="display:none;"><div class="live-dot"></div>LIVE</div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
     <div class="user-area" id="header-user-area" onclick="switchTab('account')" style="cursor:pointer;" title="アカウント設定">ゲスト <strong>ユーザー</strong> さん</div>
   </div>
 </div>
@@ -4728,20 +4734,20 @@
       lbl.textContent = '乗務開始前';
       disp.style.color = 'var(--white)';
       if (proj) proj.style.display = 'none';
-      if (liveBadge) liveBadge.style.display = 'none';
+      if (liveBadge) liveBadge.classList.remove('is-live');
       stopLiveUpdates();
     } else if (swState === 'running') {
       btn.textContent = '乗務終了'; btn.style.background = 'var(--red)'; btn.style.color = '#fff';
       lbl.textContent = '乗務中';
       disp.style.color = 'var(--green)';
-      if (liveBadge) liveBadge.style.display = 'flex';
+      if (liveBadge) liveBadge.classList.add('is-live');
       startLiveUpdates();
     } else {
       btn.textContent = 'リセット'; btn.style.background = 'rgba(255,255,255,.15)'; btn.style.color = 'var(--white)';
       lbl.textContent = '乗務終了';
       disp.style.color = 'var(--gray)';
       if (proj) proj.style.display = 'none';
-      if (liveBadge) liveBadge.style.display = 'none';
+      if (liveBadge) liveBadge.classList.remove('is-live');
       stopLiveUpdates();
     }
   }
