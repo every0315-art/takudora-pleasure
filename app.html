@@ -3761,8 +3761,10 @@
       });
     }
 
-    // 国際線第2プール 車両なし
-    if (_hanedaCamNoVehicle) {
+    // 国際線第2プール 車両なし（深夜1時〜6時は通常運休のためアラート抑制）
+    const h = now.getHours(), m = now.getMinutes();
+    const intlSuppressed = h >= 1 && h < 6;
+    if (_hanedaCamNoVehicle && !intlSuppressed) {
       alerts.push({
         tag: '📷 国際線第2プール',
         main: '車両なし',
@@ -3773,8 +3775,10 @@
       });
     }
 
-    // 国内線待機場 車列2列以下
-    if (_hanedaCam2Rows <= 2) {
+    // 国内線待機場 車列2列以下（夜11:30〜翌5:30は抑制）
+    const nowTotalMin = h * 60 + m;
+    const domSuppressed = nowTotalMin >= 23 * 60 + 30 || nowTotalMin < 5 * 60 + 30;
+    if (_hanedaCam2Rows <= 2 && !domSuppressed) {
       alerts.push({
         tag: '📷 羽田空港国内線車両減少',
         main: `待機車列 ${_hanedaCam2Rows}列`,
