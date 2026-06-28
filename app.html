@@ -338,10 +338,12 @@
       transform: translateY(-2px);
     }
 
-    /* 長押し中のフィードバック */
+    /* ドラッグ中のドロップ先ハイライト */
     .tile.longpress-active {
-      border-color: rgba(201,168,76,.7) !important;
-      transform: scale(0.97) !important;
+      border-color: rgba(201,168,76,.8) !important;
+      background: rgba(201,168,76,.08) !important;
+      transform: scale(1.02) !important;
+      transition: transform .1s, border-color .1s !important;
     }
 
     /* ── SLOT セレクターモーダル ── */
@@ -2603,70 +2605,111 @@
     });
   }
 
-  // 長押し検出（500ms）
-  let _lpTimer = null;
-  function setupLongPress() {
-    document.getElementById('top-grid').addEventListener('touchstart', e => {
+  // ── ドラッグ&ドロップ並び替え ──
+  let _drag = null; // { srcTile, srcIdx, clone, startX, startY, moved }
+
+  function setupDragSort() {
+    const grid = document.getElementById('top-grid');
+
+    function getClientXY(e) {
+      return e.touches ? [e.touches[0].clientX, e.touches[0].clientY]
+                       : [e.clientX, e.clientY];
+    }
+
+    function tileFromPoint(x, y) {
+      const el = document.elementFromPoint(x, y);
+      return el?.closest('#top-grid .tile') || null;
+    }
+
+    function startDrag(e, tile) {
+      const [x, y] = getClientXY(e);
+      const rect = tile.getBoundingClientRect();
+      // クローンを作成してbodyに追加
+      const clone = tile.cloneNode(true);
+      clone.style.cssText = `
+        position:fixed;left:${rect.left}px;top:${rect.top}px;
+        width:${rect.width}px;height:${rect.height}px;
+        opacity:.85;z-index:500;pointer-events:none;
+        border-color:rgba(201,168,76,.8);
+        box-shadow:0 8px 24px rgba(0,0,0,.5);
+        transition:none;border-radius:10px;
+        background:var(--navy-mid);border:1px solid rgba(201,168,76,.8);
+        padding:16px 18px;overflow:hidden;
+      `;
+      document.body.appendChild(clone);
+      tile.style.opacity = '0.3';
+      _drag = { srcTile: tile, srcIdx: +tile.dataset.slotIndex,
+                clone, startX: x, startY: y,
+                offX: x - rect.left, offY: y - rect.top,
+                moved: false, overTile: null };
+    }
+
+    function moveDrag(e) {
+      if (!_drag) return;
+      const [x, y] = getClientXY(e);
+      if (Math.abs(x - _drag.startX) > 5 || Math.abs(y - _drag.startY) > 5) _drag.moved = true;
+      if (!_drag.moved) return;
+      _drag.clone.style.left = (x - _drag.offX) + 'px';
+      _drag.clone.style.top  = (y - _drag.offY) + 'px';
+      // ターゲットタイルをハイライト
+      const over = tileFromPoint(x, y);
+      if (over && over !== _drag.srcTile) {
+        if (_drag.overTile && _drag.overTile !== over) _drag.overTile.classList.remove('longpress-active');
+        over.classList.add('longpress-active');
+        _drag.overTile = over;
+      } else if (_drag.overTile && (!over || over === _drag.srcTile)) {
+        _drag.overTile.classList.remove('longpress-active');
+        _drag.overTile = null;
+      }
+    }
+
+    function endDrag(e) {
+      if (!_drag) return;
+      const [x, y] = e.changedTouches
+        ? [e.changedTouches[0].clientX, e.changedTouches[0].clientY]
+        : [e.clientX, e.clientY];
+      _drag.clone.remove();
+      _drag.srcTile.style.opacity = '';
+      if (_drag.overTile) _drag.overTile.classList.remove('longpress-active');
+
+      if (_drag.moved && _drag.overTile) {
+        const dstIdx = +_drag.overTile.dataset.slotIndex;
+        if (dstIdx !== _drag.srcIdx) {
+          [topGridSlots[_drag.srcIdx], topGridSlots[dstIdx]] =
+            [topGridSlots[dstIdx], topGridSlots[_drag.srcIdx]];
+          localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
+          navigator.vibrate?.(20);
+          applyGridSlots();
+        }
+      }
+      _drag = null;
+    }
+
+    // touch
+    grid.addEventListener('touchstart', e => {
       const tile = e.target.closest('.tile');
-      if (!tile || tile.dataset.slotIndex === undefined) return;
-      tile.classList.add('longpress-active');
-      _lpTimer = setTimeout(() => {
-        tile.classList.remove('longpress-active');
-        navigator.vibrate?.(30);
-        openSlotSelector(+tile.dataset.slotIndex);
-      }, 500);
+      if (tile && tile.dataset.slotIndex !== undefined) startDrag(e, tile);
     }, { passive: true });
-    document.getElementById('top-grid').addEventListener('touchend', () => {
-      clearTimeout(_lpTimer);
-      document.querySelectorAll('.tile.longpress-active').forEach(t => t.classList.remove('longpress-active'));
-    }, { passive: true });
-    document.getElementById('top-grid').addEventListener('touchmove', () => {
-      clearTimeout(_lpTimer);
-      document.querySelectorAll('.tile.longpress-active').forEach(t => t.classList.remove('longpress-active'));
-    }, { passive: true });
-    // PC用マウス長押し
-    document.getElementById('top-grid').addEventListener('mousedown', e => {
+    document.addEventListener('touchmove', e => {
+      if (_drag && _drag.moved) e.preventDefault();
+      moveDrag(e);
+    }, { passive: false });
+    document.addEventListener('touchend', endDrag);
+
+    // mouse（PC）
+    grid.addEventListener('mousedown', e => {
       const tile = e.target.closest('.tile');
-      if (!tile || tile.dataset.slotIndex === undefined) return;
-      tile.classList.add('longpress-active');
-      _lpTimer = setTimeout(() => {
-        tile.classList.remove('longpress-active');
-        openSlotSelector(+tile.dataset.slotIndex);
-      }, 500);
+      if (tile && tile.dataset.slotIndex !== undefined) startDrag(e, tile);
     });
-    document.getElementById('top-grid').addEventListener('mouseup', () => {
-      clearTimeout(_lpTimer);
-      document.querySelectorAll('.tile.longpress-active').forEach(t => t.classList.remove('longpress-active'));
-    });
+    document.addEventListener('mousemove', moveDrag);
+    document.addEventListener('mouseup', endDrag);
   }
-  setupLongPress();
-
-  function openSlotSelector(slotIndex) {
-    _slotEditIndex = slotIndex;
-    const swapList = document.getElementById('slot-swap-list');
-    const currentId = topGridSlots[slotIndex];
-    const currentWidget = SLOT_WIDGETS.find(w => w.id === currentId);
-
-    document.getElementById('slot-widget-list').style.display = 'none';
-    document.getElementById('slot-modal-swap-section').style.display = '';
-
-    swapList.innerHTML = topGridSlots.map((id, i) => {
-      if (i === slotIndex) return '';
-      const w = SLOT_WIDGETS.find(w => w.id === id);
-      return `<button class="slot-widget-item" onclick="swapSlots(${slotIndex},${i})" style="font-size:11px;padding:10px 6px;">
-        ⇄ ${w?.label||id}</button>`;
-    }).join('');
-
-    document.querySelector('#slot-modal .slot-modal-title').textContent =
-      `「${currentWidget?.label||currentId}」の位置を入れ替え`;
-    document.getElementById('slot-modal').classList.add('open');
-  }
+  setupDragSort();
 
   function swapSlots(i, j) {
     [topGridSlots[i], topGridSlots[j]] = [topGridSlots[j], topGridSlots[i]];
     localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
     applyGridSlots();
-    closeSlotSelector();
   }
 
   function closeSlotSelector() {
