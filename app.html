@@ -316,7 +316,7 @@
     .top-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
+      grid-auto-rows: minmax(180px, auto);
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -798,13 +798,11 @@
     <!-- スロットセレクターモーダル -->
     <div class="slot-modal" id="slot-modal" onclick="if(event.target===this)closeSlotSelector()">
       <div class="slot-modal-sheet">
-        <div id="slot-modal-swap-section" style="margin-bottom:12px;display:none;">
-          <div class="slot-modal-title" style="margin-bottom:8px;">位置を入れ替える</div>
-          <div id="slot-swap-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
-          <div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0;"></div>
+        <div id="slot-modal-swap-section">
+          <div class="slot-modal-title"></div>
+          <div id="slot-swap-list" class="slot-widget-list"></div>
         </div>
-        <div class="slot-modal-title">コンテンツを変更</div>
-        <div class="slot-widget-list" id="slot-widget-list"></div>
+        <div id="slot-widget-list" style="display:none;"></div>
         <button class="slot-modal-cancel" onclick="closeSlotSelector()">キャンセル</button>
       </div>
     </div>
@@ -2598,7 +2596,7 @@
     document.body.style.overflow = '';
   });
 
-  // ── グリッドスロット管理 ──
+  // ── グリッド並び替え管理 ──
   const SLOT_WIDGETS = [
     { id: 'train',       label: '電車・交通' },
     { id: 'haneda-arr',  label: '羽田・到着便' },
@@ -2610,85 +2608,47 @@
     { id: 'community',   label: 'みんなの投稿' },
     { id: 'news',        label: '業界ニュース' },
   ];
-  const DEFAULT_SLOTS = ['train', 'haneda-arr', 'event', 'community'];
-  let topGridSlots = JSON.parse(localStorage.getItem('topGridSlots') || 'null') || [...DEFAULT_SLOTS];
+  const DEFAULT_ORDER = ['train', 'haneda-arr', 'haneda-cam', 'event', 'stand', 'sales', 'traffic', 'community', 'news'];
+  let topGridSlots = JSON.parse(localStorage.getItem('topGridOrder') || 'null') || [...DEFAULT_ORDER];
   let _slotEditIndex = 0;
 
   function applyGridSlots() {
-    SLOT_WIDGETS.forEach(w => {
-      const el = document.getElementById('tile-' + w.id);
-      if (!el) return;
-      const idx = topGridSlots.indexOf(w.id);
-      if (idx === -1) {
-        el.classList.add('tile-hidden');
-        const btn = el.querySelector('.slot-edit-btn');
-        if (btn) btn.setAttribute('onclick', `event.stopPropagation();openSlotSelector(-1)`);
-      } else {
-        el.classList.remove('tile-hidden');
-        const btn = el.querySelector('.slot-edit-btn');
-        if (btn) btn.setAttribute('onclick', `event.stopPropagation();openSlotSelector(${idx})`);
-      }
-    });
-    // グリッド内の順序を選択順に並べ替え
     const grid = document.getElementById('top-grid');
+    // 全タイルを表示して順番通りに並べ替え
     topGridSlots.forEach(id => {
       const el = document.getElementById('tile-' + id);
-      if (el) grid.appendChild(el);
-    });
-    SLOT_WIDGETS.forEach(w => {
-      if (!topGridSlots.includes(w.id)) {
-        const el = document.getElementById('tile-' + w.id);
-        if (el) grid.appendChild(el);
-      }
+      if (!el) return;
+      el.classList.remove('tile-hidden');
+      const btn = el.querySelector('.slot-edit-btn');
+      if (btn) btn.setAttribute('onclick', `event.stopPropagation();openSlotSelector(${topGridSlots.indexOf(id)})`);
+      grid.appendChild(el);
     });
   }
 
   function openSlotSelector(slotIndex) {
     _slotEditIndex = slotIndex;
-    const list = document.getElementById('slot-widget-list');
-    const swapSection = document.getElementById('slot-modal-swap-section');
     const swapList = document.getElementById('slot-swap-list');
-    const currentId = slotIndex >= 0 ? topGridSlots[slotIndex] : null;
+    const currentId = topGridSlots[slotIndex];
+    const currentWidget = SLOT_WIDGETS.find(w => w.id === currentId);
 
-    // 入れ替えセクション：表示中の他の3スロット
-    if (slotIndex >= 0) {
-      const posLabels = ['左上', '右上', '左下', '右下'];
-      swapList.innerHTML = topGridSlots.map((id, i) => {
-        if (i === slotIndex) return '';
-        const w = SLOT_WIDGETS.find(w => w.id === id);
-        return `<button class="slot-widget-item" onclick="swapSlots(${slotIndex},${i})"
-          style="font-size:11px;">⇄ ${posLabels[i]}<br><span style="font-size:9px;color:var(--gray);">${w?.label||id}</span></button>`;
-      }).join('');
-      swapSection.style.display = '';
-    } else {
-      swapSection.style.display = 'none';
-    }
+    document.getElementById('slot-widget-list').style.display = 'none';
+    document.getElementById('slot-modal-swap-section').style.display = '';
 
-    // コンテンツ選択リスト
-    list.innerHTML = SLOT_WIDGETS.map(w => {
-      const isActive = w.id === currentId;
-      const isUsed = topGridSlots.includes(w.id) && !isActive;
-      return `<button class="slot-widget-item${isActive ? ' active' : ''}" onclick="selectSlotWidget('${w.id}')"
-        style="${isUsed ? 'opacity:.4;pointer-events:none;' : ''}">${w.label}</button>`;
+    swapList.innerHTML = topGridSlots.map((id, i) => {
+      if (i === slotIndex) return '';
+      const w = SLOT_WIDGETS.find(w => w.id === id);
+      return `<button class="slot-widget-item" onclick="swapSlots(${slotIndex},${i})" style="font-size:11px;padding:10px 6px;">
+        ⇄ ${w?.label||id}</button>`;
     }).join('');
+
+    document.querySelector('#slot-modal .slot-modal-title').textContent =
+      `「${currentWidget?.label||currentId}」の位置を入れ替え`;
     document.getElementById('slot-modal').classList.add('open');
   }
 
   function swapSlots(i, j) {
     [topGridSlots[i], topGridSlots[j]] = [topGridSlots[j], topGridSlots[i]];
-    localStorage.setItem('topGridSlots', JSON.stringify(topGridSlots));
-    applyGridSlots();
-    closeSlotSelector();
-  }
-
-  function selectSlotWidget(widgetId) {
-    if (_slotEditIndex >= 0) {
-      topGridSlots[_slotEditIndex] = widgetId;
-    } else {
-      const unused = topGridSlots.findIndex(id => id === widgetId);
-      if (unused === -1) topGridSlots.push(widgetId);
-    }
-    localStorage.setItem('topGridSlots', JSON.stringify(topGridSlots));
+    localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
     applyGridSlots();
     closeSlotSelector();
   }
