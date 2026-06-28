@@ -255,9 +255,9 @@
     }
     .top-fixed-cards {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      align-items: stretch;
+      grid-template-columns: 1fr 72px;
+      grid-template-rows: auto auto;
+      gap: 6px;
     }
     .fixed-card {
       background: rgba(0,0,0,.35);
@@ -268,14 +268,9 @@
       flex-direction: column;
       overflow: hidden;
     }
-    .fixed-card-timer {
-      justify-content: center;
-    }
-    .fixed-card-location {
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-    }
+    .fixed-card-weather  { grid-column: 1; grid-row: 1; }
+    .fixed-card-location { grid-column: 2; grid-row: 1; align-items: center; justify-content: center; padding: 6px; }
+    .fixed-card-timer    { grid-column: 1 / 3; grid-row: 2; flex-direction: row; align-items: center; gap: 8px; padding: 6px 10px; }
 
     /* ── TICKER ── */
     .top-ticker {
@@ -321,7 +316,7 @@
     .top-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-auto-rows: minmax(210px, auto);
+      grid-template-rows: 1fr 1fr;
       gap: 14px;
       max-width: 960px;
       margin: 0 auto;
@@ -514,8 +509,8 @@
 
     @media(max-width:700px) {
       .tab-pane { padding: 12px 10px; }
-      .top-layout { grid-auto-rows: minmax(180px, auto); gap: 8px; }
-      .top-fixed-cards { grid-template-columns: 1fr 1.3fr 0.8fr; gap: 6px; }
+      .top-layout { gap: 8px; }
+      .top-fixed-cards { grid-template-columns: 1fr 64px; gap: 5px; }
       .fixed-card { padding: 8px 10px; }
       .tile { padding: 10px 10px; border-radius: 8px; }
       .tile-label { font-size: 9px; margin-bottom: 5px; }
@@ -675,40 +670,45 @@
     <!-- 固定パネル -->
     <div class="top-fixed-panel">
       <div class="top-fixed-cards">
-        <!-- 天気 -->
+        <!-- 天気（横長） -->
         <div class="fixed-card fixed-card-weather" onclick="openRadarModal()" style="cursor:pointer;background:linear-gradient(160deg,#112240 0%,#1a3560 100%);border-color:rgba(201,168,76,.25);">
-          <div id="weather-datetime" class="weather-dt"></div>
-          <div class="weather-body">
-            <div class="weather-main">
-              <div class="weather-icon-wrap">…</div>
-              <div class="weather-temp">—<span>℃</span></div>
-              <div class="weather-desc" style="font-size:11px;"></div>
-              <div class="weather-demand" style="font-size:9px;">
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <div class="weather-icon-wrap" style="font-size:28px;line-height:1;">…</div>
+            <div class="weather-temp" style="font-size:26px;">—<span>℃</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div id="weather-datetime" class="weather-dt" style="font-size:10px;"></div>
+                <div class="weather-desc" style="font-size:10px;color:var(--text);"></div>
+              </div>
+              <div class="weather-demand" style="font-size:8px;padding:1px 5px;align-self:flex-start;">
+                <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(240,180,41,.2)" stroke="#f0b429" stroke-width="1"/><path d="M6 3v3l2 1" stroke="#f0b429" stroke-width="1" stroke-linecap="round"/></svg>
                 需要：<strong style="color:var(--yellow);">—</strong>
               </div>
             </div>
-            <div class="weather-forecast">
-              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
-              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
-              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
-              <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
-            </div>
+          </div>
+          <div class="weather-forecast" style="margin-top:6px;">
+            <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
+            <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
+            <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
+            <div class="fc-item"><div class="fc-time">—</div><div class="fc-icon">—</div><div class="fc-tmp">—</div><div class="fc-rain"></div></div>
           </div>
         </div>
-        <!-- タイマー＋現在地投稿（1枚に統合） -->
-        <div class="fixed-card fixed-card-timer" style="grid-column:2/4;flex-direction:row;align-items:center;gap:8px;">
-          <button id="sw-btn" onclick="swAction()" style="font-size:12px;font-weight:700;padding:7px 12px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;flex-shrink:0;">乗務開始</button>
-          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div id="sw-display" style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;white-space:nowrap;">00:00:00</div>
+        <!-- 現在地投稿（天気の右） -->
+        <div class="fixed-card fixed-card-location">
+          <button onclick="openReportModal()" style="width:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:10px;font-weight:700;line-height:1.3;">
+            <span style="font-size:20px;line-height:1;">📢</span>現在地<br>投稿
+          </button>
+        </div>
+        <!-- タイマー（下段・全幅） -->
+        <div class="fixed-card fixed-card-timer">
+          <button id="sw-btn" onclick="swAction()" style="font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;flex-shrink:0;">乗務開始</button>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div id="sw-display" style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--white);line-height:1;white-space:nowrap;">00:00:00</div>
               <div id="sw-label" style="font-size:9px;color:var(--gray);white-space:nowrap;">乗務開始前</div>
             </div>
             <div id="sw-projected" style="display:none;font-size:10px;color:var(--green);font-weight:600;"></div>
           </div>
-          <button onclick="openReportModal()" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:10px;font-weight:700;line-height:1.3;flex-shrink:0;white-space:nowrap;">
-            <span style="font-size:15px;line-height:1;">📢</span>現在地投稿
-          </button>
         </div>
       </div>
 
