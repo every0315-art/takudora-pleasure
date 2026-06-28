@@ -5095,7 +5095,8 @@
   }
 
   function getMonthPeriod() {
-    const closingDay = loadClosingDay();
+    const sal = JSON.parse(localStorage.getItem('userSalarySettings') || '{}');
+    const closingDay = Number(sal.closingDay) || loadClosingDay();
     const now = new Date();
     const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
 
