@@ -2605,104 +2605,101 @@
     });
   }
 
-  // ── ドラッグ&ドロップ並び替え ──
-  let _drag = null; // { srcTile, srcIdx, clone, startX, startY, moved }
+  // ── ドラッグ&ドロップ並び替え（長押し後にドラッグ） ──
+  let _drag = null;
+  let _lpTimer = null;
 
   function setupDragSort() {
     const grid = document.getElementById('top-grid');
 
-    function getClientXY(e) {
+    function getXY(e) {
       return e.touches ? [e.touches[0].clientX, e.touches[0].clientY]
                        : [e.clientX, e.clientY];
     }
-
-    function tileFromPoint(x, y) {
-      const el = document.elementFromPoint(x, y);
-      return el?.closest('#top-grid .tile') || null;
+    function tileAt(x, y) {
+      return document.elementFromPoint(x, y)?.closest('#top-grid .tile') || null;
     }
 
-    function startDrag(e, tile) {
-      const [x, y] = getClientXY(e);
+    function enterDragMode(tile, x, y) {
       const rect = tile.getBoundingClientRect();
-      // クローンを作成してbodyに追加
       const clone = tile.cloneNode(true);
-      clone.style.cssText = `
-        position:fixed;left:${rect.left}px;top:${rect.top}px;
-        width:${rect.width}px;height:${rect.height}px;
-        opacity:.85;z-index:500;pointer-events:none;
-        border-color:rgba(201,168,76,.8);
-        box-shadow:0 8px 24px rgba(0,0,0,.5);
-        transition:none;border-radius:10px;
-        background:var(--navy-mid);border:1px solid rgba(201,168,76,.8);
-        padding:16px 18px;overflow:hidden;
-      `;
+      clone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;
+        width:${rect.width}px;height:${rect.height}px;opacity:.88;z-index:500;
+        pointer-events:none;border:1px solid rgba(201,168,76,.9);border-radius:10px;
+        box-shadow:0 10px 28px rgba(0,0,0,.55);transition:none;
+        background:var(--navy-mid);padding:16px 18px;overflow:hidden;`;
       document.body.appendChild(clone);
-      tile.style.opacity = '0.3';
+      tile.style.opacity = '0.25';
+      navigator.vibrate?.(30);
       _drag = { srcTile: tile, srcIdx: +tile.dataset.slotIndex,
-                clone, startX: x, startY: y,
-                offX: x - rect.left, offY: y - rect.top,
-                moved: false, overTile: null };
+                clone, offX: x - rect.left, offY: y - rect.top, overTile: null };
     }
 
-    function moveDrag(e) {
+    function cancelLp() {
+      clearTimeout(_lpTimer);
+      _lpTimer = null;
+    }
+
+    function onMove(e) {
       if (!_drag) return;
-      const [x, y] = getClientXY(e);
-      if (Math.abs(x - _drag.startX) > 5 || Math.abs(y - _drag.startY) > 5) _drag.moved = true;
-      if (!_drag.moved) return;
+      e.preventDefault();
+      const [x, y] = getXY(e);
       _drag.clone.style.left = (x - _drag.offX) + 'px';
       _drag.clone.style.top  = (y - _drag.offY) + 'px';
-      // ターゲットタイルをハイライト
-      const over = tileFromPoint(x, y);
-      if (over && over !== _drag.srcTile) {
-        if (_drag.overTile && _drag.overTile !== over) _drag.overTile.classList.remove('longpress-active');
-        over.classList.add('longpress-active');
-        _drag.overTile = over;
-      } else if (_drag.overTile && (!over || over === _drag.srcTile)) {
-        _drag.overTile.classList.remove('longpress-active');
-        _drag.overTile = null;
+      const over = tileAt(x, y);
+      if (over !== _drag.overTile) {
+        _drag.overTile?.classList.remove('longpress-active');
+        _drag.overTile = (over && over !== _drag.srcTile) ? over : null;
+        _drag.overTile?.classList.add('longpress-active');
       }
     }
 
-    function endDrag(e) {
+    function onEnd(e) {
+      cancelLp();
       if (!_drag) return;
-      const [x, y] = e.changedTouches
-        ? [e.changedTouches[0].clientX, e.changedTouches[0].clientY]
-        : [e.clientX, e.clientY];
       _drag.clone.remove();
       _drag.srcTile.style.opacity = '';
-      if (_drag.overTile) _drag.overTile.classList.remove('longpress-active');
-
-      if (_drag.moved && _drag.overTile) {
+      _drag.overTile?.classList.remove('longpress-active');
+      if (_drag.overTile) {
         const dstIdx = +_drag.overTile.dataset.slotIndex;
-        if (dstIdx !== _drag.srcIdx) {
-          [topGridSlots[_drag.srcIdx], topGridSlots[dstIdx]] =
-            [topGridSlots[dstIdx], topGridSlots[_drag.srcIdx]];
-          localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
-          navigator.vibrate?.(20);
-          applyGridSlots();
-        }
+        [topGridSlots[_drag.srcIdx], topGridSlots[dstIdx]] =
+          [topGridSlots[dstIdx], topGridSlots[_drag.srcIdx]];
+        localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
+        navigator.vibrate?.(20);
+        applyGridSlots();
       }
       _drag = null;
     }
 
-    // touch
+    // タッチ：長押し400msでドラッグ開始、動いたらキャンセル
     grid.addEventListener('touchstart', e => {
       const tile = e.target.closest('.tile');
-      if (tile && tile.dataset.slotIndex !== undefined) startDrag(e, tile);
+      if (!tile || tile.dataset.slotIndex === undefined) return;
+      const [x, y] = getXY(e);
+      let startX = x, startY = y;
+      cancelLp();
+      _lpTimer = setTimeout(() => { enterDragMode(tile, x, y); }, 400);
+      // 指が動いたら長押しキャンセル
+      const onTouchMove = ev => {
+        const [cx, cy] = [ev.touches[0].clientX, ev.touches[0].clientY];
+        if (Math.abs(cx - startX) > 8 || Math.abs(cy - startY) > 8) cancelLp();
+      };
+      tile.addEventListener('touchmove', onTouchMove, { once: true, passive: true });
     }, { passive: true });
-    document.addEventListener('touchmove', e => {
-      if (_drag && _drag.moved) e.preventDefault();
-      moveDrag(e);
-    }, { passive: false });
-    document.addEventListener('touchend', endDrag);
 
-    // mouse（PC）
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd);
+
+    // マウス（PC）：即座にドラッグ開始
     grid.addEventListener('mousedown', e => {
       const tile = e.target.closest('.tile');
-      if (tile && tile.dataset.slotIndex !== undefined) startDrag(e, tile);
+      if (!tile || tile.dataset.slotIndex === undefined) return;
+      const [x, y] = getXY(e);
+      enterDragMode(tile, x, y);
     });
-    document.addEventListener('mousemove', moveDrag);
-    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
   }
   setupDragSort();
 
