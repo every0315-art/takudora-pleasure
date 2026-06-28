@@ -4559,13 +4559,59 @@
     updateLocUI('prompt');
   }
 
+  const SW_MSG_START = [
+    '今日も安全運転で！ 🚕',
+    'いってらっしゃい！稼いできてください 💪',
+    'お客様との出会いを楽しんで！',
+    '今日も東京を駆け抜けよう！',
+    'ご安全に！良い一日を 🌟',
+    '体に気をつけて、よろしくお願いします！',
+    '今日の目標に向かってGO！',
+    '水分補給も忘れずに 💧',
+  ];
+  const SW_MSG_END = [
+    'お疲れさまでした！ゆっくり休んでください 🙏',
+    'お疲れ！今日もよく頑張りました 👏',
+    'お疲れさまです！体を休めてくださいね',
+    '一日お疲れさまでした。ゆっくり休もう！',
+    'よく頑張りました！今日も無事に終えられてよかった 😊',
+    'お疲れさまでした！明日も頑張りましょう',
+    '乗務終了！ゆっくり英気を養ってください ☕',
+    'お疲れさまでした！今日の自分を褒めてあげて 🌙',
+  ];
+
+  let _swToastTimer = null;
+  function showSwToast(msg) {
+    let toast = document.getElementById('sw-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'sw-toast';
+      toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+        background:rgba(15,30,55,.97);border:1px solid rgba(201,168,76,.4);border-radius:12px;
+        padding:12px 20px;font-size:13px;font-weight:600;color:var(--white);z-index:400;
+        white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;
+        max-width:90vw;white-space:normal;text-align:center;line-height:1.5;`;
+      document.body.appendChild(toast);
+    }
+    clearTimeout(_swToastTimer);
+    toast.textContent = msg;
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    _swToastTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
+    }, 3000);
+  }
+
   function swAction() {
     if (swState === 'idle') {
       swStart = Date.now();
       swElapsed = 0;
       swState = 'running';
       swTimer = setInterval(() => { swTick(); swSave(); }, 500);
-      // 位置情報取得
+      showSwToast(SW_MSG_START[Math.floor(Math.random() * SW_MSG_START.length)]);
       if (navigator.geolocation) {
         const lbl = document.getElementById('sw-label');
         lbl.textContent = '位置取得中…';
@@ -4585,6 +4631,7 @@
       swElapsed = Date.now() - swStart;
       swTick();
       swState = 'stopped';
+      showSwToast(SW_MSG_END[Math.floor(Math.random() * SW_MSG_END.length)]);
     } else {
       clearInterval(swTimer);
       swState = 'idle'; swElapsed = 0;
