@@ -666,7 +666,7 @@
 <div class="header">
   <div class="logo">タクドラ<span>PLEASURE</span></div>
   <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="live-badge" style="display:none;"><div class="live-dot"></div>LIVE</div>
     <div class="user-area" id="header-user-area" onclick="switchTab('account')" style="cursor:pointer;" title="アカウント設定">ゲスト <strong>ユーザー</strong> さん</div>
   </div>
 </div>
@@ -2853,7 +2853,6 @@
     }
   }
   loadKiseiData();
-  setInterval(loadKiseiData, 60000);
 
   // 首都高交通規制マップを毎分更新（サーバープロキシ経由）
   function updateShutokoMap() {
@@ -2867,7 +2866,6 @@
     if (label) label.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
   }
   updateShutokoMap();
-  setInterval(updateShutokoMap, 60000);
 
   // 電車運行障害情報（Yahoo路線情報より）
   async function loadTrainInfo() {
@@ -2935,7 +2933,6 @@
     updateTicker();
   }
   loadTrainInfo();
-  setInterval(loadTrainInfo, 60000);
 
   // 新幹線運行状況（JR東日本・JR東海 運行情報を取得）
   async function loadShinkansenInfo() {
@@ -3033,7 +3030,6 @@
     }
   }
   loadShinkansenInfo();
-  setInterval(loadShinkansenInfo, 60000);
 
   // 羽田タクシープール画像（ttc.taxi-inf.jp）を定期更新
   function loadTtcImage() {
@@ -3065,7 +3061,6 @@
     if (upd) upd.textContent = `${pad(ts.getHours())}:${pad(ts.getMinutes())} 更新`;
   }
   loadTtcImage();
-  setInterval(loadTtcImage, 60000);
 
   // p-counter乗り場カメラ（60秒更新）
   function loadPcounterImages() {
@@ -3091,7 +3086,6 @@
     if (topUpd) topUpd.textContent = timeStr;
   }
   loadPcounterImages();
-  setInterval(loadPcounterImages, 60000);
 
   // 画像URLをwsrv.nl経由でfetchしてbase64に変換（CORS回避）
   async function fetchImgAsBase64(url) {
@@ -3118,7 +3112,6 @@
     } catch(e) { /* ネットワークエラーは無視 */ }
   }
   checkHanedaCam();
-  setInterval(checkHanedaCam, 120000);
 
   // 国内線待機場 車列数チェック（2分おき、APIがサーバー側で画像取得）
   async function checkHanedaCam2() {
@@ -3131,7 +3124,6 @@
     } catch(e) { /* ネットワークエラーは無視 */ }
   }
   checkHanedaCam2();
-  setInterval(checkHanedaCam2, 120000);
 
   // 八重洲待機所・乗場 車両有無チェック（2分おき、APIがサーバー側で画像取得）
   async function checkYaesuCam() {
@@ -3146,7 +3138,6 @@
     } catch(e) { /* ネットワークエラーは無視 */ }
   }
   checkYaesuCam();
-  setInterval(checkYaesuCam, 120000);
 
   // 羽田空港 ターミナル別 到着便（ADS-B リアルタイム）
   const HANEDA_TERMINAL_INFO = {
@@ -3367,7 +3358,6 @@
     }
   }
   loadHanedaArr();
-  setInterval(loadHanedaArr, 60000);
 
   // 終電・需要予測（実際の時刻表データ＋現在時刻から需要を計算）
   const LAST_TRAINS = [
@@ -3885,7 +3875,6 @@
     }
   }
   updatePickupAlerts();
-  setInterval(updatePickupAlerts, 60000);
 
   // ニュース読み込み（Google News RSS経由）
   function fmtPubDate(pub) {
@@ -3976,7 +3965,6 @@
     el.style.animationDuration = duration + 's';
   }
   // 30秒ごとにティッカーを再構築
-  setInterval(updateTicker, 30000);
 
   // 客船入港スケジュール（APIから自動取得）
   async function loadShips() {
@@ -4705,25 +4693,56 @@
   function swSave() {
     localStorage.setItem('sw', JSON.stringify({ state: swState, startAt: swStart, elapsed: swElapsed }));
   }
+  // 乗務中のみ動く定期更新タイマー群
+  let _liveIntervals = [];
+  function startLiveUpdates() {
+    if (_liveIntervals.length) return; // 二重起動防止
+    _liveIntervals = [
+      setInterval(loadKiseiData,        60000),
+      setInterval(updateShutokoMap,     60000),
+      setInterval(loadTrainInfo,        60000),
+      setInterval(loadShinkansenInfo,   60000),
+      setInterval(loadTtcImage,         60000),
+      setInterval(loadPcounterImages,   60000),
+      setInterval(checkHanedaCam,      120000),
+      setInterval(checkHanedaCam2,     120000),
+      setInterval(checkYaesuCam,       120000),
+      setInterval(loadHanedaArr,        60000),
+      setInterval(updatePickupAlerts,   60000),
+      setInterval(updateTicker,         30000),
+    ];
+  }
+  function stopLiveUpdates() {
+    _liveIntervals.forEach(clearInterval);
+    _liveIntervals = [];
+  }
+
   function swUpdateUI() {
     const btn = document.getElementById('sw-btn');
     const lbl = document.getElementById('sw-label');
     const disp = document.getElementById('sw-display');
     const proj = document.getElementById('sw-projected');
+    const liveBadge = document.querySelector('.live-badge');
     if (swState === 'idle') {
       btn.textContent = '乗務開始'; btn.style.background = 'var(--green)'; btn.style.color = '#000';
       lbl.textContent = '乗務開始前';
       disp.style.color = 'var(--white)';
       if (proj) proj.style.display = 'none';
+      if (liveBadge) liveBadge.style.display = 'none';
+      stopLiveUpdates();
     } else if (swState === 'running') {
       btn.textContent = '乗務終了'; btn.style.background = 'var(--red)'; btn.style.color = '#fff';
       lbl.textContent = '乗務中';
       disp.style.color = 'var(--green)';
+      if (liveBadge) liveBadge.style.display = 'flex';
+      startLiveUpdates();
     } else {
       btn.textContent = 'リセット'; btn.style.background = 'rgba(255,255,255,.15)'; btn.style.color = 'var(--white)';
       lbl.textContent = '乗務終了';
       disp.style.color = 'var(--gray)';
       if (proj) proj.style.display = 'none';
+      if (liveBadge) liveBadge.style.display = 'none';
+      stopLiveUpdates();
     }
   }
   // 位置情報許可管理
