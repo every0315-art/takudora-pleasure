@@ -2186,8 +2186,18 @@
                     style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
                 </div>
                 <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
-                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">23歳以上（38万/人）</div>
-                  <input type="number" id="acc-dep-23p" min="0" max="9" placeholder="0"
+                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">23〜69歳（38万/人）</div>
+                  <input type="number" id="acc-dep-2369" min="0" max="9" placeholder="0"
+                    style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
+                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">70歳以上・同居老親等（58万/人）</div>
+                  <input type="number" id="acc-dep-70co" min="0" max="9" placeholder="0"
+                    style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
+                </div>
+                <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:6px 8px;">
+                  <div style="font-size:9px;color:var(--gray);margin-bottom:4px;">70歳以上・非同居（48万/人）</div>
+                  <input type="number" id="acc-dep-70ot" min="0" max="9" placeholder="0"
                     style="width:100%;background:none;border:none;border-bottom:1px solid var(--border);color:var(--white);font-size:16px;font-weight:700;padding:2px 0;text-align:center;">
                 </div>
               </div>
@@ -5821,7 +5831,9 @@
     const depU16      = Number(sal.depU16)  || 0; // 16歳未満：所得税控除なし
     const dep1618     = Number(sal.dep1618) || 0; // 16〜18歳：38万
     const dep1922     = Number(sal.dep1922) || 0; // 19〜22歳：63万（特定扶養）
-    const dep23p      = Number(sal.dep23p)  || 0; // 23歳以上：38万
+    const dep2369     = Number(sal.dep2369 ?? sal.dep23p) || 0; // 23〜69歳：38万（旧dep23p互換）
+    const dep70co     = Number(sal.dep70co) || 0; // 70歳以上同居老親等：58万
+    const dep70ot     = Number(sal.dep70ot) || 0; // 70歳以上非同居：48万
     const hasSpouse   = !!sal.hasSpouse;
     const isOtsu      = !!sal.isOtsu; // 乙欄：基礎控除・扶養控除・配偶者控除なし
     // 各控除年額
@@ -5846,11 +5858,11 @@
 
     // 所得税控除（16歳未満は0）
     const spouseDedIT = hasSpouse ? 380000 : 0;
-    const depDedIT    = 380000 * dep1618 + 630000 * dep1922 + 380000 * dep23p;
+    const depDedIT    = 380000 * dep1618 + 630000 * dep1922 + 380000 * dep2369 + 580000 * dep70co + 480000 * dep70ot;
     // 住民税控除（16歳未満も33万）
     const spouseDedMuni = hasSpouse ? 330000 : 0;
-    const depDedMuni    = 330000 * depU16 + 330000 * dep1618 + 450000 * dep1922 + 330000 * dep23p;
-    const dependents    = depU16 + dep1618 + dep1922 + dep23p; // 表示用合計
+    const depDedMuni    = 330000 * depU16 + 330000 * dep1618 + 450000 * dep1922 + 330000 * dep2369 + 450000 * dep70co + 380000 * dep70ot;
+    const dependents    = depU16 + dep1618 + dep1922 + dep2369 + dep70co + dep70ot; // 表示用合計
 
     const kyuyoIncome = Math.max(0, projectedAnnual - empDeduction(projectedAnnual));
     const taxableIT   = isOtsu
@@ -6171,7 +6183,9 @@
           ${hasSpouse ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">配偶者控除</td><td style="text-align:right;color:#e08080;">-${fmt(380000)}</td></tr>` : ''}
           ${dep1618 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（16〜18歳 ${dep1618}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep1618)}</td></tr>` : ''}
           ${dep1922 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gold);">特定扶養控除（19〜22歳 ${dep1922}人）</td><td style="text-align:right;color:#e08080;">-${fmt(630000*dep1922)}</td></tr>` : ''}
-          ${dep23p  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（23歳以上 ${dep23p}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep23p)}</td></tr>` : ''}
+          ${dep2369 > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">扶養控除（23〜69歳 ${dep2369}人）</td><td style="text-align:right;color:#e08080;">-${fmt(380000*dep2369)}</td></tr>` : ''}
+          ${dep70co > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">老人扶養控除・同居（70歳以上 ${dep70co}人）</td><td style="text-align:right;color:#e08080;">-${fmt(580000*dep70co)}</td></tr>` : ''}
+          ${dep70ot > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">老人扶養控除・非同居（70歳以上 ${dep70ot}人）</td><td style="text-align:right;color:#e08080;">-${fmt(480000*dep70ot)}</td></tr>` : ''}
           `}
           ${depU16  > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">16歳未満（${depU16}人・所得税控除なし）</td><td style="text-align:right;color:var(--gray);">—</td></tr>` : ''}
           ${dedLifeIT > 0 ? `<tr><td style="padding:2px 0 2px 8px;color:var(--gray);">生命保険料控除</td><td style="text-align:right;color:#e08080;">-${fmt(dedLifeIT)}</td></tr>` : ''}
@@ -6823,7 +6837,9 @@
     set('acc-dep-u16',  s.depU16);
     set('acc-dep-1618', s.dep1618);
     set('acc-dep-1922', s.dep1922);
-    set('acc-dep-23p',  s.dep23p);
+    set('acc-dep-2369', s.dep2369 ?? s.dep23p); // 旧dep23p互換
+    set('acc-dep-70co', s.dep70co);
+    set('acc-dep-70ot', s.dep70ot);
     set('acc-ded-life',     s.dedLife);
     set('acc-ded-quake',    s.dedQuake);
     set('acc-ded-ideco',    s.dedIdeco);
@@ -6904,7 +6920,9 @@
       depU16:         document.getElementById('acc-dep-u16').value,
       dep1618:        document.getElementById('acc-dep-1618').value,
       dep1922:        document.getElementById('acc-dep-1922').value,
-      dep23p:         document.getElementById('acc-dep-23p').value,
+      dep2369:        document.getElementById('acc-dep-2369').value,
+      dep70co:        document.getElementById('acc-dep-70co').value,
+      dep70ot:        document.getElementById('acc-dep-70ot').value,
       deduction:      document.getElementById('acc-deduction').value,
       dedLife:        document.getElementById('acc-ded-life').value,
       dedQuake:       document.getElementById('acc-ded-quake').value,
