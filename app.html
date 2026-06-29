@@ -6051,8 +6051,8 @@
               const poolAmt = poolPayments[m];
               const poolSI  = poolPaymentSI[m] || 0;
               const poolIT  = poolPaymentIT[m] || 0;
-              const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);">
-                <td style="padding:5px 6px;color:var(--gold);white-space:nowrap;">賞与</td>
+              const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;" onclick="editSimMonth(${m},${ov2Sales},${ov2Days},${ov2Kyuyo},${ov2Pool},${ov2Other},${ov2Bonus})">
+                <td style="padding:5px 6px;color:var(--gold);white-space:nowrap;">賞与${ov2Bonus!=null?'<span style="font-size:8px;color:var(--gold);margin-left:3px;">✎</span>':''}</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gold);">${fmt(poolAmt)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolSI)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolIT)}</td>
