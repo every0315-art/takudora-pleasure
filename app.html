@@ -2111,10 +2111,10 @@
         <span style="font-size:10px;color:var(--gray);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:10px;">🔒 非公開</span>
       </div>
       <div style="font-size:11px;color:var(--gray);margin-bottom:14px;">この情報は常に非公開です</div>
-      <div style="display:grid;gap:16px;">
+      <div style="display:grid;gap:16px;overflow:hidden;min-width:0;">
 
         <!-- 締日・支払日 -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:hidden;min-width:0;">
           <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:12px;">📅 給与サイクル</div>
           <div style="display:grid;gap:12px;">
             <div>
@@ -2133,9 +2133,9 @@
         </div>
 
         <!-- 歩率 -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:hidden;min-width:0;">
           <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:4px;">💴 歩合設定</div>
-          <div style="font-size:10px;color:var(--gray);margin-bottom:12px;">年間売上の給与・プール金計算に使用されます（給与歩率＋プール金歩率＝受取合計%）</div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:12px;word-break:break-all;">年間売上の給与・プール金計算に使用されます（給与歩率＋プール金歩率＝受取合計%）</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div>
               <div style="font-size:11px;color:var(--white);margin-bottom:2px;">給与歩率（%）</div>
@@ -2163,7 +2163,7 @@
         </div>
 
         <!-- 税務 -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:hidden;min-width:0;">
           <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:12px;">🧾 税務・控除</div>
           <div style="display:grid;gap:10px;">
             <div>
@@ -2239,7 +2239,7 @@
           <div style="font-size:9px;color:var(--gray);margin-top:4px;margin-left:24px;">乙欄は基礎控除・扶養控除・配偶者控除が適用されず税額が高くなります</div>
         </div>
         <!-- 社会保険・住民税 -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:hidden;min-width:0;">
           <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:12px;">🏥 社会保険・住民税</div>
           <div style="display:grid;gap:12px;">
             <div>
@@ -7400,7 +7400,7 @@
     const sel = String(selected ?? '');
     const btnStyle = (v) => {
       const active = String(v) === sel;
-      return `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
+      return `font-size:11px;font-weight:${active?'700':'500'};padding:4px 1px;border-radius:5px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
     };
     const days = Array.from({length:31},(_,i)=>i+1);
     wrap.innerHTML = days.map(d=>`<button type="button" style="${btnStyle(d)}" onclick="selectClosingDay(${d})">${d}</button>`).join('')
@@ -7418,7 +7418,7 @@
     if (!wrap) return;
     const v = Number(selected) || 0;
     const btnStyle = (d) =>
-      `font-size:12px;font-weight:${d===v?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${d===v?'var(--gold)':'var(--border)'};background:${d===v?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${d===v?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
+      `font-size:11px;font-weight:${d===v?'700':'500'};padding:4px 1px;border-radius:5px;border:1px solid ${d===v?'var(--gold)':'var(--border)'};background:${d===v?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${d===v?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
     const days = Array.from({length:31},(_,i)=>i+1);
     wrap.innerHTML = days.map(d=>`<button type="button" style="${btnStyle(d)}" onclick="selectPayday(${d})">${d}</button>`).join('')
       + `<button type="button" style="${btnStyle(0)};grid-column:span 2;" onclick="selectPayday(0)">末日</button>`;
