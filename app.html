@@ -2117,13 +2117,13 @@
               <div style="font-size:11px;color:var(--white);margin-bottom:2px;">締日</div>
               <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">毎月この日に勤務実績を締め切る日（例：10日締め→毎月10日）</div>
               <input type="hidden" id="acc-closing-day" value="0">
-              <div id="closing-day-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+              <div id="closing-day-calendar" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;max-width:100%;overflow:hidden;"></div>
             </div>
             <div>
               <div style="font-size:11px;color:var(--white);margin-bottom:2px;">給与支払日</div>
               <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">給与が振り込まれる日（例：25日払い→25）</div>
               <input type="hidden" id="acc-payday" value="0">
-              <div id="payday-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+              <div id="payday-calendar" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;max-width:100%;overflow:hidden;"></div>
             </div>
           </div>
         </div>
@@ -2150,7 +2150,7 @@
             <div style="font-size:11px;color:var(--white);margin-bottom:2px;">プール金 支払い月</div>
             <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">プール金がまとめて支払われる月を選択（複数可）</div>
             <input type="hidden" id="acc-pool-months" value="">
-            <div id="pool-month-calendar" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px;"></div>
+            <div id="pool-month-calendar" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-bottom:8px;max-width:100%;overflow:hidden;"></div>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
               <input type="checkbox" id="acc-pool-prev-month" style="width:16px;height:16px;accent-color:var(--gold);">
               <span style="font-size:11px;color:var(--gray);">支給月の前月末締め（例：6月支給＝1〜5月分）</span>
@@ -7393,7 +7393,7 @@
     const sel = String(selected ?? '');
     const btnStyle = (v) => {
       const active = String(v) === sel;
-      return `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;`;
+      return `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
     };
     const days = Array.from({length:31},(_,i)=>i+1);
     wrap.innerHTML = days.map(d=>`<button type="button" style="${btnStyle(d)}" onclick="selectClosingDay(${d})">${d}</button>`).join('')
@@ -7411,7 +7411,7 @@
     if (!wrap) return;
     const v = Number(selected) || 0;
     const btnStyle = (d) =>
-      `font-size:12px;font-weight:${d===v?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${d===v?'var(--gold)':'var(--border)'};background:${d===v?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${d===v?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;`;
+      `font-size:12px;font-weight:${d===v?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${d===v?'var(--gold)':'var(--border)'};background:${d===v?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${d===v?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
     const days = Array.from({length:31},(_,i)=>i+1);
     wrap.innerHTML = days.map(d=>`<button type="button" style="${btnStyle(d)}" onclick="selectPayday(${d})">${d}</button>`).join('')
       + `<button type="button" style="${btnStyle(0)};grid-column:span 2;" onclick="selectPayday(0)">末日</button>`;
@@ -7429,7 +7429,7 @@
     const sel = selected.map(String);
     wrap.innerHTML = Array.from({length:12},(_,i)=>i+1).map(m=>{
       const active = sel.includes(String(m));
-      const st = `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;`;
+      const st = `font-size:12px;font-weight:${active?'700':'500'};padding:5px 2px;border-radius:6px;border:1px solid ${active?'var(--gold)':'var(--border)'};background:${active?'rgba(201,168,76,.25)':'rgba(255,255,255,.05)'};color:${active?'var(--gold)':'var(--gray)'};cursor:pointer;text-align:center;min-width:0;width:100%;`;
       return `<button type="button" style="${st}" onclick="togglePoolMonth(${m})">${m}月</button>`;
     }).join('');
   }
