@@ -2238,38 +2238,41 @@
           </label>
           <div style="font-size:9px;color:var(--gray);margin-top:4px;margin-left:24px;">乙欄は基礎控除・扶養控除・配偶者控除が適用されず税額が高くなります</div>
         </div>
-        <div style="margin-top:16px;">
-          <div style="font-size:11px;color:var(--white);margin-bottom:2px;">社会保険 1〜8月（給与明細の実額）</div>
-          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">健保＋厚年＋雇保の合計を入力。空欄は給与額から自動算出</div>
-          <div>
-            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">実際の社保合計額 ¥/月</div>
-            <input type="number" id="acc-si-actual" min="0" placeholder="例: 51128"
-              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
-          </div>
-        </div>
-        <div style="margin-top:16px;">
-          <div style="font-size:11px;color:var(--white);margin-bottom:2px;">住民税（実額入力・空欄は自動計算）</div>
-          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">6月など更新月に通知書の金額を入力してください</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <!-- 社会保険・住民税 -->
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:12px;">🏥 社会保険・住民税</div>
+          <div style="display:grid;gap:12px;">
             <div>
-              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替前 ¥/月</div>
-              <input type="number" id="acc-muni-prev" placeholder="自動"
+              <div style="font-size:11px;color:var(--white);margin-bottom:2px;">社会保険 1〜8月（給与明細の実額）</div>
+              <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">健保＋厚年＋雇保の合計を入力。空欄は給与額から自動算出</div>
+              <input type="number" id="acc-si-actual" min="0" placeholder="例: 51128"
                 style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
             </div>
             <div>
-              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替後 ¥/月</div>
-              <input type="number" id="acc-muni-new" placeholder="自動"
-                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替月</div>
-              <select id="acc-muni-change-month"
-                style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 6px;cursor:pointer;">
-                <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
-                <option value="4">4月</option><option value="5">5月</option><option value="6" selected>6月</option>
-                <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
-                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-              </select>
+              <div style="font-size:11px;color:var(--white);margin-bottom:2px;">住民税（実額入力・空欄は自動計算）</div>
+              <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">6月など更新月に通知書の金額を入力してください</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div>
+                  <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替前 ¥/月</div>
+                  <input type="number" id="acc-muni-prev" placeholder="自動"
+                    style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+                </div>
+                <div>
+                  <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替後 ¥/月</div>
+                  <input type="number" id="acc-muni-new" placeholder="自動"
+                    style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+                </div>
+                <div>
+                  <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">切替月</div>
+                  <select id="acc-muni-change-month"
+                    style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:13px;padding:7px 6px;cursor:pointer;">
+                    <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+                    <option value="4">4月</option><option value="5">5月</option><option value="6" selected>6月</option>
+                    <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+                    <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
