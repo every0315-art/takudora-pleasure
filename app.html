@@ -3640,6 +3640,7 @@
 
   // ── ピックアップアラート ──
   // 鉄道運行障害情報（loadTrainInfoから更新される）
+  let _latestNews = [];
   let _trainAlerts = [];
   let _delayFirstSeen = {}; // {路線名: 最初に遅延検知したtimestamp}
   let _hanedaBigDelayCount = 0; // 羽田1時間以上遅延便数
@@ -3929,6 +3930,8 @@
         return db - da;
       });
 
+      _latestNews = all;
+
       const allEl = document.getElementById('news-all');
       if (allEl) allEl.innerHTML = renderNewsItems(all, 'ニュースを取得できませんでした');
 
@@ -3955,8 +3958,8 @@
     const items = [];
 
     // ニュース
-    document.querySelectorAll('#news-all .news-title, #news-all .news-mini-title').forEach((n, i) => {
-      if (i < 3) items.push('📰 ' + n.textContent.trim().slice(0, 40));
+    _latestNews.slice(0, 3).forEach(n => {
+      if (n.title) items.push('📰 ' + n.title.slice(0, 40));
     });
     // イベント
     document.querySelectorAll('#top-event-list [data-event-name]').forEach((n, i) => {
