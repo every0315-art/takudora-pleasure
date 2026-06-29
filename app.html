@@ -5889,7 +5889,14 @@
     const annualIT   = Object.values(monthlyITMap).reduce((a,b)=>a+b,0);
     const annualMuni = Object.values(monthlyMuniMap).reduce((a,b)=>a+b,0);
     const annualTax  = annualIT + annualMuni;
-    const annualNet  = projectedAnnual - siTotal.total - annualTax;
+    // 月別 他控除（手入力）
+    const monthlyOtherDed = {};
+    for (let m = 1; m <= 12; m++) {
+      const ov = overrideYear[m];
+      monthlyOtherDed[m] = (ov && typeof ov === 'object' && ov.otherDed != null) ? Number(ov.otherDed) : 0;
+    }
+    const annualOtherDed = Object.values(monthlyOtherDed).reduce((a,b)=>a+b,0);
+    const annualNet  = projectedAnnual - siTotal.total - annualTax - annualOtherDed;
     const poolPayments = {}; // 支給月 → 累積プール金額
     if (sortedPoolMonths.length > 0) {
       for (let i = 0; i < sortedPoolMonths.length; i++) {
@@ -5901,6 +5908,13 @@
           acc += (monthlyPool[mm] > 0) ? monthlyPool[mm] : avgPool;
         }
         poolPayments[payM] = acc;
+      }
+    }
+    // 賞与の手入力上書き
+    for (let m = 1; m <= 12; m++) {
+      const ov = overrideYear[m];
+      if (ov && typeof ov === 'object' && ov.bonusOverride != null) {
+        poolPayments[m] = Number(ov.bonusOverride);
       }
     }
     // 各支給月の賞与社保（累積額ベース）
@@ -5995,6 +6009,7 @@
               <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">社保</th>
               <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">所得税</th>
               <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">住民税</th>
+              <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">他控除</th>
               <th style="text-align:right;padding:4px 6px;color:var(--gray);font-weight:600;">手取</th>
             </tr>
           </thead>
@@ -6009,7 +6024,6 @@
               const siM = hasPoolConfig ? si.totalM : si.total;
               const mIT   = monthlyITMap[m]   || 0;
               const mMuni = monthlyMuniMap[m] || 0;
-              const net = kyuyo > 0 ? kyuyo - siM - mIT - mMuni : 0;
               const color = isFuture ? 'var(--gray)' : 'var(--white)';
               const goldC = isFuture ? 'var(--gray)' : 'var(--gold)';
               const greenC = isFuture ? 'var(--gray)' : 'var(--green)';
@@ -6020,13 +6034,18 @@
               const ov2Days = ov2Obj?.days ?? null;
               const ov2Kyuyo = ov2Obj?.kyuyo ?? null;
               const ov2Pool = ov2Obj?.pool ?? null;
+              const ov2Other = ov2Obj?.otherDed ?? null;
+              const ov2Bonus = ov2Obj?.bonusOverride ?? null;
+              const mOther = monthlyOtherDed[m] || 0;
+              const net = kyuyo > 0 ? kyuyo - siM - mIT - mMuni - mOther : 0;
               const hasOv = ov2 != null;
-              const salaryRow = `<tr style="border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;${isFuture?'opacity:.55;':''}${isSantei?'border-left:2px solid rgba(201,168,76,.4);':''}" onclick="editSimMonth(${m},${ov2Sales},${ov2Days},${ov2Kyuyo},${ov2Pool})">
+              const salaryRow = `<tr style="border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;${isFuture?'opacity:.55;':''}${isSantei?'border-left:2px solid rgba(201,168,76,.4);':''}" onclick="editSimMonth(${m},${ov2Sales},${ov2Days},${ov2Kyuyo},${ov2Pool},${ov2Other},${ov2Bonus})">
                 <td style="padding:5px 6px;color:${color};font-weight:${isFuture?400:600};white-space:nowrap;">${m}月${isFuture?'<span style="font-size:8px;margin-left:2px;">推</span>':''}${isSantei?'<span style="font-size:7px;color:var(--gold);margin-left:2px;">算</span>':''}${hasOv?'<span style="font-size:8px;color:var(--gold);margin-left:3px;">✎</span>':''}</td>
                 <td style="text-align:right;padding:5px 6px;color:${goldC};">${kyuyo>0?fmt(kyuyo):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(siM):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(mIT):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${kyuyo>0?'-'+fmt(mMuni):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${mOther>0?'-'+fmt(mOther):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;font-weight:700;color:${greenC};">${kyuyo>0?fmt(net):'—'}</td>
               </tr>`;
               const poolAmt = poolPayments[m];
@@ -6037,6 +6056,7 @@
                 <td style="text-align:right;padding:5px 6px;color:var(--gold);">${fmt(poolAmt)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolSI)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolIT)}</td>
+                <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
                 <td style="text-align:right;padding:5px 6px;font-weight:700;color:var(--green);">${fmt(poolAmt - poolSI - poolIT)}</td>
               </tr>` : '';
@@ -6050,6 +6070,7 @@
               <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(siTotal.total)}</td>
               <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualIT)}</td>
               <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualMuni)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">${annualOtherDed>0?'-'+fmt(annualOtherDed):'—'}</td>
               <td style="text-align:right;padding:6px;font-weight:700;color:var(--green);">${fmt(annualNet)}</td>
             </tr>
           </tfoot>
@@ -6206,7 +6227,7 @@
     renderTaxSimulation();
   }
 
-  function editSimMonth(m, current, currentDays, currentKyuyo, currentPool) {
+  function editSimMonth(m, current, currentDays, currentKyuyo, currentPool, currentOther, currentBonus) {
     const area = document.getElementById('sim-edit-area');
     if (!area) return;
     area.innerHTML = `
@@ -6233,6 +6254,16 @@
             <input type="number" id="sim-input-pool" value="${currentPool != null ? currentPool : ''}" placeholder="プール金額"
               style="width:100%;background:rgba(224,128,128,.06);border:1px solid rgba(224,128,128,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
           </div>
+          <div>
+            <div style="font-size:9px;color:var(--gold);margin-bottom:3px;">賞与支給額（¥）</div>
+            <input type="number" id="sim-input-bonus" value="${currentBonus != null ? currentBonus : ''}" placeholder="賞与手入力"
+              style="width:100%;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:#e08080;margin-bottom:3px;">他控除（¥）</div>
+            <input type="number" id="sim-input-other" value="${currentOther != null ? currentOther : ''}" placeholder="組合費・貸付返済など"
+              style="width:100%;background:rgba(224,128,128,.06);border:1px solid rgba(224,128,128,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
         </div>
         <div style="display:flex;gap:8px;">
           <button onclick="saveSimMonth(${m})" style="flex:1;padding:7px 14px;background:var(--gold);border:none;color:#000;font-weight:700;border-radius:6px;cursor:pointer;font-size:13px;">保存</button>
@@ -6247,20 +6278,24 @@
     const dval = document.getElementById('sim-input-days')?.value.trim();
     const kval = document.getElementById('sim-input-kyuyo')?.value.trim();
     const pval = document.getElementById('sim-input-pool')?.value.trim();
+    const bval = document.getElementById('sim-input-bonus')?.value.trim();
+    const oval = document.getElementById('sim-input-other')?.value.trim();
     const year = new Date().getFullYear();
     let overrides = {};
     try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
     if (!overrides[year]) overrides[year] = {};
-    if (val === '' && dval === '' && kval === '' && pval === '') {
+    if (val === '' && dval === '' && kval === '' && pval === '' && bval === '' && oval === '') {
       delete overrides[year][m];
     } else {
       const existing = overrides[year][m];
-      const prev = (existing && typeof existing === 'object') ? existing : { sales: existing ?? null, days: null, kyuyo: null, pool: null };
+      const prev = (existing && typeof existing === 'object') ? existing : { sales: existing ?? null, days: null, kyuyo: null, pool: null, bonusOverride: null, otherDed: null };
       overrides[year][m] = {
-        sales: val  !== '' ? Number(val)  : prev.sales,
-        days:  dval !== '' ? Number(dval) : prev.days,
-        kyuyo: kval !== '' ? Number(kval) : prev.kyuyo,
-        pool:  pval !== '' ? Number(pval) : prev.pool,
+        sales:         val  !== '' ? Number(val)  : prev.sales,
+        days:          dval !== '' ? Number(dval) : prev.days,
+        kyuyo:         kval !== '' ? Number(kval) : prev.kyuyo,
+        pool:          pval !== '' ? Number(pval) : prev.pool,
+        bonusOverride: bval !== '' ? Number(bval) : prev.bonusOverride,
+        otherDed:      oval !== '' ? Number(oval) : prev.otherDed,
       };
     }
     localStorage.setItem(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
