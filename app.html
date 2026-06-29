@@ -5961,6 +5961,23 @@
       if (net < 7000000) return 0.23483;
       return 0.45945;
     };
+    // 賞与社保・所得税の手入力上書き
+    const poolPaymentSIOverride = {}, poolPaymentITOverride = {}, poolPaymentOtherDed = {};
+    for (let m = 1; m <= 12; m++) {
+      const ov = overrideYear[m];
+      if (ov && typeof ov === 'object') {
+        if (ov.bonusSIOverride != null) poolPaymentSIOverride[m] = Number(ov.bonusSIOverride);
+        if (ov.bonusITOverride != null) poolPaymentITOverride[m] = Number(ov.bonusITOverride);
+        if (ov.bonusOtherDed  != null) poolPaymentOtherDed[m]   = Number(ov.bonusOtherDed);
+      }
+    }
+    // 手入力上書きをsiTotalに反映
+    for (const [pm, val] of Object.entries(poolPaymentSIOverride)) {
+      const m = Number(pm);
+      const diff = val - (poolPaymentSI[m] || 0);
+      poolPaymentSI[m] = val;
+      siTotal.total += diff;
+    }
     // 各支給月の賞与所得税（前月給与-社保 を基準に税率決定）
     const poolPaymentIT = {};
     for (const [pm, amount] of Object.entries(poolPayments)) {
@@ -5971,7 +5988,7 @@
       const prevNet   = Math.max(0, prevKyuyo - prevSI - (monthlyITMap[prevM] || 0));
       const rate      = bonusTaxRate(prevNet);
       const taxBase   = Math.max(0, amount - (poolPaymentSI[payM] || 0));
-      poolPaymentIT[payM] = Math.round(taxBase * rate);
+      poolPaymentIT[payM] = poolPaymentITOverride[payM] ?? Math.round(taxBase * rate);
     }
 
     // 今年の算定等級を翌年用に保存
@@ -6063,17 +6080,21 @@
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">${mOther>0?'-'+fmt(mOther):'—'}</td>
                 <td style="text-align:right;padding:5px 6px;font-weight:700;color:${greenC};">${kyuyo>0?fmt(net):'—'}</td>
               </tr>`;
-              const poolAmt = poolPayments[m];
-              const poolSI  = poolPaymentSI[m] || 0;
-              const poolIT  = poolPaymentIT[m] || 0;
-              const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;" onclick="editSimBonus(${m},${poolAmt})">
+              const poolAmt   = poolPayments[m];
+              const poolSI    = poolPaymentSI[m] || 0;
+              const poolIT    = poolPaymentIT[m] || 0;
+              const poolOther = poolPaymentOtherDed[m] || 0;
+              const ov2BonusSI   = ov2Obj?.bonusSIOverride   ?? null;
+              const ov2BonusIT   = ov2Obj?.bonusITOverride   ?? null;
+              const ov2BonusOther= ov2Obj?.bonusOtherDed     ?? null;
+              const poolRow = poolAmt > 0 ? `<tr style="background:rgba(201,168,76,.06);border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;" onclick="editSimBonus(${m},${poolAmt},${ov2BonusSI},${ov2BonusIT},${ov2BonusOther})">
                 <td style="padding:5px 6px;color:var(--gold);white-space:nowrap;">賞与<span style="font-size:8px;color:var(--gold);margin-left:3px;">✎</span></td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gold);">${fmt(poolAmt)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolSI)}</td>
                 <td style="text-align:right;padding:5px 6px;color:#e08080;">-${fmt(poolIT)}</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
-                <td style="text-align:right;padding:5px 6px;color:var(--gray);">—</td>
-                <td style="text-align:right;padding:5px 6px;font-weight:700;color:var(--green);">${fmt(poolAmt - poolSI - poolIT)}</td>
+                <td style="text-align:right;padding:5px 6px;color:#e08080;">${poolOther>0?'-'+fmt(poolOther):'—'}</td>
+                <td style="text-align:right;padding:5px 6px;font-weight:700;color:var(--green);">${fmt(poolAmt - poolSI - poolIT - poolOther)}</td>
               </tr>` : '';
               return salaryRow + poolRow;
             }).join('')}
@@ -6242,14 +6263,34 @@
     renderTaxSimulation();
   }
 
-  function editSimBonus(m, currentAmt) {
+  function editSimBonus(m, currentAmt, currentSI, currentIT, currentOther) {
     const area = document.getElementById('sim-edit-area');
     if (!area) return;
     area.innerHTML = `
       <div style="margin-top:10px;padding:10px;background:rgba(201,168,76,.08);border-radius:8px;border:1px solid rgba(201,168,76,.3);">
         <div style="font-size:11px;color:var(--gold);margin-bottom:8px;">${m}月 賞与を手入力（空欄で自動計算に戻す）</div>
-        <input type="number" id="sim-bonus-val" value="${currentAmt || ''}" placeholder="賞与支給額"
-          style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(201,168,76,.4);border-radius:6px;color:var(--white);font-size:14px;padding:8px 12px;margin-bottom:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+          <div style="grid-column:1/-1;">
+            <div style="font-size:9px;color:var(--gold);margin-bottom:3px;">賞与支給額（¥）</div>
+            <input type="number" id="sim-bonus-val" value="${currentAmt != null ? currentAmt : ''}" placeholder="賞与支給額"
+              style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(201,168,76,.4);border-radius:6px;color:var(--white);font-size:14px;padding:8px 12px;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:#e08080;margin-bottom:3px;">社保（¥）</div>
+            <input type="number" id="sim-bonus-si" value="${currentSI != null ? currentSI : ''}" placeholder="社会保険料"
+              style="width:100%;background:rgba(224,128,128,.06);border:1px solid rgba(224,128,128,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:#e08080;margin-bottom:3px;">所得税（¥）</div>
+            <input type="number" id="sim-bonus-it" value="${currentIT != null ? currentIT : ''}" placeholder="所得税"
+              style="width:100%;background:rgba(224,128,128,.06);border:1px solid rgba(224,128,128,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
+          <div style="grid-column:1/-1;">
+            <div style="font-size:9px;color:#e08080;margin-bottom:3px;">他控除（¥）</div>
+            <input type="number" id="sim-bonus-other" value="${currentOther != null ? currentOther : ''}" placeholder="組合費など"
+              style="width:100%;background:rgba(224,128,128,.06);border:1px solid rgba(224,128,128,.3);border-radius:6px;color:var(--white);font-size:13px;padding:7px 10px;">
+          </div>
+        </div>
         <div style="display:flex;gap:8px;">
           <button onclick="saveSimBonus(${m})" style="flex:1;padding:7px 14px;background:var(--gold);border:none;color:#000;font-weight:700;border-radius:6px;cursor:pointer;font-size:13px;">保存</button>
           <button onclick="document.getElementById('sim-edit-area').innerHTML=''" style="padding:7px 10px;background:none;border:1px solid var(--border);color:var(--gray);border-radius:6px;cursor:pointer;">✕</button>
@@ -6260,18 +6301,23 @@
 
   function saveSimBonus(m) {
     const bval = document.getElementById('sim-bonus-val')?.value.trim();
+    const sval = document.getElementById('sim-bonus-si')?.value.trim();
+    const ival = document.getElementById('sim-bonus-it')?.value.trim();
+    const oval = document.getElementById('sim-bonus-other')?.value.trim();
     const year = new Date().getFullYear();
     let overrides = {};
     try { overrides = JSON.parse(localStorage.getItem(ANNUAL_OVERRIDE_KEY) || '{}'); } catch {}
     if (!overrides[year]) overrides[year] = {};
     const existing = overrides[year][m];
-    const prev = (existing && typeof existing === 'object') ? existing : { sales: existing ?? null, days: null, kyuyo: null, pool: null, bonusOverride: null, otherDed: null };
-    if (bval === '') {
-      overrides[year][m] = { ...prev, bonusOverride: null };
-      if (Object.values(overrides[year][m]).every(v => v == null)) delete overrides[year][m];
-    } else {
-      overrides[year][m] = { ...prev, bonusOverride: Number(bval) };
-    }
+    const prev = (existing && typeof existing === 'object') ? existing : { sales: null, days: null, kyuyo: null, pool: null, bonusOverride: null, bonusSIOverride: null, bonusITOverride: null, bonusOtherDed: null, otherDed: null };
+    overrides[year][m] = {
+      ...prev,
+      bonusOverride:   bval !== '' ? Number(bval) : prev.bonusOverride,
+      bonusSIOverride: sval !== '' ? Number(sval) : prev.bonusSIOverride,
+      bonusITOverride: ival !== '' ? Number(ival) : prev.bonusITOverride,
+      bonusOtherDed:   oval !== '' ? Number(oval) : prev.bonusOtherDed,
+    };
+    if (Object.values(overrides[year][m]).every(v => v == null)) delete overrides[year][m];
     localStorage.setItem(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
     sbPush(ANNUAL_OVERRIDE_KEY, JSON.stringify(overrides));
     document.getElementById('sim-edit-area').innerHTML = '';
