@@ -5276,7 +5276,7 @@
       <div style="font-size:clamp(12px,3.5vw,18px);font-weight:700;color:rgba(255,255,255,.7);margin-top:4px;white-space:nowrap;">¥${totalExTax.toLocaleString()}</div>
       <div style="font-size:10px;color:var(--gray);margin-top:1px;margin-bottom:8px;">税抜</div>
       <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">
-        <div style="font-size:9px;color:var(--gray);">時間単価</div>
+        <div style="font-size:9px;color:var(--gray);">時間単価<span style="font-size:8px;color:rgba(255,255,255,.3);margin-left:3px;">税込</span></div>
         <div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:rgba(255,255,255,.85);margin-top:2px;white-space:nowrap;">${hourlyRate ? '¥'+fmt(Math.round(hourlyRate/100)*100) : '—'}</div>
       </div>
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:6px;">
@@ -5414,7 +5414,7 @@
       })()}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
         <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">時間単価</div>
+          <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">時間単価<span style="font-size:8px;color:rgba(255,255,255,.3);margin-left:3px;">税込</span></div>
           <div style="font-size:14px;font-weight:700;color:var(--white);">${timeCount && totalMinutes > 0 ? '¥'+Math.round(totalSales/(totalMinutes/60)/100)*100 : '—'}</div>
           <div style="font-size:9px;color:var(--gray);margin-top:2px;">/h</div>
         </div>
