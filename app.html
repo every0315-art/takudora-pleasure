@@ -95,7 +95,7 @@
 
     /* ── CONTENT ── */
     .content { padding-top: 100px; min-height:100vh; }
-    .tab-pane { display:none; padding:24px; max-width:960px; margin:0 auto; }
+    .tab-pane { display:none; padding:24px; max-width:960px; margin:0 auto; overflow-x:hidden; width:100%; }
     .tab-pane.active { display:block; }
 
     /* ── CARDS ── */
@@ -2101,7 +2101,7 @@
     </div>
 
     <!-- ③ 給与・税務設定（非公開固定） -->
-    <div class="card" style="margin-bottom:16px;">
+    <div class="card" style="margin-bottom:16px;overflow-x:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <div class="card-title" style="margin-bottom:0;">給与・税務設定</div>
         <span style="font-size:10px;color:var(--gray);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:10px;">🔒 非公開</span>
