@@ -30,6 +30,7 @@
       --border: rgba(255,255,255,0.11);
     }
     * { margin:0; padding:0; box-sizing:border-box; }
+    html { overflow-x: hidden; }
     body {
       font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
       background: var(--navy);
@@ -38,6 +39,7 @@
       word-break: keep-all;
       overflow-wrap: break-word;
       line-break: strict;
+      overflow-x: hidden;
     }
 
     /* ── HEADER ── */
@@ -115,6 +117,8 @@
     .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
     @media(max-width:640px) {
       .grid2,.grid3 { grid-template-columns:1fr; }
+      .tab-pane { padding:16px 12px; }
+      .card { padding:14px 12px; }
     }
 
     /* ── KPI ── */
