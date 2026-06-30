@@ -180,35 +180,80 @@ async function fetchDome() {
   return events.filter(e => { const k = e.date+e.name; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
-// ── 汎用: JSON-LD → HTML正規表現フォールバック ──
-async function fetchVenueGeneric(url, venueName, capacity = 10000) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': url },
-    signal: AbortSignal.timeout(TIMEOUT),
-  });
-  const html = await res.text();
-
-  const ldEvents = extractJsonLdEvents(html);
-  if (ldEvents.length > 0) return ldEvents.filter(e => isValidEventName(e.name));
-
-  const textOnly = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&[a-z]+;/gi, ' ')
-    .replace(/\s+/g, ' ');
-  const events = [];
-  for (const m of textOnly.matchAll(/(?:2026[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})|(\d{1,2})月(\d{1,2})日)\s*([^\d\n]{4,60}?)(?=\s*(?:\d{1,2}月|\d{4}[\/\.\-])|$)/g)) {
-    const mo = (m[1] || m[3]).padStart(2,'0');
-    const dy = (m[2] || m[4]).padStart(2,'0');
-    const date = `2026-${mo}-${dy}`;
-    const name = (m[5] || '').trim().replace(/[\/＋（(月火水木金土日）)]+$/, '').trim();
-    if (isValidEventName(name)) {
-      events.push({ date, name, start: '', end: '', demand: guessDemand(name, capacity) });
-    }
+// ── WordPress REST API 経由でイベント取得 ──
+async function fetchWordPressEvents(domain, capacity = 10000) {
+  // カスタム投稿タイプ（events/event/schedule）と通常投稿を順に試す
+  for (const type of ['events', 'event', 'schedule', 'posts']) {
+    try {
+      const url = `https://${domain}/wp-json/wp/v2/${type}?per_page=30&_fields=title,date,content,excerpt&orderby=date&order=asc`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': UA, 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) continue;
+      const posts = await res.json();
+      if (!Array.isArray(posts) || posts.length === 0) continue;
+      const today = new Date().toISOString().slice(0, 10);
+      const events = [];
+      for (const post of posts) {
+        const name = stripTags(post.title?.rendered || '').trim();
+        const dateStr = (post.date || '').slice(0, 10);
+        if (!name || !dateStr || dateStr < today) continue;
+        if (!isValidEventName(name)) continue;
+        // コンテンツから開演時刻を探す
+        const body = stripTags(post.content?.rendered || post.excerpt?.rendered || '');
+        const timeM = body.match(/(?:開演|開場|START)[^\d]*(\d{1,2}:\d{2})/);
+        events.push({ date: dateStr, name, start: timeM ? timeM[1] : '', end: '', demand: guessDemand(name, capacity) });
+      }
+      if (events.length > 0) return events;
+    } catch (_) {}
   }
-  const seen = new Set();
-  return events.filter(e => { const k = e.date+e.name; if (seen.has(k)) return false; seen.add(k); return true; });
+  return [];
+}
+
+// ── 汎用: WordPress REST API → JSON-LD → HTML正規表現フォールバック ──
+async function fetchVenueGeneric(domain, htmlUrl, venueName, capacity = 10000) {
+  // 1st: WordPress REST API
+  const wpEvents = await fetchWordPressEvents(domain, capacity);
+  if (wpEvents.length > 0) return wpEvents;
+
+  // 2nd: HTML スクレーピング
+  const urlsToTry = htmlUrl ? [htmlUrl, `https://${domain}/`, `https://${domain}/events/`, `https://${domain}/event/`] : [`https://${domain}/`];
+  for (const url of urlsToTry) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
+        signal: AbortSignal.timeout(TIMEOUT),
+      });
+      if (!res.ok) continue;
+      const html = await res.text();
+
+      const ldEvents = extractJsonLdEvents(html);
+      if (ldEvents.length > 0) return ldEvents.filter(e => isValidEventName(e.name));
+
+      const textOnly = html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&[a-z]+;/gi, ' ')
+        .replace(/\s+/g, ' ');
+      const events = [];
+      for (const m of textOnly.matchAll(/(?:2026[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})|(\d{1,2})月(\d{1,2})日)\s*([^\d\n]{4,60}?)(?=\s*(?:\d{1,2}月|\d{4}[\/\.\-])|$)/g)) {
+        const mo = (m[1] || m[3]).padStart(2,'0');
+        const dy = (m[2] || m[4]).padStart(2,'0');
+        const date = `2026-${mo}-${dy}`;
+        const name = (m[5] || '').trim().replace(/[\/＋（(月火水木金土日）)]+$/, '').trim();
+        if (isValidEventName(name)) {
+          events.push({ date, name, start: '', end: '', demand: guessDemand(name, capacity) });
+        }
+      }
+      if (events.length > 0) {
+        const seen = new Set();
+        return events.filter(e => { const k = e.date+e.name; if (seen.has(k)) return false; seen.add(k); return true; });
+      }
+    } catch (_) {}
+  }
+  return [];
 }
 
 // ── 両国国技館（大相撲）──
@@ -262,12 +307,12 @@ export default async function handler(req, res) {
     fetchSwallows(),
     fetchDome(),
     fetchSumo(),
-    fetchVenueGeneric('https://ariake-arena.tokyo/schedule/', '有明アリーナ', 15000),
-    fetchVenueGeneric('https://www.tokyo-garden-theater.jp/schedule/', '東京ガーデンシアター', 8000),
-    fetchVenueGeneric('https://www.nipponbudokan.or.jp/houseplan/', '日本武道館', 14000),
-    fetchVenueGeneric('https://www.bigsight.jp/visitor/event/', '東京ビッグサイト', 50000),
-    fetchVenueGeneric('https://www.jpnsport.go.jp/yoyogi/event/tabid/59/default.aspx', '代々木第一体育館', 13000),
-    fetchVenueGeneric('https://www.jpnsport.go.jp/kokuritsu/event/tabid/64/default.aspx', '国立競技場', 68000),
+    fetchVenueGeneric('ariake-arena.tokyo',          'https://ariake-arena.tokyo/event/', '有明アリーナ', 15000),
+    fetchVenueGeneric('www.tokyo-garden-theater.jp', 'https://www.tokyo-garden-theater.jp/schedule/', '東京ガーデンシアター', 8000),
+    fetchVenueGeneric('www.nipponbudokan.or.jp',     'https://www.nipponbudokan.or.jp/houseplan/', '日本武道館', 14000),
+    fetchVenueGeneric('www.bigsight.jp',             'https://www.bigsight.jp/visitor/event/', '東京ビッグサイト', 50000),
+    fetchVenueGeneric('www.jpnsport.go.jp',          'https://www.jpnsport.go.jp/yoyogi/event/tabid/59/default.aspx', '代々木第一体育館', 13000),
+    fetchVenueGeneric('www.jpnsport.go.jp',          'https://www.jpnsport.go.jp/kokuritsu/event/tabid/64/default.aspx', '国立競技場', 68000),
   ]);
 
   const ok = r => r.status === 'fulfilled' ? r.value : [];
