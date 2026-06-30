@@ -1101,6 +1101,7 @@
         タクシー 最新ニュース
         <span id="news-updated" style="font-size:10px;color:var(--gray);font-weight:400;"></span>
       </div>
+      <div id="news-source-warn" style="display:none;font-size:11px;color:var(--yellow);margin-bottom:8px;padding:4px 8px;background:rgba(255,184,0,.08);border-radius:4px;border:1px solid rgba(255,184,0,.2);"></div>
       <div id="news-all">読み込み中…</div>
     </div>
 
@@ -1217,6 +1218,7 @@
       </div>
       <div id="ships-body">
         <div style="font-size:10px;color:var(--gold);margin-bottom:8px;">有明 · 晴海 · 竹芝 · 日の出（中央区・港区・江東区）</div>
+        <div id="ships-source-warn" style="display:none;font-size:11px;color:var(--yellow);margin-bottom:8px;padding:4px 8px;background:rgba(255,184,0,.08);border-radius:4px;border:1px solid rgba(255,184,0,.2);"></div>
         <div id="ships-list">読み込み中…</div>
         <div style="font-size:10px;color:var(--gray);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
           <a href="https://www.kouwan.metro.tokyo.lg.jp/kanko/cruise/nyukou/index.html" target="_blank" style="color:var(--gold);">東京都港湾局</a>
@@ -3407,6 +3409,20 @@
       const el = document.getElementById('news-updated');
       if (el) el.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 更新`;
 
+      const warnEl = document.getElementById('news-source-warn');
+      if (warnEl) {
+        const failed = [];
+        if (data._errors?.google)    failed.push('Googleニュース');
+        if (data._errors?.tokyoTC)   failed.push('東京タクシーセンター');
+        if (data._errors?.taxiAssoc) failed.push('タクシー協会');
+        if (failed.length > 0) {
+          warnEl.textContent = `⚠ 一部取得失敗: ${failed.join('・')}`;
+          warnEl.style.display = 'block';
+        } else {
+          warnEl.style.display = 'none';
+        }
+      }
+
       // 全ソースを統合して新着順にソート
       const all = [
         ...(data.taxi        || []),
@@ -3541,6 +3557,20 @@
       const r = await fetch('/api/ships', { signal: AbortSignal.timeout(45000) });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
+
+      const warnEl = document.getElementById('ships-source-warn');
+      if (warnEl) {
+        const failed = [];
+        if (data._sourceErrors?.ogasawara)    failed.push('小笠原海運');
+        if (data._sourceErrors?.largeshipsAI) failed.push('大型客船(AI)');
+        if (failed.length > 0) {
+          warnEl.textContent = `⚠ 一部取得失敗: ${failed.join('・')}`;
+          warnEl.style.display = 'block';
+        } else {
+          warnEl.style.display = 'none';
+        }
+      }
+
       renderShips(data.ships || [], data.updatedAt);
       if (updEl && data.updatedAt) {
         const d = new Date(data.updatedAt);

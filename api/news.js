@@ -130,11 +130,16 @@ export default async function handler(req, res) {
     const center      = r2.status === 'fulfilled' ? r2.value : [];
     const association = r3.status === 'fulfilled' ? r3.value.slice(0, 5) : [];
 
+    const _errors = {};
+    if (r1.status !== 'fulfilled') _errors.google    = r1.reason?.message || 'failed';
+    if (r2.status !== 'fulfilled') _errors.tokyoTC   = r2.reason?.message || 'failed';
+    if (r3.status !== 'fulfilled') _errors.taxiAssoc = r3.reason?.message || 'failed';
+
     const deduped = dedup(association, center, taxi);
 
     res.setHeader('Cache-Control', 'public, s-maxage=10800, stale-while-revalidate=600');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json(deduped);
+    res.json({ ...deduped, _errors });
   } catch(e) {
     res.status(502).json({ error: e.message });
   }

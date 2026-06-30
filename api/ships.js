@@ -78,10 +78,10 @@ async function fetchOgasawara() {
     });
 
     console.log(`[ships] ogasawara parsed: ${results.length} arrivals`);
-    return results;
+    return { items: results, ok: true };
   } catch (e) {
     console.error('[ships] ogasawara error:', e.message);
-    return [];
+    return { items: [], ok: false, error: e.message };
   }
 }
 
@@ -172,11 +172,11 @@ ${texts.join('\n\n')}`;
     const data = await r.json();
     const text = data.content?.[0]?.text || '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-    return JSON.parse(jsonMatch[0]);
+    if (!jsonMatch) return { items: [], ok: false, error: 'Claude returned no JSON' };
+    return { items: JSON.parse(jsonMatch[0]), ok: true };
   } catch (e) {
     console.error('[ships] claude error:', e.message);
-    return [];
+    return { items: [], ok: false, error: e.message };
   }
 }
 
@@ -187,12 +187,12 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   try {
-    const [ogasawara, large] = await Promise.all([
+    const [ogasawaraResult, largeResult] = await Promise.all([
       fetchOgasawara(),
-      apiKey ? fetchLargeShipsViaClaude(apiKey) : Promise.resolve([]),
+      apiKey ? fetchLargeShipsViaClaude(apiKey) : Promise.resolve({ items: [], ok: true }),
     ]);
 
-    const all = [...ogasawara, ...large];
+    const all = [...ogasawaraResult.items, ...largeResult.items];
 
     // 重複除去（同日・同船名）
     const seen = new Set();
@@ -206,9 +206,13 @@ export default async function handler(req, res) {
     // 日付順ソート
     unique.sort((a, b) => a.date.localeCompare(b.date));
 
-    console.log(`[ships] fetched: ogasawara=${ogasawara.length}, large=${large.length}`);
-    res.json({ ships: unique, updatedAt: new Date().toISOString() });
+    const _sourceErrors = {};
+    if (!ogasawaraResult.ok) _sourceErrors.ogasawara = ogasawaraResult.error;
+    if (!largeResult.ok) _sourceErrors.largeshipsAI = largeResult.error;
+
+    console.log(`[ships] fetched: ogasawara=${ogasawaraResult.items.length}, large=${largeResult.items.length}`);
+    res.json({ ships: unique, updatedAt: new Date().toISOString(), _sourceErrors });
   } catch (e) {
-    res.status(502).json({ error: e.message, ships: [] });
+    res.status(502).json({ error: e.message, ships: [], _sourceErrors: { fatal: e.message } });
   }
 }
