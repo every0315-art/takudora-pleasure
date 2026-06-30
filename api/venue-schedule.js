@@ -272,6 +272,63 @@ async function freeBudokan() {
   } catch (_) { return []; }
 }
 
+// トヨタアリーナ東京: SSR Next.js、/events/ から取得
+async function freeToyota() {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const res = await fetch('https://www.toyota-arena-tokyo.jp/events/', {
+      headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
+      signal: AbortSignal.timeout(TIMEOUT),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const events = [];
+    const seen = new Set();
+    for (const m of html.matchAll(/href="\/events\/([^"\/]+)\/"[\s\S]{0,800}?2026[.\-](\d{1,2})[.\-](\d{1,2})/gi)) {
+      const date = `2026-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+      if (date < today || seen.has(m[1])) continue;
+      seen.add(m[1]);
+      const block = html.slice(m.index, m.index + 500);
+      const name = stripTags(block).replace(/2026[^\s]*/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!isValidEventName(name)) continue;
+      events.push({ date, name, start: '', end: '', demand: guessDemand(name, 10000) });
+    }
+    return events;
+  } catch (_) { return []; }
+}
+
+// 東京ガーデンシアター: shopping-sumitomo-rd.com から取得
+async function freeGarden() {
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const events = [];
+  for (let mi = 0; mi < 3; mi++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const year = d.getFullYear();
+    try {
+      const res = await fetch(`https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=${ym}`, {
+        headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
+        signal: AbortSignal.timeout(TIMEOUT),
+      });
+      if (!res.ok) continue;
+      const html = await res.text();
+      // 日付: "07/03 Fri." 形式
+      for (const m of html.matchAll(/(\d{2})\/(\d{2})\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/gi)) {
+        const date = `${year}-${m[1]}-${m[2]}`;
+        if (date < today) continue;
+        const idx = m.index;
+        const ctx = stripTags(html.slice(idx, idx + 400)).replace(/\s+/g, ' ').trim();
+        const nameM = ctx.match(/[A-Za-zぁ-ん一-龯ァ-ヶー＆&][^\d\/]{5,60}/);
+        const name = nameM ? nameM[0].trim() : '東京ガーデンシアター公演';
+        if (!isValidEventName(name)) continue;
+        events.push({ date, name, start: '', end: '', demand: guessDemand(name, 8000) });
+      }
+    } catch (_) {}
+  }
+  return events;
+}
+
 // 国立競技場: 運営移管後の jns-e.com から取得
 async function freeKokuritsu() {
   const today = new Date().toISOString().slice(0, 10);
@@ -358,13 +415,11 @@ export default async function handler(req, res) {
     fetchWithFallback(() => Promise.resolve([]),
       ['https://ariake-arena.tokyo/event/', 'https://ariake-arena.tokyo/'],
       'ariake-arena.tokyo', '有明アリーナ', 15000),
-    fetchWithFallback(() => Promise.resolve([]),
+    fetchWithFallback(freeToyota,
       ['https://www.toyota-arena-tokyo.jp/events/', 'https://www.toyota-arena-tokyo.jp/'],
       'www.toyota-arena-tokyo.jp', 'トヨタアリーナ東京', 10000),
-    fetchWithFallback(() => Promise.resolve([]),
-      ['https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=2026-07',
-       'https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=2026-08',
-       'https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=2026-09'],
+    fetchWithFallback(freeGarden,
+      ['https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/'],
       null, '東京ガーデンシアター', 8000),
     fetchWithFallback(freeBudokan,
       ['https://www.nipponbudokan.or.jp/schedule/', 'https://www.nipponbudokan.or.jp/'],
