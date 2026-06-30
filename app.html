@@ -3491,8 +3491,9 @@
       if (el) el.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
       console.warn('venue-schedule error', err);
     }
-    // 描画後に今後7日カードを再生成
+    // 描画後に今後7日カードとTOPタイルを更新
     if (typeof buildWeekEvents === 'function') buildWeekEvents();
+    if (typeof updateTopEventTile === 'function') updateTopEventTile();
   }
   loadVenueSchedules();
   setInterval(loadVenueSchedules, 10800000);
