@@ -3508,10 +3508,19 @@
       for (const venue of venues) {
         const el = document.getElementById('venue-events-'+venue);
         if (!el) continue;
-        const events = (data[venue] || [])
-          .filter(e => new Date(e.endDate || e.date) >= today)
-          .sort((a,b) => a.date.localeCompare(b.date))
-          .slice(0, 20);
+        const events = (() => {
+          const seen = new Set();
+          return (data[venue] || [])
+            .filter(e => new Date(e.endDate || e.date) >= today)
+            .sort((a,b) => a.date.localeCompare(b.date))
+            .filter(e => {
+              const key = e.date + '|' + e.name.slice(0, 10);
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            })
+            .slice(0, 10);
+        })();
         if (events.length === 0) { el.innerHTML = '<div style="font-size:12px;color:var(--gray);">今後のイベントなし / 取得失敗</div>'; continue; }
         el.innerHTML = events.map(e => {
           const d = new Date(e.date);

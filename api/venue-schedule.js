@@ -69,6 +69,7 @@ async function callClaudeForEvents(html, venueName, capacity) {
         content: `以下は「${venueName}」のウェブページテキストです。2026年以降のイベント・公演・試合スケジュールをJSON配列で抽出してください。
 形式: [{"date":"2026-MM-DD","endDate":"2026-MM-DD","name":"イベント名","start":"HH:MM","end":"HH:MM頃"}]
 ・dateは開始日、endDateは終了日（1日のみの場合はdateと同じ）
+・同じ会場・同じ日程で同時開催されるサブ展示・併催展は、最も上位の親イベント名1件にまとめること（例:「〇〇ワールド」傘下の各展示は「〇〇ワールド」1件として返す）
 ・日付・名前が不明なものは除外
 ・JSONのみ返す（説明文不要）
 
