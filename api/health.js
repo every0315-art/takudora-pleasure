@@ -117,9 +117,11 @@ export default async function handler(req, res) {
 
   console.log(`[health] ${allOk ? 'ALL OK' : `${failed.length}/${results.length} FAILED: ${failed.map(f => f.name).join(', ')}`}`);
 
-  // cronからのアクセスかつ異常あり → メール送信
+  // cronまたはGitHub Actionsからのアクセスかつ異常あり → メール送信
+  const token = process.env.HEALTH_TOKEN;
+  const isAutomated = isCron || (token && req.headers['x-health-token'] === token);
   const resendKey = process.env.RESEND_API_KEY;
-  if (isCron && !allOk && resendKey) {
+  if (isAutomated && !allOk && resendKey) {
     await sendAlertEmail(failed, resendKey).catch(e => console.error('[health] email error:', e.message));
   }
 

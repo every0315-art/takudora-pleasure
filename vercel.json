@@ -11,7 +11,7 @@
     {
       "path": "/api/events",
       "schedule": "0 20 * * *"
-    },
+    }
   ],
   "rewrites": [
     { "source": "/app", "destination": "/app.html" },

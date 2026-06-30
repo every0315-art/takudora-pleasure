@@ -1,0 +1,21 @@
+name: スクレイパー死活監視
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # 毎日 23:00 UTC = 翌8:00 JST
+  workflow_dispatch:       # 手動実行も可能
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ヘルスチェック実行
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "x-health-token: ${{ secrets.HEALTH_TOKEN }}" \
+            https://pleasure.delivery-every.com/api/health)
+          echo "HTTP Status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "異常検知: $STATUS"
+            exit 1
+          fi
