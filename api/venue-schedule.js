@@ -275,38 +275,7 @@ async function freeSwallows() {
   return events;
 }
 
-// 武道館: WP REST API で公演情報取得
-async function freeBudokan() {
-  const today = new Date().toISOString().slice(0, 10);
-  try {
-    const res = await fetch('https://www.nipponbudokan.or.jp/wp-json/wp/v2/posts?per_page=50&orderby=date&order=asc', {
-      headers: { 'User-Agent': UA, 'Accept': 'application/json' }, signal: AbortSignal.timeout(TIMEOUT),
-    });
-    if (!res.ok) return [];
-    const posts = await res.json();
-    if (!Array.isArray(posts)) return [];
-    const events = [];
-    for (const post of posts) {
-      const title = stripTags(post.title?.rendered || '').trim();
-      if (!isValidEventName(title)) continue;
-      // タイトルや本文から日付を抽出（令和8年X月Y日 or 2026/X/Y or YYYY-MM-DD）
-      const body = stripTags(post.content?.rendered || post.excerpt?.rendered || '');
-      const full = title + ' ' + body;
-      let date = null;
-      // 令和8年 = 2026年
-      const waM = full.match(/令和\s*8\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
-      if (waM) date = `2026-${waM[1].padStart(2,'0')}-${waM[2].padStart(2,'0')}`;
-      if (!date) {
-        const ymM = full.match(/2026[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-        if (ymM) date = `2026-${ymM[1].padStart(2,'0')}-${ymM[2].padStart(2,'0')}`;
-      }
-      if (!date || date < today) continue;
-      const timeM = body.match(/(?:開演|開場|START)[^\d]*(\d{1,2}:\d{2})/);
-      events.push({ date, name: title, start: timeM?.[1] || '', end: '', demand: guessDemand(title, 14000) });
-    }
-    return events;
-  } catch (_) { return []; }
-}
+// 武道館: 公式サイトにコンサートスケジュールなし → Claude Haiku にまかせる（free関数なし）
 
 // トヨタアリーナ東京: SSR Next.js、/events/ から取得
 // <li class="bg-gray-f5..."> ブロック、テキスト "2026.M.D(曜) MAIN ARENA EVENT_NAME 開催時間：..."
@@ -473,8 +442,8 @@ export default async function handler(req, res) {
     fetchWithFallback(freeGarden,
       ['https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/'],
       null, '東京ガーデンシアター', 8000),
-    fetchWithFallback(freeBudokan,
-      ['https://www.nipponbudokan.or.jp/schedule/', 'https://www.nipponbudokan.or.jp/'],
+    fetchWithFallback(() => Promise.resolve([]),
+      ['https://www.nipponbudokan.or.jp/houseplan/', 'https://www.nipponbudokan.or.jp/'],
       'www.nipponbudokan.or.jp', '日本武道館', 14000),
     fetchWithFallback(() => Promise.resolve([]),
       ['https://www.bigsight.jp/visitor/event/'],
