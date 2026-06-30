@@ -3430,48 +3430,35 @@
   setInterval(loadNews, 10800000); // 3時間ごと更新
 
   // ── 東京ドームスケジュール ──
-  async function loadDomeSchedule() {
-    try {
-      const res = await fetch('/api/dome-schedule');
-      const data = await res.json();
-      const el = document.getElementById('dome-events');
-      if (!el) return;
-      const events = (data.events || []);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const upcoming = events
-        .filter(e => new Date(e.date) >= today)
-        .sort((a,b) => a.date.localeCompare(b.date));
-      if (upcoming.length === 0) { el.innerHTML = '<div style="font-size:12px;color:var(--gray);">今後のイベントはありません</div>'; return; }
-      const DEMAND_MAP = { max:['badge-red','需要 最大級'], high:['badge-red','需要 高'], medium:['badge-yellow','需要 中'], low:['badge-green','需要 低'] };
-      el.innerHTML = upcoming.map(e => {
-        const d = new Date(e.date);
-        const mo = d.getMonth()+1, day = d.getDate();
-        const [cls, label] = DEMAND_MAP[e.demand] || DEMAND_MAP.medium;
-        const timeLabel = e.start ? (e.end ? `開演 ${e.start} → <strong style="color:var(--white);">終演 ${e.end}</strong>` : `開演 ${e.start}`) : '';
-        return `<div class="event-item">
-          <div class="event-date"><div class="event-month">${mo}月</div><div class="event-day">${day}</div></div>
-          <div class="event-info">
-            <div class="event-name">${e.name}</div>
-            ${timeLabel ? `<div class="event-meta">${timeLabel}</div>` : ''}
-            <div class="event-demand"><span class="badge ${cls}">${label}</span></div>
-          </div>
-        </div>`;
-      }).join('');
-    } catch(e) {
-      const el = document.getElementById('dome-events');
-      if (el) el.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
-    }
-  }
-  loadDomeSchedule();
-  setInterval(loadDomeSchedule, 10800000);
-
-  // ── 全会場スケジュール自動取得 ──
+  // ── 全会場スケジュール自動取得（東京ドーム含む） ──
   async function loadVenueSchedules() {
     try {
       const res = await fetch('/api/venue-schedule');
       const data = await res.json();
       const today = new Date(); today.setHours(0,0,0,0);
       const DEMAND_MAP = { max:['badge-red','需要 最大級'], high:['badge-red','需要 高'], medium:['badge-yellow','需要 中'], low:['badge-green','需要 低'] };
+
+      // 東京ドームは #dome-events に描画
+      const domeEl = document.getElementById('dome-events');
+      if (domeEl) {
+        const domeEvents = (data['東京ドーム'] || [])
+          .filter(e => new Date(e.date) >= today)
+          .sort((a,b) => a.date.localeCompare(b.date))
+          .slice(0, 20);
+        if (domeEvents.length === 0) {
+          domeEl.innerHTML = '<div style="font-size:12px;color:var(--gray);">今後のイベントはありません</div>';
+        } else {
+          domeEl.innerHTML = domeEvents.map(e => {
+            const d = new Date(e.date);
+            const mo = d.getMonth()+1, day = d.getDate();
+            const [cls, label] = DEMAND_MAP[e.demand] || DEMAND_MAP.medium;
+            const timeLabel = e.start ? (e.end ? `開演 ${e.start} → <strong style="color:var(--white);">終演 ${e.end}</strong>` : `開演 ${e.start}`) : '';
+            return `<div class="event-item"><div class="event-date"><div class="event-month">${mo}月</div><div class="event-day">${day}</div></div><div class="event-info"><div class="event-name">${e.name}</div>${timeLabel?`<div class="event-meta">${timeLabel}</div>`:''}<div class="event-demand"><span class="badge ${cls}">${label}</span></div></div></div>`;
+          }).join('');
+        }
+      }
+
+      // その他会場は #venue-events-{venue} に描画
       const venues = ['国立競技場','神宮球場','有明アリーナ','東京ガーデンシアター','日本武道館','東京ビッグサイト','代々木第一体育館','両国国技館'];
       for (const venue of venues) {
         const el = document.getElementById('venue-events-'+venue);
@@ -3489,7 +3476,11 @@
           return '<div class="event-item"><div class="event-date"><div class="event-month">'+mo+'月</div><div class="event-day">'+day+'</div></div><div class="event-info"><div class="event-name">'+e.name+'</div>'+(timeLabel?'<div class="event-meta">'+timeLabel+'</div>':'')+'<div class="event-demand"><span class="badge '+cls+'">'+label+'</span></div></div></div>';
         }).join('');
       }
-    } catch(err) { console.warn('venue-schedule error', err); }
+    } catch(err) {
+      const el = document.getElementById('dome-events');
+      if (el) el.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
+      console.warn('venue-schedule error', err);
+    }
   }
   loadVenueSchedules();
   setInterval(loadVenueSchedules, 10800000);
