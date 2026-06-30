@@ -1535,6 +1535,23 @@
           <input type="text" id="acc-car-plate" placeholder="品川 ○ 00-00"
             style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">勤務形態</div>
+            <select id="acc-work-type"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;cursor:pointer;">
+              <option value="">選択</option>
+              <option value="隔日勤務">隔日勤務</option>
+              <option value="昼日勤">昼日勤</option>
+              <option value="夜日勤">夜日勤</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">みなし残業（時間/日）</div>
+            <input type="number" id="acc-deemed-ot" placeholder="0" min="0" max="24" step="0.5"
+              style="width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;padding:9px 12px;">
+          </div>
+        </div>
       </div>
       <button onclick="saveProfile()"
         style="width:100%;margin-top:16px;padding:12px;background:var(--gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">
@@ -6394,6 +6411,8 @@
     set('acc-birthdate',  profile.birthdate);
     set('acc-experience', profile.experience);
     set('acc-car-plate',  profile.carPlate);
+    set('acc-work-type',  profile.workType);
+    set('acc-deemed-ot',  profile.deemedOT);
     if (profile.group) {
       set('acc-group', profile.group);
       updateCompanyOptions();
@@ -6472,6 +6491,8 @@
       birthdate:  document.getElementById('acc-birthdate').value,
       experience: document.getElementById('acc-experience').value,
       carPlate:   document.getElementById('acc-car-plate').value.trim(),
+      workType:   document.getElementById('acc-work-type').value,
+      deemedOT:   document.getElementById('acc-deemed-ot').value,
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     sbPush(PROFILE_KEY, JSON.stringify(profile));
