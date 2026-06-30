@@ -111,22 +111,45 @@ function parseNpbSchedule(html, venueKeywords, teamName) {
   return events;
 }
 
-// ── NPB 巨人（東京ドーム主催）──
+// ── 巨人公式サイト（東京ドーム主催）──
 async function fetchGiants() {
-  const res = await fetch('https://npb.jp/games/2026/schedule_yg_all.html', {
-    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': 'https://npb.jp/' },
+  // 巨人公式スケジュールページ
+  const res = await fetch('https://www.giants.jp/schedule/', {
+    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': 'https://www.giants.jp/' },
     signal: AbortSignal.timeout(TIMEOUT),
   });
-  return parseNpbSchedule(await res.text(), ['東京ドーム', '後楽'], '巨人');
+  const html = await res.text();
+  const result = parseNpbSchedule(html, ['東京ドーム', '後楽'], '巨人');
+  if (result.length > 0) return result;
+  // フォールバック: NPB公式（URL変更に備え複数試行）
+  for (const url of [
+    'https://npb.jp/games/2026/',
+    'https://npb.jp/scores/2026/',
+  ]) {
+    try {
+      const r2 = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(8000) });
+      const html2 = await r2.text();
+      const r = parseNpbSchedule(html2, ['東京ドーム', '後楽'], '巨人');
+      if (r.length > 0) return r;
+    } catch (_) {}
+  }
+  return [];
 }
 
-// ── NPB ヤクルト（神宮球場主催）──
+// ── ヤクルト公式サイト（神宮球場主催）──
 async function fetchSwallows() {
-  const res = await fetch('https://npb.jp/games/2026/schedule_ys_all.html', {
-    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': 'https://npb.jp/' },
+  const res = await fetch('https://www.yakult-swallows.co.jp/games/2026/', {
+    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': 'https://www.yakult-swallows.co.jp/' },
     signal: AbortSignal.timeout(TIMEOUT),
   });
-  return parseNpbSchedule(await res.text(), ['神宮', '明治神宮'], 'ヤクルト');
+  const html = await res.text();
+  const result = parseNpbSchedule(html, ['神宮', '明治神宮'], 'ヤクルト');
+  if (result.length > 0) return result;
+  // フォールバック
+  try {
+    const r2 = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(8000) });
+    return parseNpbSchedule(await r2.text(), ['神宮', '明治神宮'], 'ヤクルト');
+  } catch (_) { return []; }
 }
 
 // ── 東京ドーム（全イベント）──
