@@ -41,60 +41,49 @@ function guessDemand(name, capacity) {
   return 'medium';
 }
 
-// ── NPB 巨人（東京ドーム主催）──
-async function fetchGiants() {
-  const res = await fetch('https://npb.jp/games/2026/schedule_yg_all.html', {
-    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
-    signal: AbortSignal.timeout(TIMEOUT),
-  });
-  const html = await res.text();
+// NPBスケジュールページを解析（日付ヘッダー行 + 試合行の構造に対応）
+function parseNpbSchedule(html, venueKeywords, teamName) {
+  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   const events = [];
-  // NPBスケジュールテーブル: 月・日・球場・対戦相手
-  for (const row of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
-    const cells = [...row[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(c => stripTags(c[1]).trim());
-    if (cells.length < 4) continue;
-    // 東京ドーム主催試合のみ
-    const venueCell = cells.find(c => c.includes('東京ドーム') || c.includes('ドーム'));
-    if (!venueCell) continue;
-    // 日付
-    const dateCell = cells.find(c => /^\d{1,2}月\d{1,2}日/.test(c) || /^\d{4}\/\d{1,2}\/\d{1,2}/.test(c));
-    if (!dateCell) continue;
-    const dm = dateCell.match(/(\d{1,2})月(\d{1,2})日/) || dateCell.match(/\d{4}\/(\d{1,2})\/(\d{1,2})/);
-    if (!dm) continue;
-    const mo = dm[1].padStart(2,'0'), dy = dm[2].padStart(2,'0');
+  const seen = new Set();
+
+  // テキスト全体から「X月Y日」「会場名」の近接を検索
+  // NPBのスケジュールページは "6月30日 (月)" のような日付の後に会場名が続く構造
+  const segments = text.split(/(?=\d{1,2}月\d{1,2}日)/);
+  for (const seg of segments) {
+    const dateMO = seg.match(/^(\d{1,2})月(\d{1,2})日/);
+    if (!dateMO) continue;
+    const mo = dateMO[1].padStart(2,'0'), dy = dateMO[2].padStart(2,'0');
     const date = `2026-${mo}-${dy}`;
-    // 対戦相手
-    const opponent = cells.find(c => /vs|VS|対|巨人以外/.test(c) && c.length < 30 && !/^\d/.test(c) && !c.includes('東京')) || '';
-    const name = opponent ? `巨人 vs ${opponent.replace(/[vsVS×〇●]/g, '').trim()}` : '巨人 主催試合';
+    if (seen.has(date)) continue;
+    // この日付セグメントにvenueKeywordsが含まれるか
+    const hasVenue = venueKeywords.some(k => seg.includes(k));
+    if (!hasVenue) continue;
+    seen.add(date);
+    // 対戦相手を抽出（vs/対 パターン）
+    const oppM = seg.match(/(?:対|vs\.?\s*)([^\s（(0-9]{2,8})/);
+    const name = oppM ? `${teamName} vs ${oppM[1].trim()}` : `${teamName} 主催試合`;
     events.push({ date, name, start: '18:00', end: '21:30頃', demand: 'medium' });
   }
   return events;
 }
 
+// ── NPB 巨人（東京ドーム主催）──
+async function fetchGiants() {
+  const res = await fetch('https://npb.jp/games/2026/schedule_yg_all.html', {
+    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': 'https://npb.jp/' },
+    signal: AbortSignal.timeout(TIMEOUT),
+  });
+  return parseNpbSchedule(await res.text(), ['東京ドーム', '後楽'], '巨人');
+}
+
 // ── NPB ヤクルト（神宮球場主催）──
 async function fetchSwallows() {
   const res = await fetch('https://npb.jp/games/2026/schedule_ys_all.html', {
-    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
+    headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja', 'Referer': 'https://npb.jp/' },
     signal: AbortSignal.timeout(TIMEOUT),
   });
-  const html = await res.text();
-  const events = [];
-  for (const row of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
-    const cells = [...row[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(c => stripTags(c[1]).trim());
-    if (cells.length < 4) continue;
-    const venueCell = cells.find(c => c.includes('神宮') || c.includes('明治神宮'));
-    if (!venueCell) continue;
-    const dateCell = cells.find(c => /^\d{1,2}月\d{1,2}日/.test(c) || /^\d{4}\/\d{1,2}\/\d{1,2}/.test(c));
-    if (!dateCell) continue;
-    const dm = dateCell.match(/(\d{1,2})月(\d{1,2})日/) || dateCell.match(/\d{4}\/(\d{1,2})\/(\d{1,2})/);
-    if (!dm) continue;
-    const mo = dm[1].padStart(2,'0'), dy = dm[2].padStart(2,'0');
-    const date = `2026-${mo}-${dy}`;
-    const opponent = cells.find(c => c.length < 30 && !/^\d/.test(c) && !c.includes('神宮') && !c.includes('ヤクルト')) || '';
-    const name = opponent ? `ヤクルト vs ${opponent.replace(/[vsVS×〇●]/g, '').trim()}` : 'ヤクルト 主催試合';
-    events.push({ date, name, start: '18:00', end: '21:30頃', demand: 'medium' });
-  }
-  return events;
+  return parseNpbSchedule(await res.text(), ['神宮', '明治神宮'], 'ヤクルト');
 }
 
 // ── 東京ドーム（全イベント）──
@@ -108,17 +97,24 @@ async function fetchDome() {
   const ldEvents = extractJsonLdEvents(html);
   if (ldEvents.length > 0) return ldEvents;
 
-  // フォールバック: 日付+タイトルパターン
+  // フォールバック: タグ間テキストから日付+タイトルを抽出
   const events = [];
-  const text = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
-  for (const m of text.matchAll(/(\d{4})[\.\-\/](\d{1,2})[\.\-\/](\d{1,2})[^\n<]{0,30}?([^\n<]{5,60})/g)) {
+  // HTML属性内の日付を誤爆しないよう、まずタグを除去してからテキストのみで検索
+  const textOnly = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')   // 全タグ除去
+    .replace(/&[a-z]+;/gi, ' ') // HTMLエンティティ除去
+    .replace(/\s+/g, ' ');
+  for (const m of textOnly.matchAll(/(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})\s*([^\d\n]{5,60}?)(?=\s*\d{4}[\/\.\-]|\s*$)/g)) {
     const date = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-    const name = stripTags(m[4]).trim();
-    if (name && date >= '2026-01-01') {
+    const name = m[4].trim().replace(/[\/＋]+$/, '').trim();
+    if (name && name.length >= 3 && date >= '2026-01-01' && !/["'=]/.test(name)) {
       events.push({ date, name, start: '', end: '', demand: guessDemand(name, 55000) });
     }
   }
-  return events;
+  const seen = new Set();
+  return events.filter(e => { const k = e.date+e.name; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
 // ── 汎用: JSON-LD 抽出 → HTML正規表現フォールバック ──
@@ -132,20 +128,23 @@ async function fetchVenueGeneric(url, venueName, capacity = 10000) {
   const ldEvents = extractJsonLdEvents(html);
   if (ldEvents.length > 0) return ldEvents;
 
-  // HTML から日付+タイトルを正規表現で抽出
+  // HTML から日付+タイトルを正規表現で抽出（属性内の誤爆防止のため全タグ除去）
   const events = [];
-  const clean = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
-  // パターン1: 2026.MM.DD または 2026/MM/DD または MM月DD日
-  for (const m of clean.matchAll(/(?:2026[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})|(\d{1,2})月(\d{1,2})日)[^\n<]{0,10}<[^>]+>([^<]{5,80})/g)) {
+  const textOnly = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ');
+  for (const m of textOnly.matchAll(/(?:2026[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})|(\d{1,2})月(\d{1,2})日)\s*([^\d\n]{3,60}?)(?=\s*(?:\d{1,2}月|\d{4}[\/\.\-])|$)/g)) {
     const mo = (m[1] || m[3]).padStart(2,'0');
     const dy = (m[2] || m[4]).padStart(2,'0');
     const date = `2026-${mo}-${dy}`;
-    const name = stripTags(m[5]).trim();
-    if (name && name.length > 3) {
+    const name = (m[5] || '').trim().replace(/[\/＋]+$/, '').trim();
+    if (name && name.length >= 3 && !/["'=]/.test(name)) {
       events.push({ date, name, start: '', end: '', demand: guessDemand(name, capacity) });
     }
   }
-  // 重複除去
   const seen = new Set();
   return events.filter(e => { const k = e.date+e.name; if (seen.has(k)) return false; seen.add(k); return true; });
 }
@@ -187,15 +186,16 @@ export default async function handler(req, res) {
     fetchSwallows(),
     fetchDome(),
     fetchSumo(),
-    fetchVenueGeneric('https://ariake-arena.tokyo/event/', '有明アリーナ', 15000),
-    fetchVenueGeneric('https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/', '東京ガーデンシアター', 8000),
-    fetchVenueGeneric('https://www.nipponbudokan.or.jp/', '日本武道館', 14000),
+    fetchVenueGeneric('https://ariake-arena.tokyo/schedule/', '有明アリーナ', 15000),
+    fetchVenueGeneric('https://www.tokyo-garden-theater.jp/schedule/', '東京ガーデンシアター', 8000),
+    fetchVenueGeneric('https://www.nipponbudokan.or.jp/event/', '日本武道館', 14000),
     fetchVenueGeneric('https://www.bigsight.jp/visitor/event/', '東京ビッグサイト', 50000),
     fetchVenueGeneric('https://www.jpnsport.go.jp/yoyogi/event/tabid/59/default.aspx', '代々木第一体育館', 13000),
-    fetchVenueGeneric('https://jns-e.com/event/', '国立競技場', 68000),
+    fetchVenueGeneric('https://www.jpnsport.go.jp/kokuritsu/event/tabid/64/default.aspx', '国立競技場', 68000),
   ]);
 
   const ok = r => r.status === 'fulfilled' ? r.value : [];
+  const err = r => r.status === 'rejected' ? r.reason?.message : (r.value?.length === 0 ? 'empty' : null);
 
   return res.json({
     '東京ドーム':       ok(rDome).length ? ok(rDome) : ok(rGiants),
@@ -209,9 +209,16 @@ export default async function handler(req, res) {
     '国立競技場':       ok(rKokuritsu),
     updatedAt: new Date().toISOString(),
     errors: {
-      giants:    rGiants.status === 'rejected'    ? rGiants.reason?.message : null,
-      swallows:  rSwallows.status === 'rejected'  ? rSwallows.reason?.message : null,
-      dome:      rDome.status === 'rejected'       ? rDome.reason?.message : null,
+      giants:    err(rGiants),
+      swallows:  err(rSwallows),
+      dome:      err(rDome),
+      kokugikan: err(rKokugikan),
+      ariake:    err(rAriake),
+      garden:    err(rGarden),
+      budokan:   err(rBudokan),
+      bigsight:  err(rBigsight),
+      yoyogi:    err(rYoyogi),
+      kokuritsu: err(rKokuritsu),
     },
   });
 }
