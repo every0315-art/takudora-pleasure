@@ -258,7 +258,7 @@ export default async function handler(req, res) {
 
   const [
     rGiants, rSwallows, rDome, rKokugikan,
-    rAriake, rGarden, rBudokan, rBigsight, rYoyogi, rKokuritsu,
+    rAriake, rToyota, rGarden, rBudokan, rBigsight, rYoyogi, rKokuritsu,
   ] = await Promise.allSettled([
     // 野球・相撲: 無料のみ（信頼性高）
     freeGiants(),
@@ -273,6 +273,9 @@ export default async function handler(req, res) {
     fetchWithFallback(() => Promise.resolve([]),
       ['https://ariake-arena.tokyo/event/', 'https://ariake-arena.tokyo/'],
       'ariake-arena.tokyo', '有明アリーナ', 15000),
+    fetchWithFallback(() => Promise.resolve([]),
+      ['https://www.toyota-arena-tokyo.jp/schedule/', 'https://www.toyota-arena-tokyo.jp/'],
+      'www.toyota-arena-tokyo.jp', 'トヨタアリーナ東京', 10000),
     fetchWithFallback(() => Promise.resolve([]),
       ['https://www.tokyo-garden-theater.jp/schedule/'],
       'www.tokyo-garden-theater.jp', '東京ガーデンシアター', 8000),
@@ -298,6 +301,7 @@ export default async function handler(req, res) {
     '神宮球場':             ok(rSwallows),
     '両国国技館':           ok(rKokugikan),
     '有明アリーナ':         ok(rAriake),
+    'トヨタアリーナ東京':   ok(rToyota),
     '東京ガーデンシアター': ok(rGarden),
     '日本武道館':           ok(rBudokan),
     '東京ビッグサイト':     ok(rBigsight),
@@ -306,7 +310,7 @@ export default async function handler(req, res) {
     updatedAt: new Date().toISOString(),
     errors: {
       giants: err(rGiants), swallows: err(rSwallows), dome: err(rDome),
-      kokugikan: err(rKokugikan), ariake: err(rAriake), garden: err(rGarden),
+      kokugikan: err(rKokugikan), ariake: err(rAriake), toyota: err(rToyota), garden: err(rGarden),
       budokan: err(rBudokan), bigsight: err(rBigsight), yoyogi: err(rYoyogi), kokuritsu: err(rKokuritsu),
     },
   });

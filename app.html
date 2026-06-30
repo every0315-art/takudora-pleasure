@@ -1322,6 +1322,16 @@
       <div id="venue-events-有明アリーナ" style="font-size:12px;color:var(--gray);">読み込み中…</div>
     </div>
 
+    <!-- トヨタアリーナ東京 -->
+    <div class="card" id="venue-card-トヨタアリーナ東京">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        トヨタアリーナ東京
+        <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;">江東区有明 · 収容10,000人</span>
+      </div>
+      <div style="font-size:10px;color:var(--gold);margin-bottom:10px;">終演後：国際展示場 / 有明テニスの森</div>
+      <div id="venue-events-トヨタアリーナ東京" style="font-size:12px;color:var(--gray);">読み込み中…</div>
+    </div>
+
     <!-- 東京ガーデンシアター -->
     <div class="card" id="venue-card-東京ガーデンシアター">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
@@ -3459,7 +3469,7 @@
       }
 
       // その他会場は #venue-events-{venue} に描画
-      const venues = ['国立競技場','神宮球場','有明アリーナ','東京ガーデンシアター','日本武道館','東京ビッグサイト','代々木第一体育館','両国国技館'];
+      const venues = ['国立競技場','神宮球場','有明アリーナ','トヨタアリーナ東京','東京ガーデンシアター','日本武道館','東京ビッグサイト','代々木第一体育館','両国国技館'];
       for (const venue of venues) {
         const el = document.getElementById('venue-events-'+venue);
         if (!el) continue;
