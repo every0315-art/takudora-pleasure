@@ -3491,6 +3491,8 @@
       if (el) el.innerHTML = '<div style="font-size:12px;color:var(--gray);">取得失敗</div>';
       console.warn('venue-schedule error', err);
     }
+    // 描画後に今後7日カードを再生成
+    if (typeof buildWeekEvents === 'function') buildWeekEvents();
   }
   loadVenueSchedules();
   setInterval(loadVenueSchedules, 10800000);
@@ -4500,8 +4502,8 @@
     'ヤクルト vs 中日': 'https://www.yakult-swallows.co.jp/game',
   };
 
-  // 今後7日間のイベントカードを動的生成（venue-bodyラッパー処理より前に実行）
-  (function buildWeekEvents() {
+  // 今後7日間のイベントカードを動的生成（venue読み込み後も再実行）
+  function buildWeekEvents() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const end = new Date(today);
@@ -4581,10 +4583,17 @@
       });
     });
 
+    // 既存の今後7日カードがあれば差し替え、なければ先頭に挿入
     const tabEvent = document.getElementById('tab-event');
-    const notice = tabEvent.querySelector('div[style*="font-size:10px"]');
-    tabEvent.insertBefore(card, notice ? notice.nextSibling : tabEvent.firstElementChild);
-  })();
+    const existing = tabEvent.querySelector('.week-events-card');
+    card.classList.add('week-events-card');
+    if (existing) { existing.replaceWith(card); }
+    else {
+      const notice = tabEvent.querySelector('div[style*="font-size:10px"]');
+      tabEvent.insertBefore(card, notice ? notice.nextSibling : tabEvent.firstElementChild);
+    }
+  }
+  buildWeekEvents();
 
   // イベントタブ各カードのcard-title以外をvenue-bodyにまとめる（開閉用）
   // 最初のカード（今後7日）以外はデフォルトで閉じた状態にする
