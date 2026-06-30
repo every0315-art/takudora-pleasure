@@ -4902,8 +4902,10 @@
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:6px;">
         <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
         ${(() => {
-          const wt = (loadProfile() || {}).workType;
-          const TOTAL = wt === '隔日勤務' ? 267 : 277;
+          const _prof = loadProfile() || {};
+          const wt = _prof.workType;
+          const deemedOTMin = parseFloat(_prof.deemedOT) || 0;
+          const TOTAL = (wt === '隔日勤務' ? 267 : 277) + deemedOTMin * timeCount / 60;
           const usedH = totalMinutes / 60;
           const remH = Math.max(0, TOTAL - usedH);
           const remHH = Math.floor(remH);
@@ -5011,8 +5013,10 @@
         </div>
       </div>
       ${(() => {
-        const wt2 = (loadProfile() || {}).workType;
-        const TOTAL_HOURS = wt2 === '隔日勤務' ? 267 : 277;
+        const _prof2 = loadProfile() || {};
+        const wt2 = _prof2.workType;
+        const deemedOTMin2 = parseFloat(_prof2.deemedOT) || 0;
+        const TOTAL_HOURS = (wt2 === '隔日勤務' ? 267 : 277) + deemedOTMin2 * timeCount / 60;
         const usedH = totalMinutes / 60;
         const remainH = Math.max(0, TOTAL_HOURS - usedH);
         const usedPct = Math.min(100, Math.round(usedH / TOTAL_HOURS * 100));
