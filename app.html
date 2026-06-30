@@ -2387,13 +2387,14 @@
         return;
       }
       const newAlerts = data.lines.filter(l => l.status && l.status !== '平常運転');
-      // 遅延の初回検知時刻を記録、平常に戻ったら削除
       for (const l of newAlerts) {
         if (!_delayFirstSeen[l.name]) _delayFirstSeen[l.name] = Date.now();
       }
       for (const name of Object.keys(_delayFirstSeen)) {
         if (!newAlerts.find(l => l.name === name)) delete _delayFirstSeen[name];
       }
+      try { localStorage.setItem('delayFirstSeen', JSON.stringify(_delayFirstSeen)); } catch {}
+
       _trainAlerts = newAlerts;
       updatePickupAlerts();
       statusEl.innerHTML = data.lines.map(l => `
@@ -3132,7 +3133,7 @@
   // 鉄道運行障害情報（loadTrainInfoから更新される）
   let _latestNews = [];
   let _trainAlerts = [];
-  let _delayFirstSeen = {}; // {路線名: 最初に遅延検知したtimestamp}
+  let _delayFirstSeen = (() => { try { return JSON.parse(localStorage.getItem('delayFirstSeen') || '{}'); } catch { return {}; } })();
   let _hanedaBigDelayCount = 0; // 羽田1時間以上遅延便数
   let _hanedaCamNoVehicle = false; // 国際線第2プール 車両なし
   let _hanedaCam2Rows = 99; // 国内線待機場 車列数（2列以下でアラート）
