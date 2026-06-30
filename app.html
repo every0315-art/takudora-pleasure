@@ -4902,7 +4902,8 @@
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:6px;">
         <div style="font-size:9px;color:var(--gray);">残り営業時間</div>
         ${(() => {
-          const TOTAL = 277;
+          const wt = (loadProfile() || {}).workType;
+          const TOTAL = wt === '隔日勤務' ? 267 : 277;
           const usedH = totalMinutes / 60;
           const remH = Math.max(0, TOTAL - usedH);
           const remHH = Math.floor(remH);
@@ -5010,7 +5011,8 @@
         </div>
       </div>
       ${(() => {
-        const TOTAL_HOURS = 277;
+        const wt2 = (loadProfile() || {}).workType;
+        const TOTAL_HOURS = wt2 === '隔日勤務' ? 267 : 277;
         const usedH = totalMinutes / 60;
         const remainH = Math.max(0, TOTAL_HOURS - usedH);
         const usedPct = Math.min(100, Math.round(usedH / TOTAL_HOURS * 100));
@@ -5020,7 +5022,7 @@
         const projected = timeCount && totalMinutes > 0 ? Math.round(totalSales / usedH * TOTAL_HOURS) : null;
         return `<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:8px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:10px;color:var(--gray);">残り営業可能時間 <span style="font-size:9px;">(月277h)</span></div>
+            <div style="font-size:10px;color:var(--gray);">残り営業可能時間 <span style="font-size:9px;">(月${TOTAL_HOURS}h)</span></div>
             <div style="font-size:13px;font-weight:700;color:${barColor};">${timeCount ? remainHH+'h'+String(remainMM).padStart(2,'0')+'m' : '—'}</div>
           </div>
           <div style="background:rgba(255,255,255,.1);border-radius:3px;height:6px;overflow:hidden;">
