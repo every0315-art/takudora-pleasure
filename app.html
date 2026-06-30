@@ -3652,18 +3652,22 @@
       }
     });
 
-    const todayEvents = upcoming.filter(e => e.isToday).sort((a, b) => a.endMin - b.endMin);
+    upcoming.sort((a, b) => a.itemDate - b.itemDate || a.endMin - b.endMin);
+    const todayEvents = upcoming.filter(e => e.isToday);
+    const displayEvents = todayEvents.length > 0 ? todayEvents : upcoming.slice(0, 4);
 
-    if (todayEvents.length === 0) {
-      listEl.innerHTML = '<span style="font-size:12px;color:var(--gray);">本日のイベントなし</span>';
+    if (displayEvents.length === 0) {
+      listEl.innerHTML = '<span style="font-size:12px;color:var(--gray);">近日のイベントなし</span>';
       return;
     }
 
-    listEl.innerHTML = todayEvents.map(ev => {
+    const showingFuture = todayEvents.length === 0;
+    listEl.innerHTML = displayEvents.map(ev => {
       const shortName = ev.name.length > 12 ? ev.name.slice(0, 12) + '…' : ev.name;
+      const dateLabel = showingFuture ? `${ev.itemDate.getMonth()+1}/${ev.itemDate.getDate()} ` : '';
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
         <div style="flex:1;overflow:hidden;">
-          <div style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortName}</div>
+          <div style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dateLabel}${shortName}</div>
           <div style="font-size:9px;color:var(--gray);">${ev.venue}</div>
         </div>
         <span style="font-size:9px;color:${ev.badgeColor};white-space:nowrap;">${ev.badgeText.replace('需要 ', '')}</span>
