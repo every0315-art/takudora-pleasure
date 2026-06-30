@@ -5538,7 +5538,6 @@
     const annualManualSIAdj = Object.entries(monthlyManualSI).reduce((s,[m,v]) => s + v - (monthlySI[Number(m)]?.totalM ?? monthlySI[Number(m)]?.total ?? 0), 0);
     const annualManualITAdj = Object.entries(monthlyManualIT).reduce((s,[m,v]) => s + v - (monthlyITMap[Number(m)] || 0), 0);
     const annualManualMuniAdj = Object.entries(monthlyManualMuni).reduce((s,[m,v]) => s + v - (monthlyMuniMap[Number(m)] || 0), 0);
-    const annualNet  = projectedAnnual - siTotal.total - annualManualSIAdj - annualTax - annualManualITAdj - annualManualMuniAdj - annualOtherDed;
     const poolPayments = {}; // 支給月 → 累積プール金額
     if (sortedPoolMonths.length > 0) {
       for (let i = 0; i < sortedPoolMonths.length; i++) {
@@ -5619,6 +5618,9 @@
       const taxBase   = Math.max(0, amount - (poolPaymentSI[payM] || 0));
       poolPaymentIT[payM] = poolPaymentITOverride[payM] ?? Math.round(taxBase * rate);
     }
+    const annualPoolIT        = Object.values(poolPaymentIT).reduce((a,b)=>a+b, 0);
+    const annualPoolOtherDed  = Object.values(poolPaymentOtherDed).reduce((a,b)=>a+b, 0);
+    const annualNet = projectedAnnual - siTotal.total - annualManualSIAdj - annualTax - annualManualITAdj - annualManualMuniAdj - annualOtherDed - annualPoolIT - annualPoolOtherDed;
 
     // 今年の算定等級を翌年用に保存
     if (santeiHH) {
@@ -5733,9 +5735,9 @@
               <td style="padding:6px 6px;font-weight:700;color:var(--white);">合計</td>
               <td style="text-align:right;padding:6px;font-weight:700;color:var(--gold);">${fmt(projectedAnnual)}</td>
               <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(siTotal.total)}</td>
-              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualIT)}</td>
-              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualMuni)}</td>
-              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">${annualOtherDed>0?'-'+fmt(annualOtherDed):'—'}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualIT + annualManualITAdj + annualPoolIT)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">-${fmt(annualMuni + annualManualMuniAdj)}</td>
+              <td style="text-align:right;padding:6px;font-weight:700;color:#e08080;">${(annualOtherDed+annualPoolOtherDed)>0?'-'+fmt(annualOtherDed+annualPoolOtherDed):'—'}</td>
               <td style="text-align:right;padding:6px;font-weight:700;color:var(--green);">${fmt(annualNet)}</td>
             </tr>
           </tfoot>
