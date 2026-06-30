@@ -4558,16 +4558,20 @@
     titleEl.innerHTML = `今後7日のイベント <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;">${collected.length}件</span>`;
     card.appendChild(titleEl);
 
+    // 開閉用 venue-body ラッパーを自前で作成
+    const body = document.createElement('div');
+    body.className = 'venue-body';
+    card.appendChild(body);
+
     byDate.forEach(({ itemDate, m, d, events }) => {
       const dayLabel = week[itemDate.getDay()];
       const isToday = itemDate.getTime() === today.getTime();
       const dayColor = isToday ? 'var(--gold)' : 'var(--gray)';
 
-      // 日付ヘッダー
       const header = document.createElement('div');
       header.style.cssText = `font-size:12px;font-weight:700;color:${dayColor};padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:4px;`;
       header.textContent = `${m}/${d}（${dayLabel}）${isToday ? ' ← 今日' : ''}`;
-      card.appendChild(header);
+      body.appendChild(header);
 
       events.forEach(({ venue, name, meta, badge }) => {
         const row = document.createElement('div');
@@ -4579,7 +4583,7 @@
             <div class="event-meta">${meta}</div>
             <div class="event-demand">${badge}<span style="font-size:10px;color:var(--gray);margin-left:4px;">${venue}</span></div>
           </div>`;
-        card.appendChild(row);
+        body.appendChild(row);
       });
     });
 
