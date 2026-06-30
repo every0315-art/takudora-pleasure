@@ -273,6 +273,7 @@ async function freeBudokan() {
 }
 
 // トヨタアリーナ東京: SSR Next.js、/events/ から取得
+// <li class="bg-gray-f5..."> ブロック、テキスト "2026.M.D(曜) MAIN ARENA EVENT_NAME 開催時間：..."
 async function freeToyota() {
   const today = new Date().toISOString().slice(0, 10);
   try {
@@ -283,25 +284,41 @@ async function freeToyota() {
     if (!res.ok) return [];
     const html = await res.text();
     const events = [];
-    const seen = new Set();
-    for (const m of html.matchAll(/href="\/events\/([^"\/]+)\/"[\s\S]{0,800}?2026[.\-](\d{1,2})[.\-](\d{1,2})/gi)) {
-      const date = `2026-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-      if (date < today || seen.has(m[1])) continue;
-      seen.add(m[1]);
-      const block = html.slice(m.index, m.index + 500);
-      const name = stripTags(block).replace(/2026[^\s]*/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    for (const m of html.matchAll(/<li class="bg-gray[^>]*>([\s\S]*?)(?=<li class="bg-gray|<\/ul>)/gi)) {
+      const block = m[1];
+      const text = block.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const dateM = text.match(/2026\.(\d{1,2})\.(\d{1,2})/);
+      if (!dateM) continue;
+      const date = `2026-${dateM[1].padStart(2,'0')}-${dateM[2].padStart(2,'0')}`;
+      if (date < today) continue;
+      // イベント名: 日付・会場種別・開催時間・主催者・URLを除去
+      const name = text
+        .replace(/2026\.\d+\.\d+[（(][^）)]*[）)]\s*/g, '')
+        .replace(/(?:MAIN|SUB)\s+ARENA\s*/gi, '')
+        .replace(/開催時間[：:]\S+[\s\S]*/i, '')
+        .replace(/主催者[\s\S]*/i, '')
+        .replace(/https?:\/\/\S+/g, '')
+        .trim().slice(0, 60);
       if (!isValidEventName(name)) continue;
-      events.push({ date, name, start: '', end: '', demand: guessDemand(name, 10000) });
+      const timeM = text.match(/開催時間[：:](\d{1,2}:\d{2})/);
+      events.push({ date, name, start: timeM?.[1] || '', end: '', demand: guessDemand(name, 10000) });
     }
     return events;
   } catch (_) { return []; }
 }
 
 // 東京ガーデンシアター: shopping-sumitomo-rd.com から取得
+// テキスト形式: "07 03 Fri. [07 05 Sun.] コンサート・ショー EVENT_NAME"
 async function freeGarden() {
   const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
   const events = [];
+  const DAYS = 'Mon|Tue|Wed|Thu|Fri|Sat|Sun';
+  const re = new RegExp(
+    `(\\d{2}) (\\d{2}) (?:${DAYS})\\. (?:(\\d{2}) (\\d{2}) (?:${DAYS})\\. )?` +
+    `(?:コンサート[^\\s]*|展示[^\\s]*|スポーツ|その他) (.+?)(?= \\d{2} \\d{2} (?:${DAYS})\\.|$)`,
+    'g'
+  );
   for (let mi = 0; mi < 3; mi++) {
     const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -313,46 +330,45 @@ async function freeGarden() {
       });
       if (!res.ok) continue;
       const html = await res.text();
-      // 日付: "07/03 Fri." 形式
-      for (const m of html.matchAll(/(\d{2})\/(\d{2})\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/gi)) {
+      const text = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '')
+                       .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      for (const m of text.matchAll(re)) {
         const date = `${year}-${m[1]}-${m[2]}`;
-        if (date < today) continue;
-        const idx = m.index;
-        const ctx = stripTags(html.slice(idx, idx + 400)).replace(/\s+/g, ' ').trim();
-        const nameM = ctx.match(/[A-Za-zぁ-ん一-龯ァ-ヶー＆&][^\d\/]{5,60}/);
-        const name = nameM ? nameM[0].trim() : '東京ガーデンシアター公演';
-        if (!isValidEventName(name)) continue;
-        events.push({ date, name, start: '', end: '', demand: guessDemand(name, 8000) });
+        const endDate = m[3] ? `${year}-${m[3]}-${m[4]}` : date;
+        const name = m[5].trim().replace(/&#\d+;/g, '').trim().slice(0, 60);
+        if (date < today || !isValidEventName(name)) continue;
+        events.push({ date, endDate: endDate !== date ? endDate : undefined, name, start: '', end: '', demand: guessDemand(name, 8000) });
       }
     } catch (_) {}
   }
   return events;
 }
 
-// 国立競技場: 運営移管後の jns-e.com から取得
+// 国立競技場 (MUFGスタジアム): jns-e.com から取得
+// テキスト形式: "カテゴリ EVENT_NAME 日程 2026 07/04 土 [2026 07/05 日] 開始時間 HH:MM"
 async function freeKokuritsu() {
   const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
   const events = [];
+  const re = /(?:スポーツ|音楽|その他)\s+(.+?)\s+日程\s+(\d{4})\s+(\d{2})\/(\d{2})\s*[月火水木金土日]\s*(?:(\d{4})\s+(\d{2})\/(\d{2})\s*[月火水木金土日])?\s*(?:開始時間\s+([^\s主催]+))?/g;
   for (let mi = 0; mi < 4; mi++) {
     const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
     const ym = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
     try {
-      const url = mi === 0 ? 'https://jns-e.com/event/' : `https://jns-e.com/event/page/${ym}/`;
+      const url = mi === 0 ? `https://jns-e.com/event/page/${ym}/` : `https://jns-e.com/event/page/${ym}/`;
       const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
       if (!res.ok) continue;
       const html = await res.text();
-      // 日付形式: 202607/01火 or 2026/07/01
-      for (const m of html.matchAll(/(\d{4})(\d{2})\/(\d{2})[月火水木金土日]?/g)) {
-        const date = `${m[1]}-${m[2]}-${m[3]}`;
-        if (date < today) continue;
-        // 前後のテキストからイベント名を取得
-        const idx = m.index;
-        const ctx = stripTags(html.slice(idx, idx + 300)).trim().replace(/\s+/g, ' ');
-        const nameM = ctx.match(/[^\d\/月火水木金土日]{4,40}/);
-        const name = nameM ? nameM[0].trim() : '国立競技場 イベント';
-        if (!isValidEventName(name)) continue;
-        events.push({ date, name, start: '', end: '', demand: guessDemand(name, 68000) });
+      const text = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '')
+                       .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      re.lastIndex = 0;
+      for (const m of text.matchAll(re)) {
+        const name = m[1].replace(/&quot;/g, '"').trim().slice(0, 60);
+        const date = `${m[2]}-${m[3]}-${m[4]}`;
+        const endDate = m[5] ? `${m[5]}-${m[6]}-${m[7]}` : date;
+        const startTime = m[8]?.match(/\d+:\d+/)?.[0] || '';
+        if (date < today || !isValidEventName(name)) continue;
+        events.push({ date, endDate: endDate !== date ? endDate : undefined, name, start: startTime, end: '', demand: guessDemand(name, 68000) });
       }
     } catch (_) {}
   }
