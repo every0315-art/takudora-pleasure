@@ -67,7 +67,8 @@ async function callClaudeForEvents(html, venueName, capacity) {
       messages: [{
         role: 'user',
         content: `以下は「${venueName}」のウェブページテキストです。2026年以降のイベント・公演・試合スケジュールをJSON配列で抽出してください。
-形式: [{"date":"2026-MM-DD","name":"イベント名","start":"HH:MM","end":"HH:MM頃"}]
+形式: [{"date":"2026-MM-DD","endDate":"2026-MM-DD","name":"イベント名","start":"HH:MM","end":"HH:MM頃"}]
+・dateは開始日、endDateは終了日（1日のみの場合はdateと同じ）
 ・日付・名前が不明なものは除外
 ・JSONのみ返す（説明文不要）
 
@@ -83,9 +84,16 @@ ${text}`,
   try {
     const events = JSON.parse(m[0]);
     const today = new Date().toISOString().slice(0, 10);
-    return events
-      .filter(e => e.date >= today && isValidEventName(e.name))
-      .map(e => ({ date: e.date, name: e.name, start: e.start || '', end: e.end || '', demand: guessDemand(e.name, capacity) }));
+    const result = [];
+    for (const e of events) {
+      if (!isValidEventName(e.name)) continue;
+      if (e.date < today) continue;
+      const endDate = e.endDate || e.date;
+      if (endDate >= today) {
+        result.push({ date: e.date, endDate, name: e.name, start: e.start || '', end: e.end || '', demand: guessDemand(e.name, capacity) });
+      }
+    }
+    return result;
   } catch (_) { return []; }
 }
 

@@ -3509,7 +3509,7 @@
         const el = document.getElementById('venue-events-'+venue);
         if (!el) continue;
         const events = (data[venue] || [])
-          .filter(e => new Date(e.date) >= today)
+          .filter(e => new Date(e.endDate || e.date) >= today)
           .sort((a,b) => a.date.localeCompare(b.date))
           .slice(0, 20);
         if (events.length === 0) { el.innerHTML = '<div style="font-size:12px;color:var(--gray);">今後のイベントなし / 取得失敗</div>'; continue; }
@@ -3518,7 +3518,10 @@
           const mo = d.getMonth()+1, day = d.getDate();
           const [cls, label] = DEMAND_MAP[e.demand] || DEMAND_MAP.medium;
           const timeLabel = e.start ? (e.end ? '開演 '+e.start+' → <strong style="color:var(--white);">終演 '+e.end+'</strong>' : '開演 '+e.start) : '';
-          return '<div class="event-item"><div class="event-date"><div class="event-month">'+mo+'月</div><div class="event-day">'+day+'</div></div><div class="event-info"><div class="event-name">'+e.name+'</div>'+(timeLabel?'<div class="event-meta">'+timeLabel+'</div>':'')+'<div class="event-demand"><span class="badge '+cls+'">'+label+'</span></div></div></div>';
+          const endD = e.endDate && e.endDate !== e.date ? new Date(e.endDate) : null;
+          const dateRange = endD ? `${mo}/${day}〜${endD.getMonth()+1}/${endD.getDate()}` : `${mo}月${day}日`;
+          const meta = [timeLabel, endD ? `（〜${endD.getMonth()+1}/${endD.getDate()}）` : ''].filter(Boolean).join(' ');
+          return '<div class="event-item"><div class="event-date"><div class="event-month">'+mo+'月</div><div class="event-day">'+day+'</div></div><div class="event-info"><div class="event-name">'+e.name+'</div>'+(meta?'<div class="event-meta">'+meta+'</div>':'')+'<div class="event-demand"><span class="badge '+cls+'">'+label+'</span></div></div></div>';
         }).join('');
       }
     } catch(err) {
