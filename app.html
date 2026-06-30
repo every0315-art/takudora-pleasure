@@ -3514,7 +3514,7 @@
             .filter(e => new Date(e.endDate || e.date) >= today)
             .sort((a,b) => a.date.localeCompare(b.date))
             .filter(e => {
-              const key = e.date + '|' + e.name.slice(0, 10);
+              const key = e.date + '|' + (e.endDate || e.date);
               if (seen.has(key)) return false;
               seen.add(key);
               return true;
