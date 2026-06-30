@@ -203,27 +203,103 @@ function parseNpbSchedule(html, venueKeywords, teamName) {
 
 // ── 各会場の無料取得関数 ──
 async function freeGiants() {
-  for (const url of ['https://www.giants.jp/schedule/', 'https://npb.jp/games/2026/']) {
-    try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
-      if (!res.ok) continue;
-      const r = parseNpbSchedule(await res.text(), ['東京ドーム', '後楽'], '巨人');
-      if (r.length > 0) return r;
-    } catch (_) {}
-  }
+  // giants.jp はbot対策でブロックのため npb.jp のみ使用
+  try {
+    const res = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
+    if (!res.ok) return [];
+    const r = parseNpbSchedule(await res.text(), ['東京ドーム', '後楽'], '巨人');
+    if (r.length > 0) return r;
+  } catch (_) {}
   return [];
 }
 
 async function freeSwallows() {
-  for (const url of ['https://www.yakult-swallows.co.jp/games/2026/', 'https://npb.jp/games/2026/']) {
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const events = [];
+  // 正しいURL: /game（/games/2026/ は404）、当月・翌月・翌々月を取得
+  for (let mi = 0; mi < 3; mi++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
+    const year = d.getFullYear(), month = d.getMonth() + 1;
     try {
+      const url = `https://www.yakult-swallows.co.jp/game?year=${year}&month=${month}`;
       const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
       if (!res.ok) continue;
-      const r = parseNpbSchedule(await res.text(), ['神宮', '明治神宮'], 'ヤクルト');
-      if (r.length > 0) return r;
+      const html = await res.text();
+      const r = parseNpbSchedule(html, ['神宮', '明治神宮'], 'ヤクルト');
+      events.push(...r.filter(e => e.date >= today));
     } catch (_) {}
   }
-  return [];
+  if (events.length > 0) return events;
+  // フォールバック: npb.jp
+  try {
+    const res = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
+    if (!res.ok) return [];
+    return parseNpbSchedule(await res.text(), ['神宮', '明治神宮'], 'ヤクルト');
+  } catch (_) { return []; }
+}
+
+// 武道館: WP REST API で公演情報取得
+async function freeBudokan() {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const res = await fetch('https://www.nipponbudokan.or.jp/wp-json/wp/v2/posts?per_page=50&orderby=date&order=asc', {
+      headers: { 'User-Agent': UA, 'Accept': 'application/json' }, signal: AbortSignal.timeout(TIMEOUT),
+    });
+    if (!res.ok) return [];
+    const posts = await res.json();
+    if (!Array.isArray(posts)) return [];
+    const events = [];
+    for (const post of posts) {
+      const title = stripTags(post.title?.rendered || '').trim();
+      if (!isValidEventName(title)) continue;
+      // タイトルや本文から日付を抽出（令和8年X月Y日 or 2026/X/Y or YYYY-MM-DD）
+      const body = stripTags(post.content?.rendered || post.excerpt?.rendered || '');
+      const full = title + ' ' + body;
+      let date = null;
+      // 令和8年 = 2026年
+      const waM = full.match(/令和\s*8\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
+      if (waM) date = `2026-${waM[1].padStart(2,'0')}-${waM[2].padStart(2,'0')}`;
+      if (!date) {
+        const ymM = full.match(/2026[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (ymM) date = `2026-${ymM[1].padStart(2,'0')}-${ymM[2].padStart(2,'0')}`;
+      }
+      if (!date || date < today) continue;
+      const timeM = body.match(/(?:開演|開場|START)[^\d]*(\d{1,2}:\d{2})/);
+      events.push({ date, name: title, start: timeM?.[1] || '', end: '', demand: guessDemand(title, 14000) });
+    }
+    return events;
+  } catch (_) { return []; }
+}
+
+// 国立競技場: 運営移管後の jns-e.com から取得
+async function freeKokuritsu() {
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const events = [];
+  for (let mi = 0; mi < 4; mi++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
+    const ym = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
+    try {
+      const url = mi === 0 ? 'https://jns-e.com/event/' : `https://jns-e.com/event/page/${ym}/`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
+      if (!res.ok) continue;
+      const html = await res.text();
+      // 日付形式: 202607/01火 or 2026/07/01
+      for (const m of html.matchAll(/(\d{4})(\d{2})\/(\d{2})[月火水木金土日]?/g)) {
+        const date = `${m[1]}-${m[2]}-${m[3]}`;
+        if (date < today) continue;
+        // 前後のテキストからイベント名を取得
+        const idx = m.index;
+        const ctx = stripTags(html.slice(idx, idx + 300)).trim().replace(/\s+/g, ' ');
+        const nameM = ctx.match(/[^\d\/月火水木金土日]{4,40}/);
+        const name = nameM ? nameM[0].trim() : '国立競技場 イベント';
+        if (!isValidEventName(name)) continue;
+        events.push({ date, name, start: '', end: '', demand: guessDemand(name, 68000) });
+      }
+    } catch (_) {}
+  }
+  return events;
 }
 
 async function freeDome() {
@@ -278,18 +354,20 @@ export default async function handler(req, res) {
       null, '東京ドーム', 55000),
     // 両国国技館: 無料のみ（大相撲スケジュール）
     freeSumo(),
-    // 以下: WP REST API → HTML → AI の順
+    // 以下: 無料取得 → WP REST API → HTML → AI の順
     fetchWithFallback(() => Promise.resolve([]),
       ['https://ariake-arena.tokyo/event/', 'https://ariake-arena.tokyo/'],
       'ariake-arena.tokyo', '有明アリーナ', 15000),
     fetchWithFallback(() => Promise.resolve([]),
-      ['https://www.toyota-arena-tokyo.jp/schedule/', 'https://www.toyota-arena-tokyo.jp/'],
+      ['https://www.toyota-arena-tokyo.jp/events/', 'https://www.toyota-arena-tokyo.jp/'],
       'www.toyota-arena-tokyo.jp', 'トヨタアリーナ東京', 10000),
     fetchWithFallback(() => Promise.resolve([]),
-      ['https://www.tokyo-garden-theater.jp/schedule/'],
-      'www.tokyo-garden-theater.jp', '東京ガーデンシアター', 8000),
-    fetchWithFallback(() => Promise.resolve([]),
-      ['https://www.nipponbudokan.or.jp/houseplan/', 'https://www.nipponbudokan.or.jp/'],
+      ['https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=2026-07',
+       'https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=2026-08',
+       'https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/?date=2026-09'],
+      null, '東京ガーデンシアター', 8000),
+    fetchWithFallback(freeBudokan,
+      ['https://www.nipponbudokan.or.jp/schedule/', 'https://www.nipponbudokan.or.jp/'],
       'www.nipponbudokan.or.jp', '日本武道館', 14000),
     fetchWithFallback(() => Promise.resolve([]),
       ['https://www.bigsight.jp/visitor/event/'],
@@ -297,8 +375,8 @@ export default async function handler(req, res) {
     fetchWithFallback(() => Promise.resolve([]),
       ['https://www.jpnsport.go.jp/yoyogi/event/tabid/59/default.aspx'],
       null, '代々木第一体育館', 13000),
-    fetchWithFallback(() => Promise.resolve([]),
-      ['https://www.jpnsport.go.jp/kokuritsu/event/tabid/64/default.aspx'],
+    fetchWithFallback(freeKokuritsu,
+      ['https://jns-e.com/event/'],
       null, '国立競技場', 68000),
   ]);
 
