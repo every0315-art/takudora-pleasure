@@ -5811,8 +5811,9 @@
             <td style="padding:3px 0;color:var(--gray);">所得税（年間・復興税込）</td>
             <td style="text-align:right;color:#e08080;">-${fmt(annualIT)}</td>
           </tr>
-          <tr><td style="padding:3px 0;color:var(--gray);">住民税（年間）${muniNew != null || muniPrev != null ? '<span style="font-size:9px;color:var(--gold);">実額</span>' : ''}</td>
-            <td style="text-align:right;color:#e08080;">-${fmt(annualMuni)}</td>
+          ${(muniNew != null || muniPrev != null) ? `<tr><td style="padding:3px 0;color:var(--gray);">住民税 本年実績 <span style="font-size:9px;color:var(--gold);">実額</span></td><td style="text-align:right;color:#e08080;">-${fmt(annualMuni)}</td></tr>` : ''}
+          <tr><td style="padding:3px 0;color:var(--gray);">住民税 来年見込み <span style="font-size:9px;color:rgba(255,255,255,.35);">今年の所得ベース</span></td>
+            <td style="text-align:right;color:#e08080;">-${fmt(annualMuni_ref)}</td>
           </tr>
           <tr style="border-top:2px solid rgba(255,255,255,.15);">
             <td style="padding:5px 0;color:var(--white);font-weight:700;">年間手取り見込み</td>
