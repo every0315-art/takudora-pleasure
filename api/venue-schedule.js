@@ -201,42 +201,78 @@ function parseNpbSchedule(html, venueKeywords, teamName) {
   return events;
 }
 
+// npb.jp/games/2026/ 専用パーサー（h6.date + score_table 形式）
+function parseNpbPage(html, venueKeywords, teamName) {
+  const events = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const seen = new Set();
+  let year = new Date().getFullYear(), prevMonth = 0;
+  for (const part of html.split('<h6 class="date">').slice(1)) {
+    const dateM = part.match(/^(\d+)月(\d+)日/);
+    if (!dateM) continue;
+    const month = parseInt(dateM[1]), day = parseInt(dateM[2]);
+    if (month < prevMonth && month <= 3) year++;
+    prevMonth = month;
+    const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    if (date < today) continue;
+    for (const tm of part.matchAll(/<table>([\s\S]*?)<\/table>/g)) {
+      const t = tm[1];
+      const venueM = t.match(/<td class="state" colspan="5">\s*([^<]+?)\s*<\/td>/);
+      if (!venueM) continue;
+      const venue = venueM[1].replace(/\s+/g, '');
+      if (!venueKeywords.some(k => venue.includes(k))) continue;
+      if (seen.has(date)) continue;
+      seen.add(date);
+      const teams = [...t.matchAll(/alt="([^"]+?)"/g)].map(m => m[1]);
+      const timeM = t.match(/<td class="state" colspan="3">\s*([\d:]+)/);
+      const name = teams.length >= 2 ? `${teams[0].slice(0,4)} vs ${teams[1].slice(0,4)}` : `${teamName} 主催試合`;
+      events.push({ date, name, start: timeM?.[1] || '18:00', end: `${(parseInt(timeM?.[1]||'18')+2)}:30頃`, demand: 'high' });
+    }
+  }
+  return events;
+}
+
 // ── 各会場の無料取得関数 ──
 async function freeGiants() {
   // giants.jp はbot対策でブロックのため npb.jp のみ使用
   try {
     const res = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
     if (!res.ok) return [];
-    const r = parseNpbSchedule(await res.text(), ['東京ドーム', '後楽'], '巨人');
+    const r = parseNpbPage(await res.text(), ['東京ドーム', '後楽'], '巨人');
     if (r.length > 0) return r;
   } catch (_) {}
   return [];
 }
 
 async function freeSwallows() {
+  // ヤクルトサイトはカレンダーグリッド形式
+  // href="/game/YYYYMM#day-YYYYMMDD" + c-calendar__day-stadium で神宮試合を特定
   const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
   const events = [];
-  // 正しいURL: /game（/games/2026/ は404）、当月・翌月・翌々月を取得
   for (let mi = 0; mi < 3; mi++) {
     const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
     const year = d.getFullYear(), month = d.getMonth() + 1;
+    const ym = `${year}${String(month).padStart(2,'0')}`;
     try {
       const url = `https://www.yakult-swallows.co.jp/game?year=${year}&month=${month}`;
       const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
       if (!res.ok) continue;
       const html = await res.text();
-      const r = parseNpbSchedule(html, ['神宮', '明治神宮'], 'ヤクルト');
-      events.push(...r.filter(e => e.date >= today));
+      for (const m of html.matchAll(new RegExp(`href="/game/${ym}#day-(\\d{8})"[\\s\\S]{0,600}?c-calendar__day-stadium">([^<]+)`, 'g'))) {
+        const ds = m[1], stadium = m[2].trim();
+        if (!stadium.includes('神宮')) continue;
+        const date = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
+        if (date < today) continue;
+        const block = html.slice(m.index, m.index + 600);
+        const teamM = block.match(/alt="([^"]{2,8})"/);
+        const timeM = block.match(/c-calendar__day-stats--time">\s*([\d:]+)/);
+        const start = timeM?.[1] || '18:00';
+        events.push({ date, name: `ヤクルト vs ${teamM?.[1] || '相手チーム'}`, start, end: `${parseInt(start)+2}:30頃`, demand: 'medium' });
+      }
     } catch (_) {}
   }
-  if (events.length > 0) return events;
-  // フォールバック: npb.jp
-  try {
-    const res = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
-    if (!res.ok) return [];
-    return parseNpbSchedule(await res.text(), ['神宮', '明治神宮'], 'ヤクルト');
-  } catch (_) { return []; }
+  return events;
 }
 
 // 武道館: WP REST API で公演情報取得
