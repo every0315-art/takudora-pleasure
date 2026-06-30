@@ -4912,7 +4912,7 @@
           const remMM = Math.round((remH - remHH) * 60);
           const pct = Math.min(100, Math.round(usedH / TOTAL * 100));
           const col = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'var(--green)';
-          return `<div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:${col};margin-top:2px;white-space:nowrap;">${timeCount ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</div>`;
+          return `<div style="font-size:clamp(12px,3.5vw,16px);font-weight:700;color:${col};margin-top:2px;white-space:nowrap;">${reports.length > 0 ? remHH+'h'+String(remMM).padStart(2,'0')+'m' : '—'}</div>`;
         })()}
       </div>`;
     subEl.innerHTML = `${reports.length}日分&nbsp;·&nbsp;${timeCount ? fmtTime(totalMinutes) : '—'}`;
@@ -5028,13 +5028,13 @@
         return `<div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:8px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="font-size:10px;color:var(--gray);">残り営業可能時間 <span style="font-size:9px;">(月${Math.round(TOTAL_HOURS)}h)</span></div>
-            <div style="font-size:13px;font-weight:700;color:${barColor};">${timeCount ? remainHH+'h'+String(remainMM).padStart(2,'0')+'m' : '—'}</div>
+            <div style="font-size:13px;font-weight:700;color:${barColor};">${reports.length > 0 ? remainHH+'h'+String(remainMM).padStart(2,'0')+'m' : '—'}</div>
           </div>
           <div style="background:rgba(255,255,255,.1);border-radius:3px;height:6px;overflow:hidden;">
             <div style="height:100%;width:${usedPct}%;background:${barColor};border-radius:3px;transition:width .4s;"></div>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:5px;">
-            <div style="font-size:10px;color:var(--gray);">消化 ${timeCount ? Math.floor(usedH)+'h'+String(Math.round((usedH%1)*60)).padStart(2,'0')+'m' : '—'} (${usedPct}%)</div>
+            <div style="font-size:10px;color:var(--gray);">消化 ${reports.length > 0 ? Math.floor(usedH)+'h'+String(Math.round((usedH%1)*60)).padStart(2,'0')+'m' : '—'} (${usedPct}%)</div>
             ${projected ? `<div style="font-size:10px;color:var(--gray);">着地予測 <span style="color:var(--gold);font-weight:600;">¥${Math.round(projected/10000*10)/10}万</span></div>` : ''}
           </div>
         </div>`;
