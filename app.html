@@ -4905,7 +4905,7 @@
           const _prof = loadProfile() || {};
           const wt = _prof.workType;
           const deemedOTMin = parseFloat(_prof.deemedOT) || 0;
-          const TOTAL = (wt === '隔日勤務' ? 267 : 277) + deemedOTMin * timeCount / 60;
+          const TOTAL = (wt === '隔日勤務' ? 267 : 277) + deemedOTMin * reports.length / 60;
           const usedH = totalMinutes / 60;
           const remH = Math.max(0, TOTAL - usedH);
           const remHH = Math.floor(remH);
@@ -4961,7 +4961,7 @@
         const projectedExTax = salesCount && remainDays >= 0
           ? Math.round(totalSalesExTax + (totalSalesExTax / salesCount) * remainDays) : null;
         const _profH = loadProfile() || {};
-        const TOTAL_H = (_profH.workType === '隔日勤務' ? 267 : 277) + (parseFloat(_profH.deemedOT) || 0) * timeCount / 60;
+        const TOTAL_H = (_profH.workType === '隔日勤務' ? 267 : 277) + (parseFloat(_profH.deemedOT) || 0) * reports.length / 60;
         const usedH2 = totalMinutes / 60;
         const remainH2 = Math.max(0, TOTAL_H - usedH2);
         const hPerDay = timeCount && remainDays > 0 ? remainH2 / remainDays : null;
@@ -5017,7 +5017,7 @@
         const _prof2 = loadProfile() || {};
         const wt2 = _prof2.workType;
         const deemedOTMin2 = parseFloat(_prof2.deemedOT) || 0;
-        const TOTAL_HOURS = (wt2 === '隔日勤務' ? 267 : 277) + deemedOTMin2 * timeCount / 60;
+        const TOTAL_HOURS = (wt2 === '隔日勤務' ? 267 : 277) + deemedOTMin2 * reports.length / 60;
         const usedH = totalMinutes / 60;
         const remainH = Math.max(0, TOTAL_HOURS - usedH);
         const usedPct = Math.min(100, Math.round(usedH / TOTAL_HOURS * 100));
