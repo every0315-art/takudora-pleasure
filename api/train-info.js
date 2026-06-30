@@ -92,7 +92,42 @@ const TOKYO_LINES = new Set([
   '多摩都市モノレール','東急世田谷線',
 ]);
 
+// ── 新幹線情報（shinkansen-info.jsを統合） ──
+const SHINKANSEN_CONFIG = {
+  '東海道新幹線': { color: '#f39c12' },
+  '東北新幹線':   { color: '#27ae60' },
+  '上越新幹線':   { color: '#2980b9' },
+  '北陸新幹線':   { color: '#8e44ad' },
+};
+async function handleShinkansen(req, res) {
+  const ODPT_KEY = process.env.ODPT_KEY;
+  const DISPLAY_LINES = ['東海道新幹線', '東北新幹線', '上越新幹線', '北陸新幹線'];
+  const UA2 = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  function parseDir(arr) {
+    if (!arr || arr.length === 0) return [{ dir: '上り', status: '平常運転', message: '' }, { dir: '下り', status: '平常運転', message: '' }];
+    if (arr.length >= 2) return arr.slice(0, 2).map((d, i) => ({ dir: i === 0 ? '上り' : '下り', status: d.status || '平常運転', message: d.message || '' }));
+    return [{ dir: '上り', status: arr[0].status || '平常運転', message: arr[0].message || '' }, { dir: '下り', status: arr[0].status || '平常運転', message: arr[0].message || '' }];
+  }
+  const [rYahoo, rODPT] = await Promise.allSettled([
+    fetch('https://transit.yahoo.co.jp/diainfo/area/1', { headers: { 'User-Agent': UA2, 'Accept': 'text/html', 'Accept-Language': 'ja' } })
+      .then(r => r.text()).then(html => { const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/); if (!m) return []; return JSON.parse(m[1])?.props?.pageProps?.troubleRails || []; }),
+    ODPT_KEY ? fetch(`https://api.odpt.org/api/4/odpt:TrainInformation?odpt:operator=odpt.Operator:JRCentral&acl:consumerKey=${ODPT_KEY}`).then(r => r.json()) : Promise.resolve(null),
+  ]);
+  const troubleMap = {};
+  if (rYahoo.status === 'fulfilled') rYahoo.value.forEach(r => { const p = r.routeInfo?.property || {}; const name = p.displayName || p.railName || ''; if (SHINKANSEN_CONFIG[name] && !troubleMap[name]) troubleMap[name] = parseDir(p.diainfo); });
+  if (rODPT.status === 'fulfilled' && rODPT.value) {
+    const items = rODPT.value; const t = items[0]; const text = t?.['odpt:trainInformationText']?.ja || ''; const isNormal = !text || text.includes('平常') || text.includes('通常');
+    troubleMap['東海道新幹線'] = [{ dir: '上り', status: isNormal ? '平常運転' : '遅延・運休情報あり', message: text }, { dir: '下り', status: isNormal ? '平常運転' : '遅延・運休情報あり', message: text }];
+  }
+  const normal = [{ dir: '上り', status: '平常運転', message: '' }, { dir: '下り', status: '平常運転', message: '' }];
+  const all = DISPLAY_LINES.map(name => ({ name, color: SHINKANSEN_CONFIG[name].color, directions: troubleMap[name] || normal }));
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json({ all, updateDate: new Date().toISOString() });
+}
+
 export default async function handler(req, res) {
+  if (req.query?.type === 'shinkansen') return handleShinkansen(req, res);
   try {
     const debug = req.query?.debug === '1';
     const response = await fetch('https://transit.yahoo.co.jp/diainfo/area/4', {

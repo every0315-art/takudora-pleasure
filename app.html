@@ -2412,7 +2412,7 @@
       { name: '北陸新幹線',   company: 'JR東日本', color: '#8e44ad', url: 'https://traininfo.jreast.co.jp/train_info/shinkansen.aspx' },
     ];
     try {
-      const res = await fetch('/api/shinkansen-info');
+      const res = await fetch('/api/train-info?type=shinkansen');
       const data = await res.json();
       if (updEl && data.updateDate) {
         updEl.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 更新';
