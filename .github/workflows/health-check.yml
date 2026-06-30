@@ -13,7 +13,7 @@ jobs:
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "x-health-token: ${{ secrets.HEALTH_TOKEN }}" \
-            https://pleasure.delivery-every.com/api/health)
+            https://pleasure.delivery-every.com/api/weather?mode=health)
           echo "HTTP Status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "異常検知: $STATUS"
