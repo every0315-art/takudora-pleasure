@@ -437,6 +437,13 @@
     .sort-handle { font-size: 18px; color: var(--gray); flex-shrink: 0; }
     .sort-label { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
     .sort-num { font-size: 12px; color: var(--gray); flex-shrink: 0; }
+    .sort-item-hidden { opacity: .45; }
+    .sort-item-hidden .sort-label { text-decoration: line-through; }
+    .sort-toggle {
+      flex-shrink: 0; font-size: 16px; background: none; border: none; cursor: pointer;
+      padding: 4px 6px; border-radius: 6px; line-height: 1;
+    }
+    .sort-toggle:active { background: rgba(255,255,255,.1); }
 
     /* ドラッグ中のドロップ先ハイライト（旧機能の名残、残しておく） */
     .tile.longpress-active {
@@ -877,6 +884,18 @@
         <div class="tile-label">業界ニュース</div>
         <div id="top-news-main" style="margin-top:6px;display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--text);line-height:1.4;">読込中…</div>
         <div id="top-news-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
+      </div>
+
+      <div class="tile tile-group tile-hidden" id="tile-group" data-tab="group" style="display:none;">
+        <div class="tile-label">グループ</div>
+        <div id="top-group-main" style="font-size:12px;color:var(--text);margin-top:6px;">—</div>
+        <div id="top-group-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
+      </div>
+
+      <div class="tile tile-stands-info tile-hidden" id="tile-stands-info" data-tab="stands-info" style="display:none;">
+        <div class="tile-label">乗り場情報</div>
+        <div id="top-stands-main" style="font-size:12px;color:var(--text);margin-top:6px;">—</div>
+        <div id="top-stands-sub" style="font-size:10px;color:var(--gray);margin-top:4px;"></div>
       </div>
     </div>
 
@@ -2407,9 +2426,16 @@
     { id: 'traffic',     label: '道路情報' },
     { id: 'community',   label: 'みんなの投稿' },
     { id: 'news',        label: '業界ニュース' },
+    { id: 'group',       label: 'グループ' },
+    { id: 'stands-info', label: '乗り場情報' },
   ];
-  const DEFAULT_ORDER = ['train', 'haneda-arr', 'haneda-cam', 'event', 'stand', 'sales', 'traffic', 'community', 'news'];
+  const DEFAULT_ORDER = SLOT_WIDGETS.map(w => w.id);
   let topGridSlots = JSON.parse(localStorage.getItem('topGridOrder') || 'null') || [...DEFAULT_ORDER];
+  // 保存済みの並び順に、後から追加されたタイル(group/stands-infoなど)が
+  // 含まれていない場合は末尾に補完する
+  DEFAULT_ORDER.forEach(id => { if (!topGridSlots.includes(id)) topGridSlots.push(id); });
+  topGridSlots = topGridSlots.filter(id => DEFAULT_ORDER.includes(id));
+  let topGridHiddenSet = new Set(JSON.parse(localStorage.getItem('topGridHidden') || '[]'));
   let _slotEditIndex = 0;
 
   function applyGridSlots() {
@@ -2417,7 +2443,7 @@
     topGridSlots.forEach((id, idx) => {
       const el = document.getElementById('tile-' + id);
       if (!el) return;
-      el.classList.remove('tile-hidden');
+      el.classList.toggle('tile-hidden', topGridHiddenSet.has(id));
       el.dataset.slotIndex = idx;
       grid.appendChild(el);
     });
@@ -2425,10 +2451,12 @@
 
   // ── 並び替えモーダル ──
   let _sortOrder = [];
+  let _sortHidden = new Set();
   let _sortDrag = null;
 
   function openSortModal() {
     _sortOrder = [...topGridSlots];
+    _sortHidden = new Set(topGridHiddenSet);
     renderSortList();
     const modal = document.getElementById('sort-modal');
     modal.style.display = 'flex';
@@ -2439,7 +2467,9 @@
     if (_sortDrag) { _sortDrag.clone.remove(); _sortDrag = null; }
     if (save) {
       topGridSlots = [..._sortOrder];
+      topGridHiddenSet = new Set(_sortHidden);
       localStorage.setItem('topGridOrder', JSON.stringify(topGridSlots));
+      localStorage.setItem('topGridHidden', JSON.stringify([...topGridHiddenSet]));
       applyGridSlots();
     }
     const modal = document.getElementById('sort-modal');
@@ -2447,14 +2477,21 @@
     setTimeout(() => { modal.style.display = 'none'; }, 280);
   }
 
+  function toggleSortHidden(id) {
+    if (_sortHidden.has(id)) _sortHidden.delete(id); else _sortHidden.add(id);
+    refreshSortLabels();
+  }
+
   function renderSortList() {
     const list = document.getElementById('sort-list');
     list.innerHTML = _sortOrder.map((id, i) => {
       const w = SLOT_WIDGETS.find(w => w.id === id);
-      return `<div class="sort-item" data-idx="${i}">
+      const hidden = _sortHidden.has(id);
+      return `<div class="sort-item${hidden ? ' sort-item-hidden' : ''}" data-idx="${i}">
         <span class="sort-handle">☰</span>
         <span class="sort-label">${w?.label || id}</span>
         <span class="sort-num">${i + 1}</span>
+        <button type="button" class="sort-toggle" data-id="${id}" onclick="toggleSortHidden('${id}')" title="${hidden ? '表示する' : '非表示にする'}">${hidden ? '🚫' : '👁'}</button>
       </div>`;
     }).join('');
   }
@@ -2463,10 +2500,19 @@
   function refreshSortLabels() {
     const list = document.getElementById('sort-list');
     [...list.querySelectorAll('.sort-item')].forEach((el, i) => {
-      const w = SLOT_WIDGETS.find(w => w.id === _sortOrder[i]);
+      const id = _sortOrder[i];
+      const w = SLOT_WIDGETS.find(w => w.id === id);
+      const hidden = _sortHidden.has(id);
       el.dataset.idx = i;
-      el.querySelector('.sort-label').textContent = w?.label || _sortOrder[i];
+      el.classList.toggle('sort-item-hidden', hidden);
+      el.querySelector('.sort-label').textContent = w?.label || id;
       el.querySelector('.sort-num').textContent = i + 1;
+      const toggleBtn = el.querySelector('.sort-toggle');
+      if (toggleBtn) {
+        toggleBtn.dataset.id = id;
+        toggleBtn.textContent = hidden ? '🚫' : '👁';
+        toggleBtn.title = hidden ? '表示する' : '非表示にする';
+      }
       el.style.opacity = (i === (_sortDrag?.idx ?? -1)) ? '0.3' : '';
     });
   }
@@ -2486,6 +2532,7 @@
     }
 
     document.getElementById('sort-modal').addEventListener('touchstart', e => {
+      if (e.target.closest('.sort-toggle')) return;
       const item = e.target.closest('.sort-item');
       if (!item) return;
       e.preventDefault();
@@ -2503,6 +2550,7 @@
     }, { passive: false });
 
     document.getElementById('sort-modal').addEventListener('mousedown', e => {
+      if (e.target.closest('.sort-toggle')) return;
       const item = e.target.closest('.sort-item');
       if (!item) return;
       const idx = +item.dataset.idx;
@@ -7463,6 +7511,14 @@
     if (tabNav) tabNav.style.display = hasGroup ? 'flex' : 'none';
     const standsBtn = document.getElementById('tab-btn-stands-info');
     if (standsBtn) standsBtn.style.display = hasGroup ? 'block' : 'none';
+    // TOPタイル（グループ/乗り場情報）もグループ所属時のみ表示
+    const tileGroup  = document.getElementById('tile-group');
+    const tileStands = document.getElementById('tile-stands-info');
+    if (tileGroup)  tileGroup.style.display  = hasGroup ? '' : 'none';
+    if (tileStands) tileStands.style.display = hasGroup ? '' : 'none';
+    if (hasGroup) {
+      updateGroupTiles();
+    }
     if (!hasGroup) {
       document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -7660,6 +7716,26 @@
     if (!content) return;
     const { error } = await _sb.from('group_announcements').insert({ group_id: _group.id, author_id: _sbUser.id, content });
     if (!error) { inp.value = ''; loadAnnouncements(); }
+  }
+
+  // TOPタイル（グループ/乗り場情報）に簡易情報を表示
+  async function updateGroupTiles() {
+    if (!_group) return;
+    const gMain = document.getElementById('top-group-main');
+    const gSub  = document.getElementById('top-group-sub');
+    if (gMain) gMain.textContent = _group.name;
+    if (gSub)  gSub.textContent  = _groupMember?.role === 'admin' ? '管理者' : 'メンバー';
+
+    const sMain = document.getElementById('top-stands-main');
+    const sSub  = document.getElementById('top-stands-sub');
+    if (sMain && sSub && _sb) {
+      const [standsRes, waitRes] = await Promise.all([
+        _sb.from('taxi_stands').select('id', { count: 'exact', head: true }).eq('group_id', _group.id),
+        _sb.from('waiting_records').select('id', { count: 'exact', head: true }).eq('group_id', _group.id).eq('status', 'waiting'),
+      ]);
+      sMain.textContent = `登録乗り場 ${standsRes.count || 0}件`;
+      sSub.textContent  = `現在付待ち ${waitRes.count || 0}人`;
+    }
   }
 
   // ── 乗場情報 ─────────────────────────────────────────
