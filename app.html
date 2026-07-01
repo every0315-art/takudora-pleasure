@@ -7191,6 +7191,7 @@
         }
         refreshCommunityPosts();
         checkUsageAlert();
+        await loadGroupTab();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
       }
@@ -7212,6 +7213,7 @@
         document.getElementById('login-gate').style.display = 'none';
         refreshCommunityPosts();
         checkUsageAlert();
+        await loadGroupTab();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
         refreshCommunityPosts();
@@ -7408,6 +7410,22 @@
     return _group;
   }
 
+  // グループ未所属の間はタブバー自体を隠し、グループタブに固定する
+  // (switchTab()は呼ばない: switchTab→loadGroupTab→updateGroupGateの無限再帰になるため
+  //  ペイン切り替えだけを直接行う)
+  function updateGroupGate(hasGroup) {
+    const tabNav = document.querySelector('.tab-nav');
+    if (tabNav) tabNav.style.display = hasGroup ? 'flex' : 'none';
+    if (!hasGroup) {
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      const btn = document.querySelector('.tab-btn[data-tab="group"]');
+      if (btn) btn.classList.add('active');
+      const pane = document.getElementById('tab-group');
+      if (pane) pane.classList.add('active');
+    }
+  }
+
   // タブを開いたときに呼ばれる
   async function loadGroupTab() {
     const loginPrompt = document.getElementById('group-login-prompt');
@@ -7430,9 +7448,11 @@
       joinUI.style.display    = 'block';
       mainUI.style.display    = 'none';
       leaveArea.style.display = 'none';
+      updateGroupGate(false);
       return;
     }
 
+    updateGroupGate(true);
     joinUI.style.display    = 'none';
     mainUI.style.display    = 'block';
 
