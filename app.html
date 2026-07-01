@@ -4140,7 +4140,7 @@
       const res = await fetch(
         `${SB_URL}/rest/v1/community_posts?select=*&order=created_at.desc&limit=50`,
         {
-          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` },
+          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_sbToken || SB_KEY}` },
           signal: AbortSignal.timeout(8000)
         }
       );
@@ -4376,6 +4376,7 @@
     try {
       const postData = {
         user_id: _sbUser.id,
+        group_id: _group?.id,
         name, initial, body,
         tags: tagStr,
         location: _reportLocation,
@@ -4403,11 +4404,6 @@
     }
   }
 
-  const ADMIN_EMAILS = ['every0315@gmail.com'];
-  function isAdmin() {
-    return typeof _sbUser !== 'undefined' && _sbUser && ADMIN_EMAILS.includes(_sbUser.email);
-  }
-
   async function deletePost(id) {
     if (!confirm('この投稿を取り消しますか？')) return;
     addHiddenPostId(id);
@@ -4421,11 +4417,6 @@
       } catch(e) { console.warn('deletePost:', e); }
     }
     await refreshCommunityPosts();
-  }
-
-  function deleteStaticPost(el) {
-    if (!confirm('この投稿を削除しますか？')) return;
-    el.closest('.post').remove();
   }
 
   function timeAgo(ts) {
@@ -4493,7 +4484,7 @@
     posts.forEach(p => {
       const mapId = `post-map-${p.id}`;
       const isOwn = _sbUser && p.user_id === _sbUser.id;
-      const canDelete = isOwn || isAdmin();
+      const canDelete = isOwn;
       const ts = new Date(p.created_at).getTime();
       const div = document.createElement('div');
       div.className = 'post my-post';
@@ -4570,19 +4561,6 @@
   }
 
   // 管理者の場合、静的投稿に削除ボタンを追加
-  function addAdminDeleteButtons() {
-    if (!isAdmin()) return;
-    document.querySelectorAll('#tab-community .post:not(.my-post)').forEach(post => {
-      const header = post.querySelector('.post-header');
-      if (!header || header.querySelector('.admin-del-btn')) return;
-      const btn = document.createElement('button');
-      btn.className = 'admin-del-btn';
-      btn.textContent = '✕ 削除';
-      btn.style.cssText = 'margin-left:auto;background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:2px 6px;';
-      btn.onclick = () => deleteStaticPost(btn);
-      header.appendChild(btn);
-    });
-  }
   // ストップウォッチ（idle→running→stopped→idle）
   let swState = 'idle', swStart = 0, swElapsed = 0, swTimer = null;
   const pad = n => String(n).padStart(2, '0');
@@ -7093,7 +7071,6 @@
       if (outEl) outEl.style.display = 'none';
       if (actEl) actEl.style.display = 'flex';
       if (mailEl) mailEl.textContent = user.email;
-      addAdminDeleteButtons();
     } else {
       if (inEl)  inEl.style.display  = 'none';
       if (actEl) actEl.style.display = 'none';
@@ -7771,7 +7748,10 @@
         const dt = new Date(w.started_at);
         const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
         const nickname = nameByUser[w.user_id] || '名無し';
+        const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
+        const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
         html += `<div class="wait-row"><div class="wait-row-top">
+          <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
           <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
           <span style="color:var(--gold)">${escHtml(nickname)}</span>
           <span style="color:var(--gray);margin-left:auto">${dtStr}</span>
