@@ -51,6 +51,9 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; height: 56px;
     }
+    .logo-wrap { display:flex; flex-direction:column; justify-content:center; line-height:1.15; }
+    .logo-group { font-size:10px; font-weight:700; color:var(--gold); letter-spacing:.02em; display:none; }
+    .logo-wrap.has-group .logo { font-size:13px; }
     .logo { font-size:17px; font-weight:800; color:var(--white); letter-spacing:.03em; }
     .logo span { color:var(--gold); }
     .header-right { display:flex; align-items:center; gap:16px; }
@@ -714,7 +717,10 @@
 
 <!-- HEADER -->
 <div class="header">
-  <div class="logo">タクドラ<span>PLEASURE</span></div>
+  <div class="logo-wrap" id="header-logo-wrap">
+    <div class="logo-group" id="header-group-name"></div>
+    <div class="logo">タクドラ<span>PLEASURE</span></div>
+  </div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>LIVE</div>
     <div class="user-area" id="header-user-area" onclick="switchTab('account')" style="cursor:pointer;" title="アカウント設定">ゲスト <strong>ユーザー</strong> さん</div>
@@ -7407,7 +7413,23 @@
       _group = null;
       _groupMember = null;
     }
+    updateHeaderGroupName();
     return _group;
+  }
+
+  // ヘッダーのアプリ名の上にグループ名を表示する
+  function updateHeaderGroupName() {
+    const wrap = document.getElementById('header-logo-wrap');
+    const nameEl = document.getElementById('header-group-name');
+    if (!wrap || !nameEl) return;
+    if (_group) {
+      nameEl.textContent = _group.name;
+      nameEl.style.display = 'block';
+      wrap.classList.add('has-group');
+    } else {
+      nameEl.style.display = 'none';
+      wrap.classList.remove('has-group');
+    }
   }
 
   // グループ未所属の間はタブバー自体を隠し、グループタブに固定する
