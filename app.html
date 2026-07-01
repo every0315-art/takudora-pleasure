@@ -7814,6 +7814,7 @@
     });
 
     if (log.length > 0) {
+      const isAdmin = _groupMember?.role === 'admin';
       html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">付待ちログ</div>';
       log.forEach(w => {
         const dt = new Date(w.started_at);
@@ -7821,15 +7822,23 @@
         const nickname = nameByUser[w.user_id] || '名無し';
         const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
         const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
+        const canDelete = isAdmin || w.user_id === _sbUser?.id;
         html += `<div class="wait-row"><div class="wait-row-top">
           <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
           <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
           <span style="color:var(--gold)">${escHtml(nickname)}</span>
           <span style="color:var(--gray);margin-left:auto">${dtStr}</span>
+          ${canDelete ? `<button onclick="deleteWaitingRecord('${w.id}')" style="background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
         </div></div>`;
       });
     }
     el.innerHTML = html;
+  }
+
+  async function deleteWaitingRecord(id) {
+    if (!_sb || !confirm('このログを削除しますか？')) return;
+    await _sb.from('waiting_records').delete().eq('id', id);
+    loadStandsInfo();
   }
 
   // ── 掲示板 ───────────────────────────────────────────
