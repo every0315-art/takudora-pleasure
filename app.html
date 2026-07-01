@@ -6532,36 +6532,36 @@
     statusEl.textContent = '読み取り中…';
     statusEl.style.color = 'var(--gold)';
 
-    // プレビュー
-    const reader = new FileReader();
-    reader.onload = e => { previewEl.src = e.target.result; };
-    reader.readAsDataURL(file);
-
-    // 画像をCanvasでリサイズ・圧縮してbase64に変換（最大1200px, JPEG 85%）
-    const b64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = ev => {
-        const img = new Image();
-        img.onerror = reject;
-        img.onload = () => {
-          const MAX = 1200;
-          let w = img.width, h = img.height;
-          if (w > MAX || h > MAX) {
-            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-            else        { w = Math.round(w * MAX / h); h = MAX; }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
-        };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
     try {
+      // プレビュー
+      const reader = new FileReader();
+      reader.onload = e => { previewEl.src = e.target.result; };
+      reader.readAsDataURL(file);
+
+      // 画像をCanvasでリサイズ・圧縮してbase64に変換（最大1200px, JPEG 85%）
+      const b64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
+        reader.onload = ev => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('画像の変換に失敗しました（対応していない形式の可能性があります）'));
+          img.onload = () => {
+            const MAX = 1200;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else        { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
       const res = await fetch('/api/parse-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
