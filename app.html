@@ -4731,6 +4731,16 @@
     }, 3500);
   }
 
+  // グループメンバーに営業開始/終了状態を共有する
+  async function syncShiftStatus(startedAt) {
+    if (!_sb || !_sbUser || !_group) return;
+    try {
+      await _sb.from('group_members')
+        .update({ shift_started_at: startedAt ? startedAt.toISOString() : null })
+        .eq('group_id', _group.id).eq('user_id', _sbUser.id);
+    } catch(e) { console.warn('syncShiftStatus:', e); }
+  }
+
   function swAction() {
     if (swState === 'idle') {
       swStart = Date.now();
@@ -4738,6 +4748,7 @@
       swState = 'running';
       swTimer = setInterval(() => { swTick(); swSave(); }, 500);
       showSwToast(SW_MSG_START[Math.floor(Math.random() * SW_MSG_START.length)]);
+      syncShiftStatus(new Date(swStart));
       if (navigator.geolocation) {
         const lbl = document.getElementById('sw-label');
         lbl.textContent = '位置取得中…';
@@ -4758,6 +4769,7 @@
       swTick();
       swState = 'stopped';
       showSwToast(SW_MSG_END[Math.floor(Math.random() * SW_MSG_END.length)]);
+      syncShiftStatus(null);
     } else {
       clearInterval(swTimer);
       swState = 'idle'; swElapsed = 0;
@@ -7706,14 +7718,54 @@
     if (!_group) return;
     const gMain = document.getElementById('top-group-main');
     const gSub  = document.getElementById('top-group-sub');
-    if (gMain) gMain.textContent = _group.name;
-    if (gSub)  gSub.textContent  = _groupMember?.role === 'admin' ? '管理者' : 'メンバー';
+    if (gSub) gSub.textContent = _groupMember?.role === 'admin' ? '管理者' : 'メンバー';
+
+    if (gMain && _sb) {
+      const { data: onShift } = await _sb.from('group_members')
+        .select('display_name, shift_started_at')
+        .eq('group_id', _group.id)
+        .not('shift_started_at', 'is', null)
+        .order('shift_started_at', { ascending: true });
+      if (!onShift || onShift.length === 0) {
+        gMain.innerHTML = `${escHtml(_group.name)}<div style="font-size:10px;color:var(--gray);margin-top:2px;">現在営業中のメンバーなし</div>`;
+      } else {
+        const now = Date.now();
+        const rows = onShift.map(m => {
+          const start = new Date(m.shift_started_at);
+          const startStr = `${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`;
+          const mins = Math.floor((now - start.getTime()) / 60000);
+          const h = Math.floor(mins / 60), mm = mins % 60;
+          return `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10px;margin-top:3px;">
+            <span style="color:var(--gold);">${escHtml(m.display_name || '名無し')}</span>
+            <span style="color:var(--gray);">${startStr}〜 (${h}h${String(mm).padStart(2,'0')}m)</span>
+          </div>`;
+        }).join('');
+        gMain.innerHTML = `${escHtml(_group.name)}${rows}`;
+      }
+    }
 
     const sMain = document.getElementById('top-stands-main');
     const sSub  = document.getElementById('top-stands-sub');
     if (sMain && _sb) {
-      const standsRes = await _sb.from('taxi_stands').select('id', { count: 'exact', head: true }).eq('group_id', _group.id);
-      sMain.textContent = `登録乗り場 ${standsRes.count || 0}件`;
+      const [logRes, membersRes] = await Promise.all([
+        _sb.from('waiting_records').select('*').eq('group_id', _group.id).order('started_at', { ascending: false }).limit(3),
+        _sb.from('group_members').select('user_id, display_name').eq('group_id', _group.id),
+      ]);
+      const nameByUser = {};
+      (membersRes.data || []).forEach(m => { nameByUser[m.user_id] = m.display_name || '名無し'; });
+      const log = logRes.data || [];
+      if (log.length === 0) {
+        sMain.textContent = '付待ちログはありません';
+      } else {
+        sMain.innerHTML = log.map(w => {
+          const dt = new Date(w.started_at);
+          const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+          return `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10px;margin-top:3px;">
+            <span style="color:var(--text);">${escHtml(w.stand_name||'不明')} / ${escHtml(nameByUser[w.user_id]||'名無し')}</span>
+            <span style="color:var(--gray);flex-shrink:0;">${dtStr}</span>
+          </div>`;
+        }).join('');
+      }
       if (sSub) sSub.textContent = '';
     }
   }
