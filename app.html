@@ -7153,11 +7153,13 @@
 
   if (_sb) {
     _sb.auth.onAuthStateChange(async (event, session) => {
+      console.log('[DEBUG onAuthStateChange]', event, 'user:', session?.user?.email);
       _sbToken = session?.access_token || null;
       sbUpdateUI(session?.user || null);
       if (session?.user) {
         document.getElementById('login-gate').style.display = 'none';
         await sbPull();
+        console.log('[DEBUG onAuthStateChange] sbPull done, event:', event);
         const profile = loadProfile();
         if (profile) {
           applyProfileToUI(profile);
@@ -7165,9 +7167,11 @@
         }
         refreshCommunityPosts();
         checkUsageAlert();
+        console.log('[DEBUG onAuthStateChange] calling refreshGroupTabButton, event:', event);
         refreshGroupTabButton();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
+        console.log('[DEBUG onAuthStateChange] no user branch, calling refreshGroupTabButton, event:', event);
         refreshGroupTabButton();
       }
       if (event === 'PASSWORD_RECOVERY') {
@@ -7175,10 +7179,12 @@
       }
     });
     _sb.auth.getSession().then(async ({ data }) => {
+      console.log('[DEBUG getSession] user:', data?.session?.user?.email);
       if (data?.session?.user) {
         _sbToken = data.session.access_token || null;
         sbUpdateUI(data.session.user);
         await sbPull();
+        console.log('[DEBUG getSession] sbPull done');
         const profile = loadProfile();
         if (profile) {
           applyProfileToUI(profile);
@@ -7187,10 +7193,12 @@
         document.getElementById('login-gate').style.display = 'none';
         refreshCommunityPosts();
         checkUsageAlert();
+        console.log('[DEBUG getSession] calling refreshGroupTabButton');
         refreshGroupTabButton();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
         refreshCommunityPosts();
+        console.log('[DEBUG getSession] no user branch, calling refreshGroupTabButton');
         refreshGroupTabButton();
       }
     });
@@ -7975,7 +7983,9 @@
   // ログイン後にグループタブボタンを表示
   function refreshGroupTabButton() {
     const btn = document.getElementById('tab-btn-group');
-    if (btn) btn.style.display = (_sb && _sbUser) ? 'block' : 'none';
+    const val = (_sb && _sbUser) ? 'block' : 'none';
+    console.log('[DEBUG refreshGroupTabButton]', 'sbUser:', _sbUser?.email, '-> setting', val, new Error().stack.split('\n')[2]);
+    if (btn) btn.style.display = val;
   }
 
   // escHtml helper（未定義の場合のみ）
