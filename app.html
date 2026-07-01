@@ -7191,7 +7191,7 @@
         }
         refreshCommunityPosts();
         checkUsageAlert();
-        await loadGroupTab();
+        loadGroupTab(); // sbPull()の完了を待たず並行実行(遅延防止)
       } else {
         document.getElementById('login-gate').style.display = 'flex';
       }
@@ -7213,7 +7213,7 @@
         document.getElementById('login-gate').style.display = 'none';
         refreshCommunityPosts();
         checkUsageAlert();
-        await loadGroupTab();
+        loadGroupTab(); // sbPull()の完了を待たず並行実行(遅延防止)
       } else {
         document.getElementById('login-gate').style.display = 'flex';
         refreshCommunityPosts();
