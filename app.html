@@ -6946,7 +6946,15 @@
     if (typeof supabase !== 'undefined') {
       _sb = supabase.createClient(
         'https://oxkzmpigegqaakeyhyrk.supabase.co',
-        'sb_publishable_V7mWATT47ffhp45TZ1_DpQ_lgTUiPdF'
+        'sb_publishable_V7mWATT47ffhp45TZ1_DpQ_lgTUiPdF',
+        {
+          auth: {
+            // iOSのホーム画面PWA(スタンドアロン表示)ではnavigator.locksの
+            // 挙動が不安定で、内部ロック待ちのままクエリが固まることがあるため、
+            // ロック機構を使わずそのまま関数を実行するようにする
+            lock: (name, acquireTimeout, fn) => fn(),
+          },
+        }
       );
     }
   } catch(e) { console.warn('Supabase init:', e); }
