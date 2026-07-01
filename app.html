@@ -7483,23 +7483,27 @@
     if (!code) { msg.style.color='var(--yellow)'; msg.textContent='招待コードを入力してください'; return; }
     msg.style.color = 'var(--gray)'; msg.textContent = '参加処理中…';
 
-    const { data: grp } = await _sb.from('groups').select('*').eq('invite_code', code).maybeSingle();
-    if (!grp) { msg.style.color='var(--red)'; msg.textContent='招待コードが無効です'; return; }
+    try {
+      const { data: grp } = await withTimeout(_sb.from('groups').select('*').eq('invite_code', code).maybeSingle());
+      if (!grp) { msg.style.color='var(--red)'; msg.textContent='招待コードが無効です'; return; }
 
-    const { error } = await _sb.from('group_members').insert({
-      group_id: grp.id,
-      user_id: _sbUser.id,
-      role: 'member',
-      display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || 'メンバー',
-      sales_public: true,
-    });
-    if (error) {
-      if (error.code === '23505') { msg.style.color='var(--yellow)'; msg.textContent='すでにこのグループに所属しています'; }
-      else { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
-      return;
+      const { error } = await withTimeout(_sb.from('group_members').insert({
+        group_id: grp.id,
+        user_id: _sbUser.id,
+        role: 'member',
+        display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || 'メンバー',
+        sales_public: true,
+      }));
+      if (error) {
+        if (error.code === '23505') { msg.style.color='var(--yellow)'; msg.textContent='すでにこのグループに所属しています'; }
+        else { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
+        return;
+      }
+      _groupLoaded = false;
+      loadGroupTab();
+    } catch(e) {
+      msg.style.color='var(--red)'; msg.textContent='エラー: ' + e.message;
     }
-    _groupLoaded = false;
-    loadGroupTab();
   }
 
   // ── グループ作成 ──────────────────────────────────────
@@ -7511,21 +7515,25 @@
     if (!name) { msg.style.color='var(--yellow)'; msg.textContent='グループ名を入力してください'; return; }
     msg.style.color = 'var(--gray)'; msg.textContent = '作成中…';
 
-    const invite_code = genInviteCode();
-    const { data: grp, error: ge } = await _sb.from('groups').insert({
-      name, description: desc || null, invite_code, created_by: _sbUser.id, sales_share: false,
-    }).select().single();
-    if (ge) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + ge.message; return; }
+    try {
+      const invite_code = genInviteCode();
+      const { data: grp, error: ge } = await withTimeout(_sb.from('groups').insert({
+        name, description: desc || null, invite_code, created_by: _sbUser.id, sales_share: false,
+      }).select().single());
+      if (ge) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + ge.message; return; }
 
-    const { error: me } = await _sb.from('group_members').insert({
-      group_id: grp.id, user_id: _sbUser.id, role: 'admin',
-      display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || '管理者',
-      sales_public: true,
-    });
-    if (me) { msg.style.color='var(--red)'; msg.textContent='メンバー登録エラー: ' + me.message; return; }
+      const { error: me } = await withTimeout(_sb.from('group_members').insert({
+        group_id: grp.id, user_id: _sbUser.id, role: 'admin',
+        display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || '管理者',
+        sales_public: true,
+      }));
+      if (me) { msg.style.color='var(--red)'; msg.textContent='メンバー登録エラー: ' + me.message; return; }
 
-    _groupLoaded = false;
-    loadGroupTab();
+      _groupLoaded = false;
+      loadGroupTab();
+    } catch(e) {
+      msg.style.color='var(--red)'; msg.textContent='エラー: ' + e.message;
+    }
   }
 
   // ── グループ退会 / 解散 ───────────────────────────────
