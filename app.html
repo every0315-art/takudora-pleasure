@@ -282,6 +282,46 @@
     .fixed-card-weather { grid-column: 1; grid-row: 1; }
     .fixed-card-timer   { grid-column: 1 / 3; grid-row: 2; flex-direction: row; align-items: center; gap: 6px; padding: 2px 8px; }
 
+    /* ── グループ機能 ──────────────────────────────────── */
+    .group-sub-tabs { display:flex; gap:0; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); }
+    .group-sub-btn { flex:1; padding:9px 4px; font-size:11px; font-weight:700; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--gray); cursor:pointer; transition:color .15s,border-color .15s; }
+    .group-sub-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
+    .group-sub-pane { display:none; }
+    .group-sub-pane.active { display:block; }
+    .gboard-post { padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:8px; }
+    .gboard-meta { font-size:10px; color:var(--gray); margin-bottom:4px; }
+    .gboard-body { font-size:13px; color:var(--text); white-space:pre-wrap; }
+    .gann-item { padding:12px; background:rgba(255,180,40,.07); border:1px solid rgba(255,180,40,.2); border-radius:8px; margin-bottom:8px; }
+    .gann-meta { font-size:10px; color:var(--gold); margin-bottom:4px; }
+    .gann-body { font-size:13px; color:var(--white); white-space:pre-wrap; }
+    .stand-item { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:6px; }
+    .stand-name { font-size:13px; font-weight:700; color:var(--white); }
+    .stand-sub { font-size:10px; color:var(--gray); }
+    .wait-row { padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:6px; font-size:12px; }
+    .wait-row-top { display:flex; align-items:center; gap:8px; }
+    .wait-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:700; flex-shrink:0; }
+    .wait-badge-waiting { background:rgba(255,180,40,.15); color:var(--yellow); }
+    .wait-badge-boarded { background:rgba(39,174,96,.15); color:var(--green); }
+    .member-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:6px; }
+    .member-avatar { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+    .member-info { flex:1; min-width:0; }
+    .member-name-txt { font-size:13px; font-weight:700; color:var(--white); }
+    .member-sub-txt { font-size:10px; color:var(--gray); margin-top:1px; }
+    .member-sales-txt { font-size:12px; font-weight:700; color:var(--gold); text-align:right; flex-shrink:0; }
+    .member-role-badge { font-size:9px; padding:1px 6px; border-radius:8px; background:rgba(255,180,40,.15); color:var(--gold); font-weight:700; }
+    /* 客待ちオーバーレイ */
+    .wait-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:2000; display:none; align-items:flex-end; justify-content:center; padding:0; }
+    .wait-overlay.show { display:flex; }
+    .wait-popup { background:#1a1a2e; border-radius:20px 20px 0 0; padding:24px 20px 32px; width:100%; max-width:480px; }
+    .wait-popup-title { font-size:12px; color:var(--gray); text-align:center; }
+    .wait-stand-lbl { font-size:15px; color:var(--gold); font-weight:700; text-align:center; margin:4px 0 0; }
+    .wait-timer-big { font-size:52px; font-weight:900; text-align:center; color:var(--white); font-variant-numeric:tabular-nums; letter-spacing:2px; margin:14px 0 20px; }
+    .wait-actions { display:flex; gap:10px; }
+    .wait-actions button { flex:1; padding:16px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; }
+    /* 管理パネル */
+    .admin-section { margin-bottom:16px; }
+    .admin-label { font-size:11px; color:var(--gold); font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+
     /* ── TICKER ── */
     .top-ticker {
       display: flex;
@@ -692,6 +732,7 @@
   <button class="tab-btn" data-tab="train">電車・交通</button>
   <button class="tab-btn" data-tab="event">イベント</button>
   <button class="tab-btn" data-tab="community">コミュニティ</button>
+  <button class="tab-btn" data-tab="group" id="tab-btn-group" style="display:none;">グループ</button>
   <button class="tab-btn" data-tab="account">👤 アカウント</button>
 </div>
 
@@ -746,6 +787,7 @@
             <div id="sw-label" style="font-size:9px;color:var(--gray);white-space:nowrap;">乗務開始前</div>
             <div id="sw-projected" style="display:none;font-size:9px;color:var(--green);font-weight:600;"></div>
           </div>
+          <button id="wait-start-btn" onclick="startWaiting()" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);cursor:pointer;white-space:nowrap;flex-shrink:0;">客待ち</button>
         </div>
       </div>
 
@@ -1397,6 +1439,152 @@
     <div class="card">
       <div class="card-title">投稿する</div>
       <button onclick="openReportModal()" style="width:100%;padding:14px;background:var(--red);color:var(--white);font-weight:800;border:none;border-radius:10px;font-size:15px;cursor:pointer;">📢 現在地を報告する</button>
+    </div>
+
+  </div>
+
+  <!-- 客待ちオーバーレイ -->
+  <div class="wait-overlay" id="wait-overlay">
+    <div class="wait-popup">
+      <div class="wait-popup-title">客待ち中</div>
+      <div class="wait-stand-lbl" id="wait-stand-lbl">現在地</div>
+      <div class="wait-timer-big" id="wait-timer-display">00:00</div>
+      <div class="wait-actions">
+        <button onclick="cancelWaiting()" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
+        <button onclick="boardedWaiting()" style="background:var(--green);color:#000;flex:2;">🚕 乗車した</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- グループ -->
+  <div class="tab-pane" id="tab-group">
+
+    <!-- 未ログイン -->
+    <div id="group-login-prompt" style="display:none;" class="card" style="text-align:center;">
+      <div style="font-size:14px;color:var(--gray);text-align:center;padding:16px 0;">グループ機能はログインが必要です</div>
+      <button onclick="switchTab('account')" style="width:100%;padding:12px;background:var(--red);color:var(--white);font-weight:700;border:none;border-radius:8px;cursor:pointer;">ログイン / 登録する</button>
+    </div>
+
+    <!-- グループ未所属 -->
+    <div id="group-join-ui" style="display:none;">
+      <div class="card">
+        <div class="card-title">グループに参加する</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;">管理者から受け取った招待コードを入力してください</div>
+        <input id="group-invite-input" type="text" maxlength="8" placeholder="招待コード（例：ABC123）"
+          style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:15px;text-align:center;text-transform:uppercase;letter-spacing:3px;box-sizing:border-box;">
+        <button onclick="joinGroup()" style="width:100%;margin-top:10px;padding:13px;background:var(--red);color:var(--white);font-weight:800;border:none;border-radius:8px;font-size:14px;cursor:pointer;">参加する</button>
+        <div id="group-join-msg" style="font-size:12px;text-align:center;margin-top:8px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">グループを作成する</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px;">新しいグループを作成して招待コードを発行します</div>
+        <input id="group-create-name" type="text" maxlength="30" placeholder="グループ名（例：○○タクシー）"
+          style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:14px;box-sizing:border-box;margin-bottom:8px;">
+        <input id="group-create-desc" type="text" maxlength="60" placeholder="説明（任意）"
+          style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:13px;box-sizing:border-box;">
+        <button onclick="createGroup()" style="width:100%;margin-top:10px;padding:13px;background:rgba(39,174,96,.2);border:1px solid rgba(39,174,96,.5);color:var(--green);font-weight:800;border:none;border-radius:8px;font-size:14px;cursor:pointer;">グループを作成</button>
+        <div id="group-create-msg" style="font-size:12px;text-align:center;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- グループ所属済み -->
+    <div id="group-main-ui" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div id="group-name-lbl" style="font-size:16px;font-weight:800;color:var(--white);"></div>
+        <div id="group-role-lbl" style="font-size:10px;color:var(--gold);font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(255,180,40,.12);"></div>
+      </div>
+
+      <!-- サブタブ -->
+      <div class="group-sub-tabs">
+        <button class="group-sub-btn active" data-gsub="ann" onclick="switchGroupSub('ann')">告知</button>
+        <button class="group-sub-btn" data-gsub="stands" onclick="switchGroupSub('stands')">乗場情報</button>
+        <button class="group-sub-btn" data-gsub="board" onclick="switchGroupSub('board')">掲示板</button>
+        <button class="group-sub-btn" data-gsub="members" onclick="switchGroupSub('members')">メンバー</button>
+        <button class="group-sub-btn" data-gsub="admin" id="group-admin-tab" style="display:none;" onclick="switchGroupSub('admin')">管理</button>
+      </div>
+
+      <!-- 告知 -->
+      <div class="group-sub-pane active" id="gsub-ann">
+        <div id="group-ann-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
+        <div id="group-ann-post-area" style="display:none;margin-top:10px;" class="card">
+          <div class="card-title" style="font-size:13px;">告知を投稿する</div>
+          <textarea id="group-ann-input" rows="4" placeholder="告知内容を入力…"
+            style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:13px;box-sizing:border-box;resize:none;"></textarea>
+          <button onclick="postAnnouncement()" style="width:100%;margin-top:8px;padding:12px;background:var(--gold);color:#000;font-weight:800;border:none;border-radius:8px;cursor:pointer;">投稿する</button>
+        </div>
+      </div>
+
+      <!-- 乗場情報 -->
+      <div class="group-sub-pane" id="gsub-stands">
+        <div id="group-stands-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
+        <div style="margin-top:8px;text-align:center;">
+          <button onclick="startWaiting()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">客待ち開始</button>
+        </div>
+      </div>
+
+      <!-- 掲示板 -->
+      <div class="group-sub-pane" id="gsub-board">
+        <div id="group-board-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
+        <div class="card" style="margin-top:10px;">
+          <textarea id="group-board-input" rows="3" placeholder="掲示板に投稿する…"
+            style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:13px;box-sizing:border-box;resize:none;"></textarea>
+          <button onclick="postBoard()" style="width:100%;margin-top:8px;padding:12px;background:var(--red);color:var(--white);font-weight:800;border:none;border-radius:8px;cursor:pointer;">投稿</button>
+        </div>
+      </div>
+
+      <!-- メンバー -->
+      <div class="group-sub-pane" id="gsub-members">
+        <div id="group-members-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
+      </div>
+
+      <!-- 管理（admin only） -->
+      <div class="group-sub-pane" id="gsub-admin">
+        <!-- 招待コード -->
+        <div class="card admin-section">
+          <div class="admin-label">招待コード</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="admin-invite-code" style="font-size:22px;font-weight:900;color:var(--gold);letter-spacing:4px;flex:1;"></div>
+            <button onclick="copyInviteCode()" style="padding:8px 14px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--gold);font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;">コピー</button>
+            <button onclick="regenInviteCode()" style="padding:8px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--gray);font-size:12px;border-radius:8px;cursor:pointer;">再発行</button>
+          </div>
+        </div>
+        <!-- 売上共有設定 -->
+        <div class="card admin-section">
+          <div class="admin-label">売上共有設定</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:13px;color:var(--text);">メンバーの売上を全員に公開</div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;">
+              <input type="checkbox" id="admin-sales-share" onchange="updateSalesShare(this.checked)" style="opacity:0;width:0;height:0;">
+              <span id="admin-sales-share-slider" style="position:absolute;cursor:pointer;inset:0;background:rgba(255,255,255,.15);border-radius:12px;transition:.2s;"></span>
+            </label>
+          </div>
+          <div style="font-size:11px;color:var(--gray);margin-top:6px;">ONにしてもメンバー個人が「非公開」設定した場合は除外されます</div>
+        </div>
+        <!-- 乗り場登録 -->
+        <div class="card admin-section">
+          <div class="admin-label">乗り場を登録する</div>
+          <input id="admin-stand-name" type="text" maxlength="30" placeholder="乗り場名（例：渋谷駅 南口）"
+            style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:13px;box-sizing:border-box;margin-bottom:8px;">
+          <button onclick="addStandByLocation()" style="width:100%;padding:11px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:var(--green);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">📍 現在地で登録</button>
+          <div id="admin-stand-msg" style="font-size:12px;text-align:center;margin-top:6px;"></div>
+          <div id="admin-stands-list" style="margin-top:12px;"></div>
+        </div>
+        <!-- メンバー管理 -->
+        <div class="card admin-section">
+          <div class="admin-label">メンバー管理</div>
+          <div id="admin-members-list"><div style="color:var(--gray);font-size:13px;text-align:center;padding:8px;">読み込み中…</div></div>
+        </div>
+        <!-- グループ退出 -->
+        <div style="text-align:center;margin-top:16px;">
+          <button onclick="leaveGroup(true)" style="padding:10px 24px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;font-size:12px;border-radius:8px;cursor:pointer;">グループを解散する</button>
+        </div>
+      </div>
+
+    </div><!-- /group-main-ui -->
+
+    <!-- 退会ボタン（下部） -->
+    <div id="group-leave-area" style="display:none;text-align:center;margin-top:16px;">
+      <button onclick="leaveGroup(false)" style="padding:8px 20px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;font-size:12px;border-radius:8px;cursor:pointer;">グループから退会する</button>
     </div>
 
   </div>
@@ -2077,6 +2265,9 @@
     if (pane) pane.classList.add('active');
     if (tabId === 'community' && typeof refreshCommunityPosts === 'function') {
       refreshCommunityPosts();
+    }
+    if (tabId === 'group') {
+      loadGroupTab();
     }
     const fab = document.getElementById('sort-fab');
     if (fab) fab.style.display = tabId === 'top' ? 'flex' : 'none';
@@ -6952,8 +7143,10 @@
         }
         refreshCommunityPosts();
         checkUsageAlert();
+        refreshGroupTabButton();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
+        refreshGroupTabButton();
       }
       if (event === 'PASSWORD_RECOVERY') {
         showPasswordResetModal();
@@ -6972,9 +7165,11 @@
         document.getElementById('login-gate').style.display = 'none';
         refreshCommunityPosts();
         checkUsageAlert();
+        refreshGroupTabButton();
       } else {
         document.getElementById('login-gate').style.display = 'flex';
         refreshCommunityPosts();
+        refreshGroupTabButton();
       }
     });
   }
@@ -7127,6 +7322,531 @@
       document.getElementById('setup-modal').style.display = 'flex';
     }
   })();
+
+  // ──────────────────────────────────────────────────────
+  //  グループ機能
+  // ──────────────────────────────────────────────────────
+  let _group = null;
+  let _groupMember = null;
+  let _groupLoaded = false;
+
+  // ランダム招待コード生成（6文字英数字大文字）
+  function genInviteCode() {
+    return Array.from(crypto.getRandomValues(new Uint8Array(6)))
+      .map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+  }
+
+  // グループ状態を取得してUIを切り替える
+  async function loadGroupData(force = false) {
+    if (!_sb || !_sbUser) return null;
+    if (_groupLoaded && !force) return _group;
+    _groupLoaded = true;
+
+    const { data: mem } = await _sb
+      .from('group_members')
+      .select('*, groups(*)')
+      .eq('user_id', _sbUser.id)
+      .maybeSingle();
+
+    if (mem && mem.groups) {
+      _group = mem.groups;
+      _groupMember = mem;
+    } else {
+      _group = null;
+      _groupMember = null;
+    }
+    return _group;
+  }
+
+  // タブを開いたときに呼ばれる
+  async function loadGroupTab() {
+    const loginPrompt = document.getElementById('group-login-prompt');
+    const joinUI      = document.getElementById('group-join-ui');
+    const mainUI      = document.getElementById('group-main-ui');
+    const leaveArea   = document.getElementById('group-leave-area');
+
+    if (!_sb || !_sbUser) {
+      loginPrompt.style.display = 'block';
+      joinUI.style.display      = 'none';
+      mainUI.style.display      = 'none';
+      leaveArea.style.display   = 'none';
+      return;
+    }
+
+    loginPrompt.style.display = 'none';
+    await loadGroupData(true);
+
+    if (!_group) {
+      joinUI.style.display    = 'block';
+      mainUI.style.display    = 'none';
+      leaveArea.style.display = 'none';
+      return;
+    }
+
+    joinUI.style.display    = 'none';
+    mainUI.style.display    = 'block';
+
+    document.getElementById('group-name-lbl').textContent = _group.name;
+    const isAdmin = _groupMember?.role === 'admin';
+    document.getElementById('group-role-lbl').textContent = isAdmin ? '管理者' : 'メンバー';
+
+    const adminTab = document.getElementById('group-admin-tab');
+    if (adminTab) adminTab.style.display = isAdmin ? 'block' : 'none';
+
+    if (isAdmin) {
+      document.getElementById('admin-invite-code').textContent = _group.invite_code;
+      const annArea = document.getElementById('group-ann-post-area');
+      if (annArea) annArea.style.display = 'block';
+      document.getElementById('admin-sales-share').checked = !!_group.sales_share;
+      updateSalesShareSlider(!!_group.sales_share);
+    }
+
+    leaveArea.style.display = isAdmin ? 'none' : 'block';
+
+    // 現在のサブタブを読み込む
+    const activeSub = document.querySelector('.group-sub-btn.active');
+    const subId = activeSub ? activeSub.dataset.gsub : 'ann';
+    loadGroupSubContent(subId);
+  }
+
+  function switchGroupSub(sub) {
+    document.querySelectorAll('.group-sub-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.gsub === sub);
+    });
+    document.querySelectorAll('.group-sub-pane').forEach(p => {
+      p.classList.toggle('active', p.id === 'gsub-' + sub);
+    });
+    loadGroupSubContent(sub);
+  }
+
+  function loadGroupSubContent(sub) {
+    if (!_group) return;
+    if (sub === 'ann')     loadAnnouncements();
+    if (sub === 'stands')  loadStandsInfo();
+    if (sub === 'board')   loadBoard();
+    if (sub === 'members') loadMembers();
+    if (sub === 'admin')   loadAdminPanel();
+  }
+
+  // ── グループ参加 ──────────────────────────────────────
+  async function joinGroup() {
+    if (!_sb || !_sbUser) return;
+    const code = (document.getElementById('group-invite-input').value || '').trim().toUpperCase();
+    const msg  = document.getElementById('group-join-msg');
+    if (!code) { msg.style.color='var(--yellow)'; msg.textContent='招待コードを入力してください'; return; }
+    msg.style.color = 'var(--gray)'; msg.textContent = '参加処理中…';
+
+    const { data: grp } = await _sb.from('groups').select('*').eq('invite_code', code).maybeSingle();
+    if (!grp) { msg.style.color='var(--red)'; msg.textContent='招待コードが無効です'; return; }
+
+    const { error } = await _sb.from('group_members').insert({
+      group_id: grp.id,
+      user_id: _sbUser.id,
+      role: 'member',
+      display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || 'メンバー',
+      sales_public: true,
+    });
+    if (error) {
+      if (error.code === '23505') { msg.style.color='var(--yellow)'; msg.textContent='すでにこのグループに所属しています'; }
+      else { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
+      return;
+    }
+    _groupLoaded = false;
+    loadGroupTab();
+  }
+
+  // ── グループ作成 ──────────────────────────────────────
+  async function createGroup() {
+    if (!_sb || !_sbUser) return;
+    const name = (document.getElementById('group-create-name').value || '').trim();
+    const desc = (document.getElementById('group-create-desc').value || '').trim();
+    const msg  = document.getElementById('group-create-msg');
+    if (!name) { msg.style.color='var(--yellow)'; msg.textContent='グループ名を入力してください'; return; }
+    msg.style.color = 'var(--gray)'; msg.textContent = '作成中…';
+
+    const invite_code = genInviteCode();
+    const { data: grp, error: ge } = await _sb.from('groups').insert({
+      name, description: desc || null, invite_code, created_by: _sbUser.id, sales_share: false,
+    }).select().single();
+    if (ge) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + ge.message; return; }
+
+    const { error: me } = await _sb.from('group_members').insert({
+      group_id: grp.id, user_id: _sbUser.id, role: 'admin',
+      display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || '管理者',
+      sales_public: true,
+    });
+    if (me) { msg.style.color='var(--red)'; msg.textContent='メンバー登録エラー: ' + me.message; return; }
+
+    _groupLoaded = false;
+    loadGroupTab();
+  }
+
+  // ── グループ退会 / 解散 ───────────────────────────────
+  async function leaveGroup(dissolve = false) {
+    if (!_sb || !_sbUser || !_group) return;
+    const msg = dissolve ? 'グループを解散しますか？この操作は取り消せません。' : 'グループから退会しますか？';
+    if (!confirm(msg)) return;
+    if (dissolve) {
+      await _sb.from('groups').delete().eq('id', _group.id);
+    } else {
+      await _sb.from('group_members').delete().eq('group_id', _group.id).eq('user_id', _sbUser.id);
+    }
+    _groupLoaded = false; _group = null; _groupMember = null;
+    loadGroupTab();
+  }
+
+  // ── 告知 ─────────────────────────────────────────────
+  async function loadAnnouncements() {
+    const el = document.getElementById('group-ann-list');
+    if (!el || !_group) return;
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:12px;padding:8px;">読み込み中…</div>';
+    const { data } = await _sb.from('group_announcements')
+      .select('*').eq('group_id', _group.id)
+      .order('created_at', { ascending: false }).limit(30);
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">告知はありません</div>';
+      return;
+    }
+    el.innerHTML = data.map(a => `
+      <div class="gann-item">
+        <div class="gann-meta">${new Date(a.created_at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="gann-body">${escHtml(a.content)}</div>
+      </div>`).join('');
+  }
+
+  async function postAnnouncement() {
+    if (!_sb || !_sbUser || !_group) return;
+    const inp = document.getElementById('group-ann-input');
+    const content = (inp?.value || '').trim();
+    if (!content) return;
+    const { error } = await _sb.from('group_announcements').insert({ group_id: _group.id, author_id: _sbUser.id, content });
+    if (!error) { inp.value = ''; loadAnnouncements(); }
+  }
+
+  // ── 乗場情報 ─────────────────────────────────────────
+  async function loadStandsInfo() {
+    const el = document.getElementById('group-stands-list');
+    if (!el || !_group) return;
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:12px;padding:8px;">読み込み中…</div>';
+
+    const [standsRes, waitRes] = await Promise.all([
+      _sb.from('taxi_stands').select('*').eq('group_id', _group.id).order('name'),
+      _sb.from('waiting_records').select('*').eq('group_id', _group.id)
+         .in('status', ['waiting']).order('started_at', { ascending: false }).limit(20),
+    ]);
+    const stands = standsRes.data || [];
+    const waiting = waitRes.data || [];
+
+    if (stands.length === 0 && waiting.length === 0) {
+      el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">乗場情報はありません<br><span style="font-size:11px;">管理者が乗り場を登録すると表示されます</span></div>';
+      return;
+    }
+
+    const waitByStand = {};
+    waiting.forEach(w => {
+      const key = w.stand_name || '不明';
+      if (!waitByStand[key]) waitByStand[key] = 0;
+      waitByStand[key]++;
+    });
+
+    let html = '';
+    stands.forEach(s => {
+      const cnt = waitByStand[s.name] || 0;
+      html += `<div class="stand-item">
+        <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">現在客待ち: <b style="color:var(--yellow)">${cnt}人</b></div></div>
+        <button onclick="startWaitingAt(${JSON.stringify(s.name)})" style="padding:6px 12px;background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">客待ち</button>
+      </div>`;
+    });
+
+    if (waiting.length > 0) {
+      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">現在の客待ち状況</div>';
+      waiting.forEach(w => {
+        const mins = Math.floor((Date.now() - new Date(w.started_at).getTime()) / 60000);
+        html += `<div class="wait-row"><div class="wait-row-top">
+          <span class="wait-badge wait-badge-waiting">待機中</span>
+          <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
+          <span style="color:var(--gray);margin-left:auto">${mins}分</span>
+        </div></div>`;
+      });
+    }
+    el.innerHTML = html;
+  }
+
+  // ── 掲示板 ───────────────────────────────────────────
+  async function loadBoard() {
+    const el = document.getElementById('group-board-list');
+    if (!el || !_group) return;
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:12px;padding:8px;">読み込み中…</div>';
+    const { data } = await _sb.from('group_board_posts')
+      .select('*').eq('group_id', _group.id)
+      .order('created_at', { ascending: false }).limit(50);
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">投稿はありません</div>';
+      return;
+    }
+    el.innerHTML = data.map(p => `
+      <div class="gboard-post">
+        <div class="gboard-meta">${new Date(p.created_at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="gboard-body">${escHtml(p.content)}</div>
+      </div>`).join('');
+  }
+
+  async function postBoard() {
+    if (!_sb || !_sbUser || !_group) return;
+    const inp = document.getElementById('group-board-input');
+    const content = (inp?.value || '').trim();
+    if (!content) return;
+    const { error } = await _sb.from('group_board_posts').insert({ group_id: _group.id, author_id: _sbUser.id, content });
+    if (!error) { inp.value = ''; loadBoard(); }
+  }
+
+  // ── メンバー ─────────────────────────────────────────
+  async function loadMembers() {
+    const el = document.getElementById('group-members-list');
+    if (!el || !_group) return;
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:12px;padding:8px;">読み込み中…</div>';
+    const { data } = await _sb.from('group_members')
+      .select('*').eq('group_id', _group.id).order('joined_at');
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">メンバーがいません</div>';
+      return;
+    }
+    const salesShare = _group.sales_share;
+    el.innerHTML = data.map(m => {
+      const isMe = m.user_id === _sbUser?.id;
+      const showSales = salesShare && m.sales_public;
+      const salesHtml = showSales
+        ? `<div class="member-sales-txt" id="member-sales-${m.user_id}">—</div>`
+        : '';
+      return `<div class="member-row">
+        <div class="member-avatar">${(m.display_name||'?').slice(0,1)}</div>
+        <div class="member-info">
+          <div class="member-name-txt">${escHtml(m.display_name||'名無し')} ${isMe?'<span style="font-size:10px;color:var(--gold)">(自分)</span>':''}</div>
+          <div class="member-sub-txt">${m.affiliation||''} ${m.role==='admin'?'<span class="member-role-badge">管理者</span>':''}</div>
+        </div>
+        ${salesHtml}
+      </div>`;
+    }).join('');
+
+    if (salesShare) {
+      data.filter(m => m.sales_public).forEach(m => fetchMemberSales(m.user_id));
+    }
+  }
+
+  async function fetchMemberSales(userId) {
+    const el = document.getElementById('member-sales-' + userId);
+    if (!el) return;
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const { data } = await _sb.from('user_data')
+      .select('value').eq('user_id', userId).eq('key', 'reports').maybeSingle();
+    if (!data?.value) return;
+    try {
+      const reports = JSON.parse(data.value);
+      const monthTotal = reports
+        .filter(r => r.date && r.date.startsWith(ym))
+        .reduce((s, r) => s + (Number(r.meterAmount) || 0), 0);
+      el.textContent = monthTotal > 0 ? `¥${monthTotal.toLocaleString()}` : '—';
+    } catch (_) {}
+  }
+
+  // ── 管理パネル ────────────────────────────────────────
+  async function loadAdminPanel() {
+    if (!_group || _groupMember?.role !== 'admin') return;
+    const el = document.getElementById('admin-stands-list');
+    const memEl = document.getElementById('admin-members-list');
+    if (el) {
+      const { data } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id).order('name');
+      el.innerHTML = (data || []).map(s => `
+        <div class="stand-item" style="margin-bottom:6px;">
+          <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">${s.lat?.toFixed(5)||''}, ${s.lng?.toFixed(5)||''}</div></div>
+          <button onclick="deleteStand('${s.id}')" style="padding:5px 10px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:6px;font-size:11px;cursor:pointer;">削除</button>
+        </div>`).join('') || '<div style="color:var(--gray);font-size:12px;text-align:center;">登録乗り場なし</div>';
+    }
+    if (memEl) {
+      const { data } = await _sb.from('group_members').select('*').eq('group_id', _group.id).order('joined_at');
+      memEl.innerHTML = (data || []).map(m => `
+        <div class="member-row">
+          <div class="member-avatar">${(m.display_name||'?').slice(0,1)}</div>
+          <div class="member-info">
+            <div class="member-name-txt">${escHtml(m.display_name||'名無し')}</div>
+            <div class="member-sub-txt">${m.role === 'admin' ? '<span class="member-role-badge">管理者</span>' : 'メンバー'}</div>
+          </div>
+          ${m.user_id !== _sbUser?.id
+            ? `<button onclick="removeMember('${m.id}')" style="padding:5px 10px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:6px;font-size:11px;cursor:pointer;">削除</button>`
+            : ''}
+        </div>`).join('') || '<div style="color:var(--gray);font-size:12px;">なし</div>';
+    }
+  }
+
+  async function addStandByLocation() {
+    if (!_sb || !_sbUser || !_group) return;
+    const name = (document.getElementById('admin-stand-name')?.value || '').trim();
+    const msg  = document.getElementById('admin-stand-msg');
+    if (!name) { msg.style.color='var(--yellow)'; msg.textContent='乗り場名を入力してください'; return; }
+    msg.style.color = 'var(--gray)'; msg.textContent = '位置情報取得中…';
+    if (!navigator.geolocation) { msg.style.color='var(--red)'; msg.textContent='位置情報が使えません'; return; }
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      const { error } = await _sb.from('taxi_stands').insert({ group_id: _group.id, name, lat, lng, created_by: _sbUser.id });
+      if (error) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
+      else { document.getElementById('admin-stand-name').value=''; msg.style.color='var(--green)'; msg.textContent='登録しました'; loadAdminPanel(); }
+    }, () => { msg.style.color='var(--red)'; msg.textContent='位置情報の取得に失敗しました'; });
+  }
+
+  async function deleteStand(standId) {
+    if (!_sb || !confirm('この乗り場を削除しますか？')) return;
+    await _sb.from('taxi_stands').delete().eq('id', standId);
+    loadAdminPanel();
+  }
+
+  async function removeMember(memberId) {
+    if (!_sb || !confirm('このメンバーを削除しますか？')) return;
+    await _sb.from('group_members').delete().eq('id', memberId);
+    loadAdminPanel(); loadMembers();
+  }
+
+  function copyInviteCode() {
+    const code = _group?.invite_code;
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      const el = document.getElementById('admin-invite-code');
+      const orig = el.textContent;
+      el.textContent = 'コピー済み！'; setTimeout(() => { el.textContent = orig; }, 1500);
+    });
+  }
+
+  async function regenInviteCode() {
+    if (!_sb || !_group || !confirm('招待コードを再発行しますか？\n既存のコードは使えなくなります')) return;
+    const code = genInviteCode();
+    const { error } = await _sb.from('groups').update({ invite_code: code }).eq('id', _group.id);
+    if (!error) { _group.invite_code = code; document.getElementById('admin-invite-code').textContent = code; }
+  }
+
+  function updateSalesShareSlider(on) {
+    const slider = document.getElementById('admin-sales-share-slider');
+    if (slider) {
+      slider.style.background = on ? 'var(--green)' : 'rgba(255,255,255,.15)';
+      slider.style.setProperty('--after-left', on ? '22px' : '2px');
+    }
+  }
+
+  async function updateSalesShare(checked) {
+    if (!_sb || !_group) return;
+    updateSalesShareSlider(checked);
+    await _sb.from('groups').update({ sales_share: checked }).eq('id', _group.id);
+    if (_group) _group.sales_share = checked;
+  }
+
+  // ── 客待ちシステム ────────────────────────────────────
+  let _waitState = null;
+  let _waitInterval = null;
+
+  async function startWaiting(standName = null) {
+    if (_waitState) { showWaitOverlay(); return; }
+    let resolvedStand = standName;
+
+    if (!resolvedStand && navigator.geolocation && _group) {
+      resolvedStand = await new Promise(resolve => {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          const { data: stands } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
+          if (stands && stands.length > 0) {
+            const nearest = stands.reduce((best, s) => {
+              const d = Math.hypot(s.lat - lat, s.lng - lng) * 111000;
+              return d < best.dist ? { stand: s, dist: d } : best;
+            }, { stand: null, dist: Infinity });
+            if (nearest.dist < 150) {
+              const confirmed = confirm(`「${nearest.stand.name}」で客待ちを開始しますか？`);
+              resolve(confirmed ? nearest.stand.name : null);
+              return;
+            }
+          }
+          resolve(null);
+        }, () => resolve(null), { timeout: 5000 });
+      });
+    }
+
+    const now = new Date();
+    let waitRecordId = null;
+    if (_sb && _sbUser && _group) {
+      const { latitude: lat, longitude: lng } = await new Promise(resolve => {
+        navigator.geolocation?.getCurrentPosition(pos => resolve(pos.coords), () => resolve({}));
+      }).catch(() => ({}));
+      const { data } = await _sb.from('waiting_records').insert({
+        group_id: _group.id,
+        user_id: _sbUser.id,
+        stand_name: resolvedStand || null,
+        lat: lat || null, lng: lng || null,
+        started_at: now.toISOString(),
+        status: 'waiting',
+      }).select().single();
+      waitRecordId = data?.id || null;
+    }
+
+    _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId };
+    showWaitOverlay();
+  }
+
+  async function startWaitingAt(standName) {
+    await startWaiting(standName);
+  }
+
+  function showWaitOverlay() {
+    if (!_waitState) return;
+    const overlay = document.getElementById('wait-overlay');
+    const lbl     = document.getElementById('wait-stand-lbl');
+    if (lbl) lbl.textContent = _waitState.standName || '現在地で客待ち中';
+    overlay.classList.add('show');
+    clearInterval(_waitInterval);
+    _waitInterval = setInterval(updateWaitTimer, 1000);
+    updateWaitTimer();
+  }
+
+  function updateWaitTimer() {
+    const el = document.getElementById('wait-timer-display');
+    if (!el || !_waitState) return;
+    const secs = Math.floor((Date.now() - _waitState.startedAt.getTime()) / 1000);
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    el.textContent = `${m}:${s}`;
+  }
+
+  async function boardedWaiting() {
+    if (!_waitState) return;
+    clearInterval(_waitInterval);
+    const mins = Math.round((Date.now() - _waitState.startedAt.getTime()) / 60000);
+    if (_sb && _waitState.recordId) {
+      await _sb.from('waiting_records').update({
+        boarded_at: new Date().toISOString(),
+        wait_minutes: mins,
+        status: 'boarded',
+      }).eq('id', _waitState.recordId);
+    }
+    _waitState = null;
+    document.getElementById('wait-overlay').classList.remove('show');
+  }
+
+  async function cancelWaiting() {
+    if (!_waitState) return;
+    clearInterval(_waitInterval);
+    if (_sb && _waitState.recordId) {
+      await _sb.from('waiting_records').update({ status: 'cancelled' }).eq('id', _waitState.recordId);
+    }
+    _waitState = null;
+    document.getElementById('wait-overlay').classList.remove('show');
+  }
+
+  // ログイン後にグループタブボタンを表示
+  function refreshGroupTabButton() {
+    const btn = document.getElementById('tab-btn-group');
+    if (btn) btn.style.display = (_sb && _sbUser) ? 'block' : 'none';
+  }
+
+  // escHtml helper（未定義の場合のみ）
+  if (typeof escHtml === 'undefined') {
+    window.escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 </script>
 </body>
 </html>
