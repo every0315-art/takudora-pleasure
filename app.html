@@ -7914,7 +7914,8 @@
   // ── 課金機能 ──────────────────────────────────────────
 
   function isBillingActive(status) {
-    return status === 'active' || status === 'trialing';
+    return true; // TODO: 課金開始まで一時的に無償開放中。復活させる場合は下の行に戻す
+    // return status === 'active' || status === 'trialing';
   }
 
   // グループタブ表示時に課金ロックバナーを制御
