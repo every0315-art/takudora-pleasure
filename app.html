@@ -6643,9 +6643,13 @@
 
   function applyProfileToUI(profile) {
     if (!profile) return;
-    // ヘッダー
+    // ヘッダー（ニックネームがあれば優先表示）
     const area = document.getElementById('header-user-area');
-    if (area) area.innerHTML = `${profile.lastName || 'ゲスト'} <strong>${profile.firstName || 'ユーザー'}</strong> さん`;
+    if (area) {
+      area.innerHTML = profile.nickname
+        ? `<strong>${profile.nickname}</strong> さん`
+        : `${profile.lastName || 'ゲスト'} <strong>${profile.firstName || 'ユーザー'}</strong> さん`;
+    }
     // アカウントタブ上部
     const dispName = document.getElementById('acc-display-name');
     if (dispName) dispName.textContent = `${profile.lastName || ''} ${profile.firstName || ''}`.trim() || 'ゲスト ユーザー';
