@@ -1607,7 +1607,9 @@
           <div class="admin-label">乗り場を登録する</div>
           <input id="admin-stand-name" type="text" maxlength="30" placeholder="乗り場名（例：渋谷駅 南口）"
             style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:13px;box-sizing:border-box;margin-bottom:8px;">
-          <button onclick="addStandByLocation()" style="width:100%;padding:11px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:var(--green);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">📍 現在地で登録</button>
+          <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">📍 ピンをドラッグ、または地図タップで位置を調整できます</div>
+          <div id="stand-map" style="width:100%;height:180px;border-radius:8px;overflow:hidden;margin-bottom:8px;"></div>
+          <button onclick="registerStandAtPin()" style="width:100%;padding:11px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:var(--green);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">📍 この位置で登録</button>
           <div id="admin-stand-msg" style="font-size:12px;text-align:center;margin-top:6px;"></div>
           <div id="admin-stands-list" style="margin-top:12px;"></div>
         </div>
@@ -7791,6 +7793,7 @@
   async function loadAdminPanel() {
     if (!_group || _groupMember?.role !== 'admin') return;
     renderAdminBillingStatus();
+    initStandMap();
     const el = document.getElementById('admin-stands-list');
     const memEl = document.getElementById('admin-members-list');
     if (el) {
@@ -7817,19 +7820,62 @@
     }
   }
 
-  async function addStandByLocation() {
+  let _standMap = null, _standMarker = null, _standCoords = null;
+
+  function moveStandMarker(lat, lng, setView = false) {
+    _standCoords = { lat, lng };
+    if (!_standMap) return;
+    if (setView) _standMap.setView([lat, lng], 16);
+    if (_standMarker) {
+      _standMarker.setLatLng([lat, lng]);
+    } else {
+      _standMarker = L.marker([lat, lng], {
+        draggable: true,
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="width:20px;height:20px;border-radius:50%;background:#f0b429;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        })
+      }).addTo(_standMap);
+      _standMarker.on('dragend', () => {
+        const p = _standMarker.getLatLng();
+        _standCoords = { lat: p.lat, lng: p.lng };
+      });
+    }
+  }
+
+  function initStandMap() {
+    const mapEl = document.getElementById('stand-map');
+    if (!mapEl) return;
+    if (_standMap) { _standMap.invalidateSize(); return; }
+    mapEl.innerHTML = '';
+    _standMap = L.map('stand-map', { zoomControl: true, attributionControl: false }).setView([35.681, 139.767], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_standMap);
+    _standMap.on('click', e => moveStandMarker(e.latlng.lat, e.latlng.lng));
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => moveStandMarker(pos.coords.latitude, pos.coords.longitude, true),
+        () => moveStandMarker(35.681, 139.767, true),
+        { timeout: 8000, maximumAge: 30000 }
+      );
+    } else {
+      moveStandMarker(35.681, 139.767, true);
+    }
+    setTimeout(() => _standMap.invalidateSize(), 200);
+  }
+
+  async function registerStandAtPin() {
     if (!_sb || !_sbUser || !_group) return;
     const name = (document.getElementById('admin-stand-name')?.value || '').trim();
     const msg  = document.getElementById('admin-stand-msg');
     if (!name) { msg.style.color='var(--yellow)'; msg.textContent='乗り場名を入力してください'; return; }
-    msg.style.color = 'var(--gray)'; msg.textContent = '位置情報取得中…';
-    if (!navigator.geolocation) { msg.style.color='var(--red)'; msg.textContent='位置情報が使えません'; return; }
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      const { error } = await _sb.from('taxi_stands').insert({ group_id: _group.id, name, lat, lng, created_by: _sbUser.id });
-      if (error) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
-      else { document.getElementById('admin-stand-name').value=''; msg.style.color='var(--green)'; msg.textContent='登録しました'; loadAdminPanel(); }
-    }, () => { msg.style.color='var(--red)'; msg.textContent='位置情報の取得に失敗しました'; });
+    if (!_standCoords) { msg.style.color='var(--red)'; msg.textContent='地図でピンの位置を指定してください'; return; }
+    msg.style.color = 'var(--gray)'; msg.textContent = '登録中…';
+    const { lat, lng } = _standCoords;
+    const { error } = await _sb.from('taxi_stands').insert({ group_id: _group.id, name, lat, lng, created_by: _sbUser.id });
+    if (error) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
+    else { document.getElementById('admin-stand-name').value=''; msg.style.color='var(--green)'; msg.textContent='登録しました'; loadAdminPanel(); }
   }
 
   async function deleteStand(standId) {
