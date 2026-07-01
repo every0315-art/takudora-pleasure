@@ -6824,7 +6824,19 @@
     applyProfileToUI(profile);
     updateTopSalesTile();
     renderMonthlySummary();
+    syncGroupDisplayName(profile.nickname);
     showMsg('acc-save-msg', '保存しました ✓');
+  }
+
+  // プロフィールのニックネームをグループの表示名にも反映する
+  async function syncGroupDisplayName(nickname) {
+    if (!_sb || !_sbUser || !_group || !nickname) return;
+    try {
+      await _sb.from('group_members')
+        .update({ display_name: nickname })
+        .eq('group_id', _group.id).eq('user_id', _sbUser.id);
+      if (_groupMember) _groupMember.display_name = nickname;
+    } catch(e) { console.warn('syncGroupDisplayName:', e); }
   }
 
   function savePublicSettings() {
@@ -7613,7 +7625,7 @@
         group_id: grp.id,
         user_id: _sbUser.id,
         role: 'member',
-        display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || 'メンバー',
+        display_name: loadProfile()?.nickname || _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || 'メンバー',
         sales_public: true,
       }));
       if (error) {
@@ -7658,7 +7670,7 @@
 
       const { error: me } = await withTimeout(_sb.from('group_members').insert({
         group_id: grp.id, user_id: _sbUser.id, role: 'admin',
-        display_name: _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || '管理者',
+        display_name: loadProfile()?.nickname || _sbUser.user_metadata?.name || _sbUser.email?.split('@')[0] || '管理者',
         sales_public: true,
       }));
       if (me) { msg.style.color='var(--red)'; msg.textContent='メンバー登録エラー: ' + me.message; return; }
