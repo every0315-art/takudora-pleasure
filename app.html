@@ -7587,7 +7587,9 @@
     msg.style.color = 'var(--gray)'; msg.textContent = '参加処理中…';
 
     try {
-      const { data: grp } = await withTimeout(_sb.from('groups').select('*').eq('invite_code', code).maybeSingle());
+      // groupsテーブルの直接SELECTはメンバー限定のため、招待コード検索用のRPCを使う
+      const { data: grpRows } = await withTimeout(_sb.rpc('lookup_group_by_invite_code', { p_code: code }));
+      const grp = grpRows && grpRows[0];
       if (!grp) { msg.style.color='var(--red)'; msg.textContent='招待コードが無効です'; return; }
 
       const { error } = await withTimeout(_sb.from('group_members').insert({
