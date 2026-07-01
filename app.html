@@ -1493,6 +1493,10 @@
         <button onclick="cancelWaiting()" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
         <button onclick="boardedWaiting()" style="background:var(--green);color:#000;flex:2;">🚕 乗車した</button>
       </div>
+      <div class="wait-actions" style="margin-top:8px;">
+        <button onclick="leaveWaiting()" style="background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);">離脱</button>
+        <button onclick="radioLeaveWaiting()" style="background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);">無線離脱</button>
+      </div>
     </div>
   </div>
 
@@ -7998,6 +8002,21 @@
               return;
             }
           }
+          // 近くに登録済みの乗り場がない場合、その場で新規登録するか確認する
+          const wantsRegister = confirm('近くに登録済みの乗り場がありません。この場所を新しい乗り場として登録しますか？');
+          if (wantsRegister) {
+            const newName = (prompt('乗り場名を入力してください', '') || '').trim();
+            if (newName) {
+              const { data: newStand, error } = await _sb.from('taxi_stands').insert({
+                group_id: _group.id, name: newName, lat, lng, created_by: _sbUser.id,
+              }).select().single();
+              if (!error && newStand) {
+                resolve({ name: newStand.name, cancelled: false });
+                return;
+              }
+              alert('乗り場の登録に失敗しました: ' + (error?.message || ''));
+            }
+          }
           resolve({ name: null, cancelled: false });
         }, () => resolve({ name: null, cancelled: false }), { timeout: 5000 });
       });
@@ -8084,6 +8103,32 @@
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = '付待ち';
+  }
+
+  // 乗車以外の理由で付待ちを終える（離脱・無線離脱）共通処理
+  async function endWaitingWithStatus(status) {
+    if (!_waitState) return;
+    clearInterval(_waitInterval);
+    const mins = Math.round((Date.now() - _waitState.startedAt.getTime()) / 60000);
+    if (_sb && _waitState.recordId) {
+      await _sb.from('waiting_records').update({
+        boarded_at: new Date().toISOString(),
+        wait_minutes: mins,
+        status,
+      }).eq('id', _waitState.recordId);
+    }
+    _waitState = null;
+    document.getElementById('wait-overlay').classList.remove('show');
+    const btn = document.getElementById('wait-start-btn');
+    if (btn) btn.innerHTML = '付待ち';
+  }
+
+  async function leaveWaiting() {
+    if (confirm('付待ちを離脱しますか？')) await endWaitingWithStatus('left');
+  }
+
+  async function radioLeaveWaiting() {
+    if (confirm('無線対応のため離脱しますか？')) await endWaitingWithStatus('radio_left');
   }
 
   // ── 課金機能 ──────────────────────────────────────────
