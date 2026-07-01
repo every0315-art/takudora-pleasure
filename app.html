@@ -4738,6 +4738,7 @@
       await _sb.from('group_members')
         .update({ shift_started_at: startedAt ? startedAt.toISOString() : null })
         .eq('group_id', _group.id).eq('user_id', _sbUser.id);
+      if (typeof updateGroupTiles === 'function') updateGroupTiles();
     } catch(e) { console.warn('syncShiftStatus:', e); }
   }
 
