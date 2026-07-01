@@ -3596,7 +3596,7 @@
       list.innerHTML = alerts.map(a => {
         const clickable = a.link || a.tab;
         const onclick = a.link
-          ? `onclick="Object.assign(document.createElement('a'),{href:'${a.link}',target:'_blank',rel:'noopener'}).click()"`
+          ? `onclick="window.open('${a.link}', '_blank', 'noopener')"`
           : a.tab ? `onclick="switchTab('${a.tab}')"` : '';
         return `
         <div class="pickup-card${a.serious ? ' pc-alert' : a.delay ? ' pc-warn' : ''}" style="max-width:100%;width:100%;${clickable ? 'cursor:pointer;' : ''}" ${onclick}>
