@@ -6494,9 +6494,11 @@
     if (!inp) return;
     inp.addEventListener('change', function() {
       const file = this.files && this.files[0];
+      // 次の選択で同じ/別の写真でも確実にchangeイベントが発火するよう、
+      // fileを変数へ確保した直後に即座にリセットする（遅延させない）
+      inp.value = '';
       if (!file) return;
       handleReportFile(file);
-      setTimeout(function() { inp.value = ''; }, 300);
     });
   })();
 
