@@ -1494,6 +1494,19 @@
         <div id="group-role-lbl" style="font-size:10px;color:var(--gold);font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(255,180,40,.12);"></div>
       </div>
 
+      <!-- 課金ロック バナー -->
+      <div id="billing-lock-group" style="display:none;" class="card" style="border:1px solid rgba(231,76,60,.4);background:rgba(231,76,60,.07);text-align:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:#e74c3c;margin-bottom:6px;">グループプランの支払いが必要です</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">管理者がグループ基本料金を支払うと全員が利用できます</div>
+        <button id="billing-lock-group-btn" onclick="startGroupBilling()" style="padding:12px 24px;background:#e74c3c;color:#fff;font-weight:800;border:none;border-radius:8px;font-size:13px;cursor:pointer;">グループ料金を支払う</button>
+      </div>
+      <div id="billing-lock-member" style="display:none;" class="card" style="border:1px solid rgba(255,180,40,.4);background:rgba(255,180,40,.07);text-align:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:6px;">メンバー料金の支払いが必要です</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">グループ機能を使うには個人のメンバー料金をお支払いください</div>
+        <button onclick="startMemberBilling()" style="padding:12px 24px;background:var(--gold);color:#000;font-weight:800;border:none;border-radius:8px;font-size:13px;cursor:pointer;">メンバー料金を支払う</button>
+      </div>
+      <!-- /課金ロック -->
+
       <!-- サブタブ -->
       <div class="group-sub-tabs">
         <button class="group-sub-btn active" data-gsub="ann" onclick="switchGroupSub('ann')">告知</button>
@@ -1539,6 +1552,15 @@
 
       <!-- 管理（admin only） -->
       <div class="group-sub-pane" id="gsub-admin">
+        <!-- 課金状況 -->
+        <div class="card admin-section">
+          <div class="admin-label">課金状況</div>
+          <div id="admin-billing-status" style="font-size:13px;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="startGroupBilling()" id="admin-billing-pay-btn" style="padding:10px 16px;background:var(--red);color:#fff;font-weight:700;border:none;border-radius:8px;font-size:12px;cursor:pointer;display:none;">今すぐ支払う</button>
+            <button onclick="openGroupPortal()" id="admin-billing-portal-btn" style="padding:10px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--text);font-size:12px;border-radius:8px;cursor:pointer;display:none;">プラン管理 / 解約</button>
+          </div>
+        </div>
         <!-- 招待コード -->
         <div class="card admin-section">
           <div class="admin-label">招待コード</div>
@@ -7401,6 +7423,7 @@
       updateSalesShareSlider(!!_group.sales_share);
     }
 
+    applyBillingLock();
     leaveArea.style.display = isAdmin ? 'none' : 'block';
 
     // 現在のサブタブを読み込む
@@ -7653,6 +7676,7 @@
   // ── 管理パネル ────────────────────────────────────────
   async function loadAdminPanel() {
     if (!_group || _groupMember?.role !== 'admin') return;
+    renderAdminBillingStatus();
     const el = document.getElementById('admin-stands-list');
     const memEl = document.getElementById('admin-members-list');
     if (el) {
@@ -7835,6 +7859,117 @@
     }
     _waitState = null;
     document.getElementById('wait-overlay').classList.remove('show');
+  }
+
+  // ── 課金機能 ──────────────────────────────────────────
+
+  function isBillingActive(status) {
+    return status === 'active' || status === 'trialing';
+  }
+
+  // グループタブ表示時に課金ロックバナーを制御
+  function applyBillingLock() {
+    if (!_group || !_groupMember) return;
+    const groupOk  = isBillingActive(_group.subscription_status);
+    const memberOk = isBillingActive(_groupMember.subscription_status);
+    const isAdmin  = _groupMember.role === 'admin';
+
+    const lockGroup  = document.getElementById('billing-lock-group');
+    const lockMember = document.getElementById('billing-lock-member');
+    const lockGroupBtn = document.getElementById('billing-lock-group-btn');
+    const subTabs    = document.querySelector('.group-sub-tabs');
+
+    // グループ未払い → 管理者にのみ支払いボタン、他メンバーには説明のみ
+    if (lockGroup) {
+      lockGroup.style.display = !groupOk ? 'block' : 'none';
+      if (lockGroupBtn) lockGroupBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    }
+    // メンバー未払い（グループ課金はOKだが本人未払い）
+    if (lockMember) lockMember.style.display = (groupOk && !memberOk) ? 'block' : 'none';
+
+    // サブタブはどちらも未払いならグレーアウト（使用不可にはしない→閲覧だけ可にする場合はここを変える）
+    const locked = !groupOk || !memberOk;
+    if (subTabs) subTabs.style.opacity = locked ? '0.4' : '1';
+    document.querySelectorAll('.group-sub-btn').forEach(b => { b.style.pointerEvents = locked ? 'none' : ''; });
+  }
+
+  async function startGroupBilling() {
+    if (!_sb || !_sbUser || !_group) return;
+    try {
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'group', groupId: _group.id, userId: _sbUser.id }),
+      });
+      const d = await res.json();
+      if (d.url) window.open(d.url, '_blank');
+      else alert('エラー: ' + (d.error || '不明'));
+    } catch (e) { alert('通信エラー: ' + e.message); }
+  }
+
+  async function startMemberBilling() {
+    if (!_sb || !_sbUser || !_group || !_groupMember) return;
+    try {
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'member', groupId: _group.id, memberId: _groupMember.id, userId: _sbUser.id }),
+      });
+      const d = await res.json();
+      if (d.url) window.open(d.url, '_blank');
+      else alert('エラー: ' + (d.error || '不明'));
+    } catch (e) { alert('通信エラー: ' + e.message); }
+  }
+
+  async function openGroupPortal() {
+    if (!_sb || !_group) return;
+    try {
+      const res = await fetch('/api/stripe-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'group', groupId: _group.id }),
+      });
+      const d = await res.json();
+      if (d.url) window.open(d.url, '_blank');
+      else alert('エラー: ' + (d.error || '不明'));
+    } catch (e) { alert('通信エラー: ' + e.message); }
+  }
+
+  async function openMemberPortal() {
+    if (!_sb || !_groupMember) return;
+    try {
+      const res = await fetch('/api/stripe-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'member', memberId: _groupMember.id }),
+      });
+      const d = await res.json();
+      if (d.url) window.open(d.url, '_blank');
+      else alert('エラー: ' + (d.error || '不明'));
+    } catch (e) { alert('通信エラー: ' + e.message); }
+  }
+
+  // 管理パネルの課金状況表示を更新
+  function renderAdminBillingStatus() {
+    const el = document.getElementById('admin-billing-status');
+    const payBtn    = document.getElementById('admin-billing-pay-btn');
+    const portalBtn = document.getElementById('admin-billing-portal-btn');
+    if (!el || !_group) return;
+    const ok = isBillingActive(_group.subscription_status);
+    const statusLabel = { active:'有効', trialing:'試用中', past_due:'支払い遅延', canceled:'解約済み', inactive:'未契約' };
+    const color = ok ? 'var(--green)' : '#e74c3c';
+    el.innerHTML = `グループプラン: <b style="color:${color}">${statusLabel[_group.subscription_status] || _group.subscription_status}</b>`;
+    if (payBtn)    payBtn.style.display    = !ok ? 'inline-block' : 'none';
+    if (portalBtn) portalBtn.style.display = _group.stripe_customer_id ? 'inline-block' : 'none';
+  }
+
+  // ページ復帰時（Stripe Checkoutからの戻り）に状態を再チェック
+  if (window.location.search.includes('billing=success')) {
+    history.replaceState(null, '', window.location.pathname);
+    window.addEventListener('_groupLoaded', () => {
+      _groupLoaded = false;
+      loadGroupTab();
+    }, { once: true });
   }
 
   // ログイン後にグループタブボタンを表示
