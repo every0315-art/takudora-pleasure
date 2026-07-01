@@ -7868,7 +7868,7 @@
     let resolvedStand = standName;
 
     if (!resolvedStand && navigator.geolocation && _group) {
-      resolvedStand = await new Promise(resolve => {
+      const result = await new Promise(resolve => {
         navigator.geolocation.getCurrentPosition(async pos => {
           const { latitude: lat, longitude: lng } = pos.coords;
           const { data: stands } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
@@ -7879,13 +7879,15 @@
             }, { stand: null, dist: Infinity });
             if (nearest.dist < 150) {
               const confirmed = confirm(`「${nearest.stand.name}」で付待ちを開始しますか？`);
-              resolve(confirmed ? nearest.stand.name : null);
+              resolve(confirmed ? { name: nearest.stand.name, cancelled: false } : { name: null, cancelled: true });
               return;
             }
           }
-          resolve(null);
-        }, () => resolve(null), { timeout: 5000 });
+          resolve({ name: null, cancelled: false });
+        }, () => resolve({ name: null, cancelled: false }), { timeout: 5000 });
       });
+      if (result.cancelled) return; // キャンセル時は付待ちを開始しない
+      resolvedStand = result.name;
     }
 
     const now = new Date();
