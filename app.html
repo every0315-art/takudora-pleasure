@@ -6954,20 +6954,29 @@
   // 認証完了を待たずにコミュニティ投稿を即時読み込み（公開データのため認証不要）
   if (_sb) refreshCommunityPosts();
 
+  // Supabaseクライアントの内部ロック等でクエリが応答しなくなるケースに備え、
+  // 一定時間で強制的にタイムアウトさせて呼び出し元に失敗を返す
+  function withTimeout(promise, ms = 8000) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+    ]);
+  }
+
   async function sbPush(key, value) {
     if (!_sb || !_sbUser) return;
     try {
-      await _sb.from('user_data').upsert(
+      await withTimeout(_sb.from('user_data').upsert(
         { user_id: _sbUser.id, key, value },
         { onConflict: 'user_id,key' }
-      );
+      ));
     } catch(e) { console.warn('sbPush:', e); }
   }
 
   async function sbPull() {
     if (!_sb || !_sbUser) return;
     try {
-      const { data } = await _sb.from('user_data').select('key,value').eq('user_id', _sbUser.id);
+      const { data } = await withTimeout(_sb.from('user_data').select('key,value').eq('user_id', _sbUser.id));
       if (!data) return;
       data.forEach(r => localStorage.setItem(r.key, r.value));
       applyProfileToUI(loadProfile());
@@ -7021,7 +7030,7 @@
       const rows = keys
         .map(key => ({ user_id: _sbUser.id, key, value: localStorage.getItem(key) }))
         .filter(r => r.value != null);
-      await _sb.from('user_data').upsert(rows, { onConflict: 'user_id,key' });
+      await withTimeout(_sb.from('user_data').upsert(rows, { onConflict: 'user_id,key' }));
       sbSyncMsg('✓ クラウドに保存しました', 'var(--green)');
     } catch(e) {
       sbSyncMsg('✗ 保存失敗: ' + e.message, 'var(--red)');
