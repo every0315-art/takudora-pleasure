@@ -283,7 +283,7 @@
       overflow: hidden;
     }
     .fixed-card-weather { grid-column: 1; grid-row: 1; }
-    .fixed-card-timer   { grid-column: 1 / 3; grid-row: 2; flex-direction: row; align-items: center; gap: 6px; padding: 2px 8px; }
+    .fixed-card-timer   { grid-column: 1; grid-row: 2; flex-direction: row; align-items: center; gap: 6px; padding: 2px 8px; }
 
     /* ── グループ機能 ──────────────────────────────────── */
     .group-sub-tabs { display:flex; gap:0; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); }
@@ -781,11 +781,13 @@
             </div>
           </div>
         </div>
-        <!-- 現在地投稿 -->
-        <button onclick="openReportModal()" style="grid-column:2;grid-row:1;align-self:start;height:29px;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;">
-          現在地投稿
+        <!-- 現在地投稿（正方形） -->
+        <button onclick="openReportModal()" style="grid-column:2;grid-row:1;aspect-ratio:1;width:100%;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;">
+          現在地<br>投稿
         </button>
-        <!-- タイマー（下段・全幅） -->
+        <!-- 付待ち（正方形・現在地投稿と揃える） -->
+        <button id="wait-start-btn" onclick="startWaiting()" style="grid-column:2;grid-row:2;aspect-ratio:1;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">付待ち</button>
+        <!-- タイマー（左列・下段） -->
         <div class="fixed-card fixed-card-timer">
           <button id="sw-btn" onclick="swAction()" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;flex-shrink:0;">乗務開始</button>
           <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
@@ -793,7 +795,6 @@
             <div id="sw-label" style="font-size:9px;color:var(--gray);white-space:nowrap;">乗務開始前</div>
             <div id="sw-projected" style="display:none;font-size:9px;color:var(--green);font-weight:600;"></div>
           </div>
-          <button id="wait-start-btn" onclick="startWaiting()" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);cursor:pointer;white-space:nowrap;flex-shrink:0;">付待ち</button>
         </div>
       </div>
 
