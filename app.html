@@ -782,8 +782,8 @@
           </div>
         </div>
         <!-- 現在地投稿 -->
-        <button onclick="openReportModal()" style="grid-column:2;grid-row:1;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:10px;font-weight:700;line-height:1.4;">
-          現在地<br>投稿
+        <button onclick="openReportModal()" style="grid-column:2;grid-row:1;align-self:start;height:29px;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;">
+          現在地投稿
         </button>
         <!-- タイマー（下段・全幅） -->
         <div class="fixed-card fixed-card-timer">
@@ -793,7 +793,7 @@
             <div id="sw-label" style="font-size:9px;color:var(--gray);white-space:nowrap;">乗務開始前</div>
             <div id="sw-projected" style="display:none;font-size:9px;color:var(--green);font-weight:600;"></div>
           </div>
-          <button id="wait-start-btn" onclick="startWaiting()" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);cursor:pointer;white-space:nowrap;flex-shrink:0;">客待ち</button>
+          <button id="wait-start-btn" onclick="startWaiting()" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);cursor:pointer;white-space:nowrap;flex-shrink:0;">付待ち</button>
         </div>
       </div>
 
@@ -1452,7 +1452,7 @@
   <!-- 客待ちオーバーレイ -->
   <div class="wait-overlay" id="wait-overlay">
     <div class="wait-popup">
-      <div class="wait-popup-title">客待ち中</div>
+      <div class="wait-popup-title">付待ち中</div>
       <div class="wait-stand-lbl" id="wait-stand-lbl">現在地</div>
       <div class="wait-timer-big" id="wait-timer-display">00:00</div>
       <div class="wait-actions">
@@ -1537,7 +1537,7 @@
       <div class="group-sub-pane" id="gsub-stands">
         <div id="group-stands-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
         <div style="margin-top:8px;text-align:center;">
-          <button onclick="startWaiting()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">客待ち開始</button>
+          <button onclick="startWaiting()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">付待ち開始</button>
         </div>
       </div>
 
@@ -7672,13 +7672,13 @@
     stands.forEach(s => {
       const cnt = waitByStand[s.name] || 0;
       html += `<div class="stand-item">
-        <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">現在客待ち: <b style="color:var(--yellow)">${cnt}人</b></div></div>
-        <button onclick="startWaitingAt(${JSON.stringify(s.name)})" style="padding:6px 12px;background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">客待ち</button>
+        <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">現在付待ち: <b style="color:var(--yellow)">${cnt}人</b></div></div>
+        <button onclick="startWaitingAt(${JSON.stringify(s.name)})" style="padding:6px 12px;background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">付待ち</button>
       </div>`;
     });
 
     if (waiting.length > 0) {
-      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">現在の客待ち状況</div>';
+      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">現在の付待ち状況</div>';
       waiting.forEach(w => {
         const mins = Math.floor((Date.now() - new Date(w.started_at).getTime()) / 60000);
         html += `<div class="wait-row"><div class="wait-row-top">
@@ -7877,7 +7877,7 @@
               return d < best.dist ? { stand: s, dist: d } : best;
             }, { stand: null, dist: Infinity });
             if (nearest.dist < 150) {
-              const confirmed = confirm(`「${nearest.stand.name}」で客待ちを開始しますか？`);
+              const confirmed = confirm(`「${nearest.stand.name}」で付待ちを開始しますか？`);
               resolve(confirmed ? nearest.stand.name : null);
               return;
             }
@@ -7916,7 +7916,7 @@
     if (!_waitState) return;
     const overlay = document.getElementById('wait-overlay');
     const lbl     = document.getElementById('wait-stand-lbl');
-    if (lbl) lbl.textContent = _waitState.standName || '現在地で客待ち中';
+    if (lbl) lbl.textContent = _waitState.standName || '現在地で付待ち中';
     overlay.classList.add('show');
     clearInterval(_waitInterval);
     _waitInterval = setInterval(updateWaitTimer, 1000);
