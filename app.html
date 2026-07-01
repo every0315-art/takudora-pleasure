@@ -6420,10 +6420,15 @@
       window._lastOcrResult = null;
     }
     saveReport(d);
+    // report-result内の子要素(report-preview/report-status/report-fields)は
+    // 次回のOCR読み取りでも使うため、innerHTMLの書き換えでは壊さない
     const resultEl = document.getElementById('report-result');
+    const statusEl = document.getElementById('report-status');
+    const fieldsEl = document.getElementById('report-fields');
+    if (statusEl) { statusEl.textContent = '保存しました'; statusEl.style.color = 'var(--green)'; }
+    if (fieldsEl) fieldsEl.innerHTML = '';
     if (resultEl) {
-      resultEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--green);font-weight:600;">保存しました</div>';
-      setTimeout(() => { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }, 1500);
+      setTimeout(() => { resultEl.style.display = 'none'; }, 1500);
     }
   }
 
