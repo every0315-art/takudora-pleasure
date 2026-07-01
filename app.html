@@ -7388,11 +7388,15 @@
     if (_groupLoaded && !force) return _group;
     _groupLoaded = true;
 
-    const { data: mem } = await _sb
+    // 重複メンバーシップが万一残っていても壊れないよう、
+    // maybeSingle()ではなく最も古い所属1件のみを対象にする
+    const { data: memRows } = await _sb
       .from('group_members')
       .select('*, groups(*)')
       .eq('user_id', _sbUser.id)
-      .maybeSingle();
+      .order('joined_at', { ascending: true })
+      .limit(1);
+    const mem = memRows && memRows[0];
 
     if (mem && mem.groups) {
       _group = mem.groups;
@@ -7507,15 +7511,27 @@
   }
 
   // ── グループ作成 ──────────────────────────────────────
+  let _creatingGroup = false;
   async function createGroup() {
     if (!_sb || !_sbUser) return;
+    if (_creatingGroup) return; // 二重送信防止
     const name = (document.getElementById('group-create-name').value || '').trim();
     const desc = (document.getElementById('group-create-desc').value || '').trim();
     const msg  = document.getElementById('group-create-msg');
     if (!name) { msg.style.color='var(--yellow)'; msg.textContent='グループ名を入力してください'; return; }
+
+    _creatingGroup = true;
     msg.style.color = 'var(--gray)'; msg.textContent = '作成中…';
 
     try {
+      // 既に何らかのグループに所属していないか確認してから作成する
+      const existing = await loadGroupData(true);
+      if (existing) {
+        msg.style.color='var(--yellow)'; msg.textContent='既にグループに所属しています';
+        loadGroupTab();
+        return;
+      }
+
       const invite_code = genInviteCode();
       const { data: grp, error: ge } = await withTimeout(_sb.from('groups').insert({
         name, description: desc || null, invite_code, created_by: _sbUser.id, sales_share: false,
@@ -7533,6 +7549,8 @@
       loadGroupTab();
     } catch(e) {
       msg.style.color='var(--red)'; msg.textContent='エラー: ' + e.message;
+    } finally {
+      _creatingGroup = false;
     }
   }
 
