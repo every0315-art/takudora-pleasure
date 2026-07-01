@@ -1451,11 +1451,15 @@
   </div>
 
   <!-- 客待ちオーバーレイ -->
-  <div class="wait-overlay" id="wait-overlay">
+  <div class="wait-overlay" id="wait-overlay" onclick="if(event.target===this)minimizeWaitOverlay()">
     <div class="wait-popup">
-      <div class="wait-popup-title">付待ち中</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="wait-popup-title">付待ち中</div>
+        <button onclick="minimizeWaitOverlay()" title="閉じる（付待ちは継続します）" style="background:none;border:none;color:var(--gray);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
       <div class="wait-stand-lbl" id="wait-stand-lbl">現在地</div>
       <div class="wait-timer-big" id="wait-timer-display">00:00</div>
+      <div style="font-size:11px;color:var(--gray);text-align:center;margin:-14px 0 16px;">✕で閉じてもアプリの他の画面を使えます</div>
       <div class="wait-actions">
         <button onclick="cancelWaiting()" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
         <button onclick="boardedWaiting()" style="background:var(--green);color:#000;flex:2;">🚕 乗車した</button>
@@ -7926,13 +7930,20 @@
     updateWaitTimer();
   }
 
+  // オーバーレイだけ閉じる（付待ち状態は継続、他の画面を操作できるようにする）
+  function minimizeWaitOverlay() {
+    document.getElementById('wait-overlay').classList.remove('show');
+  }
+
   function updateWaitTimer() {
-    const el = document.getElementById('wait-timer-display');
-    if (!el || !_waitState) return;
+    const el  = document.getElementById('wait-timer-display');
+    const btn = document.getElementById('wait-start-btn');
+    if (!_waitState) return;
     const secs = Math.floor((Date.now() - _waitState.startedAt.getTime()) / 1000);
     const m = String(Math.floor(secs / 60)).padStart(2, '0');
     const s = String(secs % 60).padStart(2, '0');
-    el.textContent = `${m}:${s}`;
+    if (el) el.textContent = `${m}:${s}`;
+    if (btn) btn.innerHTML = `付待ち中<br>${m}:${s}`;
   }
 
   async function boardedWaiting() {
@@ -7948,6 +7959,8 @@
     }
     _waitState = null;
     document.getElementById('wait-overlay').classList.remove('show');
+    const btn = document.getElementById('wait-start-btn');
+    if (btn) btn.innerHTML = '付待ち';
   }
 
   async function cancelWaiting() {
@@ -7958,6 +7971,8 @@
     }
     _waitState = null;
     document.getElementById('wait-overlay').classList.remove('show');
+    const btn = document.getElementById('wait-start-btn');
+    if (btn) btn.innerHTML = '付待ち';
   }
 
   // ── 課金機能 ──────────────────────────────────────────
