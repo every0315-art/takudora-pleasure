@@ -7728,13 +7728,10 @@
 
     const sMain = document.getElementById('top-stands-main');
     const sSub  = document.getElementById('top-stands-sub');
-    if (sMain && sSub && _sb) {
-      const [standsRes, waitRes] = await Promise.all([
-        _sb.from('taxi_stands').select('id', { count: 'exact', head: true }).eq('group_id', _group.id),
-        _sb.from('waiting_records').select('id', { count: 'exact', head: true }).eq('group_id', _group.id).eq('status', 'waiting'),
-      ]);
+    if (sMain && _sb) {
+      const standsRes = await _sb.from('taxi_stands').select('id', { count: 'exact', head: true }).eq('group_id', _group.id);
       sMain.textContent = `登録乗り場 ${standsRes.count || 0}件`;
-      sSub.textContent  = `現在付待ち ${waitRes.count || 0}人`;
+      if (sSub) sSub.textContent = '';
     }
   }
 
@@ -7744,43 +7741,40 @@
     if (!el || !_group) return;
     el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:12px;padding:8px;">読み込み中…</div>';
 
-    const [standsRes, waitRes] = await Promise.all([
+    const [standsRes, logRes, membersRes] = await Promise.all([
       _sb.from('taxi_stands').select('*').eq('group_id', _group.id).order('name'),
       _sb.from('waiting_records').select('*').eq('group_id', _group.id)
-         .in('status', ['waiting']).order('started_at', { ascending: false }).limit(20),
+         .order('started_at', { ascending: false }).limit(30),
+      _sb.from('group_members').select('user_id, display_name').eq('group_id', _group.id),
     ]);
-    const stands = standsRes.data || [];
-    const waiting = waitRes.data || [];
+    const stands  = standsRes.data || [];
+    const log     = logRes.data || [];
+    const nameByUser = {};
+    (membersRes.data || []).forEach(m => { nameByUser[m.user_id] = m.display_name || '名無し'; });
 
-    if (stands.length === 0 && waiting.length === 0) {
+    if (stands.length === 0 && log.length === 0) {
       el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">乗場情報はありません<br><span style="font-size:11px;">管理者が乗り場を登録すると表示されます</span></div>';
       return;
     }
 
-    const waitByStand = {};
-    waiting.forEach(w => {
-      const key = w.stand_name || '不明';
-      if (!waitByStand[key]) waitByStand[key] = 0;
-      waitByStand[key]++;
-    });
-
     let html = '';
     stands.forEach(s => {
-      const cnt = waitByStand[s.name] || 0;
       html += `<div class="stand-item">
-        <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">現在付待ち: <b style="color:var(--yellow)">${cnt}人</b></div></div>
+        <div><div class="stand-name">${escHtml(s.name)}</div></div>
         <button onclick="startWaitingAt(${JSON.stringify(s.name)})" style="padding:6px 12px;background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">付待ち</button>
       </div>`;
     });
 
-    if (waiting.length > 0) {
-      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">現在の付待ち状況</div>';
-      waiting.forEach(w => {
-        const mins = Math.floor((Date.now() - new Date(w.started_at).getTime()) / 60000);
+    if (log.length > 0) {
+      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">付待ちログ</div>';
+      log.forEach(w => {
+        const dt = new Date(w.started_at);
+        const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        const nickname = nameByUser[w.user_id] || '名無し';
         html += `<div class="wait-row"><div class="wait-row-top">
-          <span class="wait-badge wait-badge-waiting">待機中</span>
           <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
-          <span style="color:var(--gray);margin-left:auto">${mins}分</span>
+          <span style="color:var(--gold)">${escHtml(nickname)}</span>
+          <span style="color:var(--gray);margin-left:auto">${dtStr}</span>
         </div></div>`;
       });
     }
