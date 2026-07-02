@@ -3560,6 +3560,7 @@
             sub: `${nearPosts.length}件の投稿が近くにあります`,
             serious: false,
             delay: true,
+            tab: 'tab-community',
           });
         }
       } else {
@@ -3577,7 +3578,9 @@
         sub: '待機所または乗場にタクシーが確認できません',
         serious: false,
         delay: true,
-        link: 'https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/',
+        // このドメインには一覧ページが存在しない(404)ため、実際にカメラ画像が
+        // 表示される待機所側の画像URLに直接リンクする
+        link: 'https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg',
       });
     }
 
@@ -3605,7 +3608,7 @@
         sub: '国内線タクシー待機場の車列が少なくなっています',
         serious: false,
         delay: true,
-        link: 'https://ttc.taxi-inf.jp/',
+        link: 'https://ttc.taxi-inf.jp/no23.php',
       });
     }
 
@@ -3854,13 +3857,20 @@
   setInterval(loadVenueSchedules, 10800000);
 
   // ── トピックスティッカー ──
+  let _latestAnnouncements = [];
   function updateTicker() {
     const el = document.getElementById('top-ticker-inner');
     if (!el) return;
     const items = [];
+    const THREE_H = 3 * 60 * 60 * 1000;
+    const now = Date.now();
 
-    // ニュース
-    _latestNews.slice(0, 3).forEach(n => {
+    // グループ告知（最新1件）
+    _latestAnnouncements.slice(0, 1).forEach(a => {
+      if (a.content) items.push('📢 ' + a.content.slice(0, 30));
+    });
+    // ニュース（3時間以内のみ。それ以前のものは流さない）
+    _latestNews.filter(n => !n.pub || now - new Date(n.pub).getTime() < THREE_H).slice(0, 3).forEach(n => {
       if (n.title) items.push('📰 ' + n.title.slice(0, 40));
     });
     // イベント
@@ -3868,8 +3878,6 @@
       if (i < 2) items.push('📅 ' + n.dataset.eventName?.slice(0, 30));
     });
     // コミュニティ（3時間以内のみ）
-    const THREE_H = 3 * 60 * 60 * 1000;
-    const now = Date.now();
     _communityPosts.filter(p => now - new Date(p.created_at).getTime() < THREE_H).slice(0, 2).forEach(p => {
       const body = (p.body || '').slice(0, 30);
       const loc = p.location ? `（${p.location.slice(0, 8)}）` : '';
@@ -7755,6 +7763,7 @@
     const { data } = await _sb.from('group_announcements')
       .select('*').eq('group_id', _group.id)
       .order('created_at', { ascending: false }).limit(30);
+    _latestAnnouncements = data || [];
     if (!data || data.length === 0) {
       el.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">告知はありません</div>';
       return;
