@@ -233,8 +233,47 @@ function parseNpbPage(html, venueKeywords, teamName) {
 }
 
 // ── 各会場の無料取得関数 ──
+// npb.jp/games/2026/schedule_MM_detail.html 専用パーサー（月別・全試合掲載）
+// <tr id="dateMMDD">内に team1/team2/place/time が入る形式
+function parseNpbMonthDetail(html, venueKeywords, teamName) {
+  const events = [];
+  const today = new Date().toISOString().slice(0, 10);
+  for (const m of html.matchAll(/<tr id="date(\d{4})"[^>]*>([\s\S]*?)<\/tr>/g)) {
+    const mmdd = m[1];
+    const block = m[2];
+    const team1 = block.match(/class="team1">([^<]*)</);
+    const team2 = block.match(/class="team2">([^<]*)</);
+    const place = block.match(/class="place">([^<]*)</);
+    if (!team1 || !place) continue;
+    const placeText = place[1].trim();
+    if (!venueKeywords.some(k => placeText.includes(k))) continue;
+    const date = `2026-${mmdd.slice(0, 2)}-${mmdd.slice(2, 4)}`;
+    if (date < today) continue;
+    const timeM = block.match(/class="time">([^<]*)</);
+    const start = timeM?.[1]?.trim() || '18:00';
+    const t1 = team1[1].trim(), t2 = team2?.[1]?.trim() || '';
+    const name = t1 && t2 ? `${t1} vs ${t2}` : `${teamName} 主催試合`;
+    events.push({ date, name, start, end: `${parseInt(start) + 3}:00頃`, demand: 'high' });
+  }
+  return events;
+}
+
 async function freeGiants() {
-  // giants.jp はbot対策でブロックのため npb.jp のみ使用
+  // npb.jp/games/2026/ は直近1週間分しか出ないため、月別詳細ページ(当月+翌月)を使う
+  const now = new Date();
+  const events = [];
+  for (let mi = 0; mi < 2; mi++) {
+    const month = now.getMonth() + 1 + mi;
+    if (month > 12) break; // 年またぎは非対応(URLが/games/2026/固定のため)
+    try {
+      const url = `https://npb.jp/games/2026/schedule_${String(month).padStart(2, '0')}_detail.html`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
+      if (!res.ok) continue;
+      events.push(...parseNpbMonthDetail(await res.text(), ['東京ドーム', '後楽'], '巨人'));
+    } catch (_) {}
+  }
+  if (events.length > 0) return events;
+  // フォールバック: 直近1週間ページ
   try {
     const res = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
     if (!res.ok) return [];
