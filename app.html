@@ -4023,7 +4023,7 @@
     listEl.innerHTML = displayEvents.map(ev => {
       const shortName = ev.name.length > 12 ? ev.name.slice(0, 12) + '…' : ev.name;
       const dateLabel = showingFuture ? `${ev.itemDate.getMonth()+1}/${ev.itemDate.getDate()} ` : '';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+      return `<div data-event-name="${escHtml(ev.name)}" style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
         <div style="flex:1;overflow:hidden;">
           <div style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dateLabel}${shortName}</div>
           <div style="font-size:9px;color:var(--gray);">${ev.venue}</div>
