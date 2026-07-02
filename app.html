@@ -7964,6 +7964,7 @@
     if (!_sb || !confirm('このログを削除しますか？')) return;
     await _sb.from('waiting_records').delete().eq('id', id);
     loadStandsInfo();
+    if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
   // ── 掲示板 ───────────────────────────────────────────
