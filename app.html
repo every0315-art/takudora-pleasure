@@ -7054,9 +7054,13 @@
   })();
 
   // ── SUPABASE ──────────────────────────────────────────────────────
-  let _sb = null;
-  let _sbUser = null;
-  let _sbToken = null;
+  // let ではなく var を使う: Safariの戻る/進む(bfcache復元)時などに
+  // ボタンのonclickがスクリプトの再実行タイミングとズレて
+  // 「Cannot access '_sb' before initialization」(TDZ)が発生する
+  // ケースがあったため、TDZが存在しないvarで安全側に倒す
+  var _sb = null;
+  var _sbUser = null;
+  var _sbToken = null;
   try {
     if (typeof supabase !== 'undefined') {
       _sb = supabase.createClient(
