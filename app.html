@@ -809,12 +809,12 @@
             </div>
           </div>
         </div>
-        <!-- 現在地投稿・付待ち（左の統合カードと同じ高さを2等分） -->
+        <!-- 現在地投稿・つけ待ち（左の統合カードと同じ高さを2等分） -->
         <div style="width:58px;flex-shrink:0;display:flex;flex-direction:column;gap:3px;">
           <button onclick="openReportModal()" style="flex:1;min-height:0;width:100%;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;">
             現在地<br>投稿
           </button>
-          <button id="wait-start-btn" onclick="startWaiting()" style="flex:1;min-height:0;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">付待ち</button>
+          <button id="wait-start-btn" onclick="startWaiting()" style="flex:1;min-height:0;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">つけ待ち</button>
         </div>
       </div>
 
@@ -1486,8 +1486,8 @@
   <div class="wait-overlay" id="wait-overlay" onclick="if(event.target===this)minimizeWaitOverlay()">
     <div class="wait-popup">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="wait-popup-title">付待ち中</div>
-        <button onclick="minimizeWaitOverlay()" title="閉じる（付待ちは継続します）" style="background:none;border:none;color:var(--gray);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">✕</button>
+        <div class="wait-popup-title">つけ待ち中</div>
+        <button onclick="minimizeWaitOverlay()" title="閉じる（つけ待ちは継続します）" style="background:none;border:none;color:var(--gray);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">✕</button>
       </div>
       <div class="wait-stand-lbl" id="wait-stand-lbl">現在地</div>
       <div class="wait-timer-big" id="wait-timer-display">00:00</div>
@@ -1507,7 +1507,7 @@
   <div class="tab-pane" id="tab-stands-info">
     <div id="group-stands-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
     <div style="margin-top:8px;text-align:center;">
-      <button onclick="startWaiting()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">付待ち開始</button>
+      <button onclick="startWaiting()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
     </div>
   </div>
 
@@ -7902,7 +7902,7 @@
       (membersRes.data || []).forEach(m => { nameByUser[m.user_id] = m.display_name || '名無し'; });
       const log = logRes.data || [];
       if (log.length === 0) {
-        sMain.textContent = '付待ちログはありません';
+        sMain.textContent = 'つけ待ちログはありません';
       } else {
         sMain.innerHTML = log.map(w => {
           const dt = new Date(w.started_at);
@@ -7946,12 +7946,12 @@
     }
 
     let html = `<div style="text-align:center;margin-bottom:10px;">
-      <button onclick="startWaiting()" style="padding:10px 24px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">付待ち開始</button>
+      <button onclick="startWaiting()" style="padding:10px 24px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
     </div>`;
 
     if (log.length > 0) {
       const isAdmin = _groupMember?.role === 'admin';
-      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">付待ちログ</div>';
+      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">つけ待ちログ</div>';
       log.forEach(w => {
         const dt = new Date(w.started_at);
         const dateStr = `${dt.getMonth()+1}/${dt.getDate()}`;
@@ -8312,7 +8312,7 @@
               return d < best.dist ? { stand: s, dist: d } : best;
             }, { stand: null, dist: Infinity });
             if (nearest.dist < 150) {
-              const confirmed = confirm(`「${nearest.stand.name}」で付待ちを開始しますか？`);
+              const confirmed = confirm(`「${nearest.stand.name}」でつけ待ちを開始しますか？`);
               resolve(confirmed ? { name: nearest.stand.name, cancelled: false } : { name: null, cancelled: true });
               return;
             }
@@ -8335,7 +8335,7 @@
           resolve({ name: null, cancelled: false });
         }, () => resolve({ name: null, cancelled: false }), { timeout: 5000 });
       });
-      if (result.cancelled) return; // キャンセル時は付待ちを開始しない
+      if (result.cancelled) return; // キャンセル時はつけ待ちを開始しない
       resolvedStand = result.name;
     }
 
@@ -8369,14 +8369,14 @@
     if (!_waitState) return;
     const overlay = document.getElementById('wait-overlay');
     const lbl     = document.getElementById('wait-stand-lbl');
-    if (lbl) lbl.textContent = _waitState.standName || '現在地で付待ち中';
+    if (lbl) lbl.textContent = _waitState.standName || '現在地でつけ待ち中';
     overlay.classList.add('show');
     clearInterval(_waitInterval);
     _waitInterval = setInterval(updateWaitTimer, 1000);
     updateWaitTimer();
   }
 
-  // オーバーレイだけ閉じる（付待ち状態は継続、他の画面を操作できるようにする）
+  // オーバーレイだけ閉じる（つけ待ち状態は継続、他の画面を操作できるようにする）
   function minimizeWaitOverlay() {
     document.getElementById('wait-overlay').classList.remove('show');
   }
@@ -8389,7 +8389,7 @@
     const m = String(Math.floor(secs / 60)).padStart(2, '0');
     const s = String(secs % 60).padStart(2, '0');
     if (el) el.textContent = `${m}:${s}`;
-    if (btn) btn.innerHTML = `付待ち中<br>${m}:${s}`;
+    if (btn) btn.innerHTML = `つけ待ち中<br>${m}:${s}`;
   }
 
   async function boardedWaiting() {
@@ -8406,7 +8406,7 @@
     _waitState = null;
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
-    if (btn) btn.innerHTML = '付待ち';
+    if (btn) btn.innerHTML = 'つけ待ち';
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
@@ -8419,11 +8419,11 @@
     _waitState = null;
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
-    if (btn) btn.innerHTML = '付待ち';
+    if (btn) btn.innerHTML = 'つけ待ち';
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
-  // 乗車以外の理由で付待ちを終える（離脱・無線離脱）共通処理
+  // 乗車以外の理由でつけ待ちを終える（離脱・無線離脱）共通処理
   async function endWaitingWithStatus(status) {
     if (!_waitState) return;
     clearInterval(_waitInterval);
@@ -8438,12 +8438,12 @@
     _waitState = null;
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
-    if (btn) btn.innerHTML = '付待ち';
+    if (btn) btn.innerHTML = 'つけ待ち';
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
   async function leaveWaiting() {
-    if (confirm('付待ちを離脱しますか？')) await endWaitingWithStatus('left');
+    if (confirm('つけ待ちを離脱しますか？')) await endWaitingWithStatus('left');
   }
 
   async function radioLeaveWaiting() {
