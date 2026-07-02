@@ -7899,12 +7899,16 @@
       } else {
         sMain.innerHTML = log.map(w => {
           const dt = new Date(w.started_at);
-          const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+          const dateStr = `${dt.getMonth()+1}/${dt.getDate()}`;
+          const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
           const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
-          return `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10px;margin-top:3px;">
-            <span style="color:var(--text);"><span style="color:var(--yellow);font-weight:700;">${mins}分</span> ${escHtml(w.stand_name||'不明')} / ${escHtml(nameByUser[w.user_id]||'名無し')}</span>
-            <span style="color:var(--gray);flex-shrink:0;">${dtStr}</span>
+          // 表示順: 日付・時間・待ち時間・場所・ネーム
+          return `<div style="display:flex;gap:6px;font-size:10px;margin-top:3px;color:var(--text);">
+            <span style="color:var(--gray);flex-shrink:0;">${dateStr} ${timeStr}</span>
+            <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
+            <span>${escHtml(w.stand_name||'不明')}</span>
+            <span style="color:var(--gold);">${escHtml(nameByUser[w.user_id]||'名無し')}</span>
           </div>`;
         }).join('');
       }
@@ -7943,17 +7947,19 @@
       html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">付待ちログ</div>';
       log.forEach(w => {
         const dt = new Date(w.started_at);
-        const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        const dateStr = `${dt.getMonth()+1}/${dt.getDate()}`;
+        const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
         const nickname = nameByUser[w.user_id] || '名無し';
         const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
         const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
         const canDelete = isAdmin || w.user_id === _sbUser?.id;
+        // 表示順: 日付・時間・待ち時間・場所・ネーム
         html += `<div class="wait-row"><div class="wait-row-top">
+          <span style="color:var(--gray)">${dateStr} ${timeStr}</span>
           <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
           <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
           <span style="color:var(--gold)">${escHtml(nickname)}</span>
-          <span style="color:var(--gray);margin-left:auto">${dtStr}</span>
-          ${canDelete ? `<button onclick="deleteWaitingRecord('${w.id}')" style="background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
+          ${canDelete ? `<button onclick="deleteWaitingRecord('${w.id}')" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
         </div></div>`;
       });
     }
