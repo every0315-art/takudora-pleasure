@@ -7941,7 +7941,7 @@
         <div class="stand-item" style="margin-bottom:6px;">
           <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">${s.lat?.toFixed(5)||''}, ${s.lng?.toFixed(5)||''}</div></div>
           <div style="display:flex;gap:6px;">
-            <button onclick="editStand('${s.id}', ${JSON.stringify(s.name)}, ${s.lat}, ${s.lng})" style="padding:5px 10px;background:rgba(255,180,40,.1);border:1px solid rgba(255,180,40,.3);color:var(--gold);border-radius:6px;font-size:11px;cursor:pointer;">編集</button>
+            <button onclick="editStand('${s.id}', ${escHtml(JSON.stringify(s.name))}, ${s.lat}, ${s.lng})" style="padding:5px 10px;background:rgba(255,180,40,.1);border:1px solid rgba(255,180,40,.3);color:var(--gold);border-radius:6px;font-size:11px;cursor:pointer;">編集</button>
             <button onclick="deleteStand('${s.id}')" style="padding:5px 10px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:6px;font-size:11px;cursor:pointer;">削除</button>
           </div>
         </div>`).join('') || '<div style="color:var(--gray);font-size:12px;text-align:center;">登録乗り場なし</div>';
