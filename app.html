@@ -1612,6 +1612,8 @@
             <button onclick="copyInviteCode()" style="padding:8px 14px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--gold);font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;">コピー</button>
             <button onclick="regenInviteCode()" style="padding:8px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--gray);font-size:12px;border-radius:8px;cursor:pointer;">再発行</button>
           </div>
+          <div style="font-size:11px;color:var(--gray);margin-top:8px;">アプリ: <span style="color:var(--text);">https://pleasure.delivery-every.com/app</span></div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px;">「コピー」で招待コードとアプリのリンクを一緒にコピーできます</div>
         </div>
         <!-- 売上共有設定 -->
         <div class="card admin-section">
@@ -1632,9 +1634,13 @@
             style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--white);font-size:13px;box-sizing:border-box;margin-bottom:8px;">
           <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">📍 ピンをドラッグ、または地図タップで位置を調整できます</div>
           <div id="stand-map" style="width:100%;height:180px;border-radius:8px;overflow:hidden;margin-bottom:8px;"></div>
-          <button onclick="registerStandAtPin()" style="width:100%;padding:11px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:var(--green);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">📍 この位置で登録</button>
+          <button id="stand-register-btn" onclick="registerStandAtPin()" style="width:100%;padding:11px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.4);color:var(--green);font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;">📍 この位置で登録</button>
           <div id="admin-stand-msg" style="font-size:12px;text-align:center;margin-top:6px;"></div>
-          <div id="admin-stands-list" style="margin-top:12px;"></div>
+          <div onclick="toggleStandsList()" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:8px 0;border-top:1px solid rgba(255,255,255,.1);">
+            <span style="font-size:12px;color:var(--gray);font-weight:700;" id="admin-stands-count">登録乗り場一覧</span>
+            <span id="admin-stands-toggle-icon" style="color:var(--gray);font-size:12px;">▼</span>
+          </div>
+          <div id="admin-stands-list" style="display:none;"></div>
         </div>
         <!-- メンバー管理 -->
         <div class="card admin-section">
@@ -7776,7 +7782,7 @@
           const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
           const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
           return `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10px;margin-top:3px;">
-            <span style="color:var(--text);"><span style="color:var(--yellow);font-weight:700;">${mins}分</span> ${escHtml(w.stand_name||'不明')} / ${escHtml(nameByUser[w.user_id]||'名無し')}</span>
+            <span style="color:var(--text);"><span style="color:var(--yellow);font-weight:700;">${mins}分</span> ${escHtml(nameByUser[w.user_id]||'名無し')}</span>
             <span style="color:var(--gray);flex-shrink:0;">${dtStr}</span>
           </div>`;
         }).join('');
@@ -7827,7 +7833,6 @@
         const canDelete = isAdmin || w.user_id === _sbUser?.id;
         html += `<div class="wait-row"><div class="wait-row-top">
           <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
-          <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
           <span style="color:var(--gold)">${escHtml(nickname)}</span>
           <span style="color:var(--gray);margin-left:auto">${dtStr}</span>
           ${canDelete ? `<button onclick="deleteWaitingRecord('${w.id}')" style="background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
@@ -7930,10 +7935,15 @@
     const memEl = document.getElementById('admin-members-list');
     if (el) {
       const { data } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id).order('name');
+      const countEl = document.getElementById('admin-stands-count');
+      if (countEl) countEl.textContent = `登録乗り場一覧（${(data || []).length}件）`;
       el.innerHTML = (data || []).map(s => `
         <div class="stand-item" style="margin-bottom:6px;">
           <div><div class="stand-name">${escHtml(s.name)}</div><div class="stand-sub">${s.lat?.toFixed(5)||''}, ${s.lng?.toFixed(5)||''}</div></div>
-          <button onclick="deleteStand('${s.id}')" style="padding:5px 10px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:6px;font-size:11px;cursor:pointer;">削除</button>
+          <div style="display:flex;gap:6px;">
+            <button onclick="editStand('${s.id}', ${JSON.stringify(s.name)}, ${s.lat}, ${s.lng})" style="padding:5px 10px;background:rgba(255,180,40,.1);border:1px solid rgba(255,180,40,.3);color:var(--gold);border-radius:6px;font-size:11px;cursor:pointer;">編集</button>
+            <button onclick="deleteStand('${s.id}')" style="padding:5px 10px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:6px;font-size:11px;cursor:pointer;">削除</button>
+          </div>
         </div>`).join('') || '<div style="color:var(--gray);font-size:12px;text-align:center;">登録乗り場なし</div>';
     }
     if (memEl) {
@@ -7997,14 +8007,47 @@
     setTimeout(() => _standMap.invalidateSize(), 200);
   }
 
+  let _editingStandId = null;
+
+  function toggleStandsList() {
+    const list = document.getElementById('admin-stands-list');
+    const icon = document.getElementById('admin-stands-toggle-icon');
+    const open = list.style.display !== 'none';
+    list.style.display = open ? 'none' : 'block';
+    if (icon) icon.textContent = open ? '▼' : '▲';
+  }
+
+  function editStand(id, name, lat, lng) {
+    _editingStandId = id;
+    document.getElementById('admin-stand-name').value = name;
+    moveStandMarker(lat, lng, true);
+    const btn = document.getElementById('stand-register-btn');
+    if (btn) btn.textContent = '✏️ この内容で更新する';
+    document.getElementById('admin-stand-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   async function registerStandAtPin() {
     if (!_sb || !_sbUser || !_group) return;
     const name = (document.getElementById('admin-stand-name')?.value || '').trim();
     const msg  = document.getElementById('admin-stand-msg');
     if (!name) { msg.style.color='var(--yellow)'; msg.textContent='乗り場名を入力してください'; return; }
     if (!_standCoords) { msg.style.color='var(--red)'; msg.textContent='地図でピンの位置を指定してください'; return; }
-    msg.style.color = 'var(--gray)'; msg.textContent = '登録中…';
+    msg.style.color = 'var(--gray)'; msg.textContent = _editingStandId ? '更新中…' : '登録中…';
     const { lat, lng } = _standCoords;
+    const btn = document.getElementById('stand-register-btn');
+
+    if (_editingStandId) {
+      const { error } = await _sb.from('taxi_stands').update({ name, lat, lng }).eq('id', _editingStandId);
+      if (error) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
+      else {
+        _editingStandId = null;
+        document.getElementById('admin-stand-name').value = '';
+        if (btn) btn.textContent = '📍 この位置で登録';
+        msg.style.color='var(--green)'; msg.textContent='更新しました'; loadAdminPanel();
+      }
+      return;
+    }
+
     const { error } = await _sb.from('taxi_stands').insert({ group_id: _group.id, name, lat, lng, created_by: _sbUser.id });
     if (error) { msg.style.color='var(--red)'; msg.textContent='エラー: ' + error.message; }
     else { document.getElementById('admin-stand-name').value=''; msg.style.color='var(--green)'; msg.textContent='登録しました'; loadAdminPanel(); }
@@ -8025,7 +8068,8 @@
   function copyInviteCode() {
     const code = _group?.invite_code;
     if (!code) return;
-    navigator.clipboard.writeText(code).then(() => {
+    const text = `招待コード: ${code}\nアプリ: https://pleasure.delivery-every.com/app`;
+    navigator.clipboard.writeText(text).then(() => {
       const el = document.getElementById('admin-invite-code');
       const orig = el.textContent;
       el.textContent = 'コピー済み！'; setTimeout(() => { el.textContent = orig; }, 1500);
