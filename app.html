@@ -3985,8 +3985,9 @@
           <div style="font-size:13px;font-weight:600;">${s.name}</div>
         </div>`;
       }).join('');
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(terminal)}`;
       return `<div style="margin-bottom:10px;">
-        <div style="font-size:11px;color:var(--gold);font-weight:700;padding:6px 0 2px;">${terminal}</div>
+        <a href="${mapUrl}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);font-weight:700;padding:6px 0 2px;display:inline-block;text-decoration:none;">${terminal} ↗</a>
         ${rows}
       </div>`;
     }).join('');
