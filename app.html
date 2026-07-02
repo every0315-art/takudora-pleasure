@@ -7835,7 +7835,7 @@
     const sSub  = document.getElementById('top-stands-sub');
     if (sMain && _sb) {
       const [logRes, membersRes] = await Promise.all([
-        _sb.from('waiting_records').select('*').eq('group_id', _group.id).order('started_at', { ascending: false }).limit(3),
+        _sb.from('waiting_records').select('*').eq('group_id', _group.id).order('started_at', { ascending: false }).limit(9),
         _sb.from('group_members').select('user_id, display_name').eq('group_id', _group.id),
       ]);
       const nameByUser = {};
