@@ -8228,6 +8228,7 @@
 
     _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId };
     showWaitOverlay();
+    if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
   async function startWaitingAt(standName) {
@@ -8276,6 +8277,7 @@
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = '付待ち';
+    if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
   async function cancelWaiting() {
@@ -8288,6 +8290,7 @@
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = '付待ち';
+    if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
   // 乗車以外の理由で付待ちを終える（離脱・無線離脱）共通処理
@@ -8306,6 +8309,7 @@
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = '付待ち';
+    if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
   async function leaveWaiting() {
