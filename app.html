@@ -7208,7 +7208,10 @@
     if (!_sb) { alert('認証機能が読み込めていません。ページを再読み込みしてください（アプリ内ブラウザの場合はSafariで開き直してください）'); return; }
     const { error } = await _sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: location.origin + '/app' }
+      // prompt: 'select_account' がないと、ブラウザに既存のGoogleセッションが
+      // あった場合アカウント選択画面が出ずに前回と同じアカウントで
+      // 自動ログインされてしまう(別アカウントに切り替えたいのに切り替わらない)
+      options: { redirectTo: location.origin + '/app', queryParams: { prompt: 'select_account' } }
     });
     // 成功時はブラウザがGoogleへ遷移するためここには到達しない。
     // エラー時は何も表示されず無反応に見えてしまうため、失敗を可視化する
