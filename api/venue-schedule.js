@@ -7,6 +7,18 @@ function stripTags(html) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function decodeEntities(text) {
+  return text
+    .replace(/&(?:ldquo|rdquo);/g, '"')
+    .replace(/&(?:lsquo|rsquo);/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)));
+}
+
 function extractJsonLdEvents(html) {
   const events = [];
   for (const m of html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -304,7 +316,37 @@ async function freeSwallows() {
   return fetchNpbVenueGames(['神宮'], 'ヤクルト');
 }
 
-// 武道館: 公式サイトにコンサートスケジュールなし → Claude Haiku にまかせる（free関数なし）
+// 武道館: 公式サイトにスケジュールなし → enjoy-live.net(ライブ会場スケジュールまとめサイト)を使用
+// <article class="calendar" id="YYYY-M"> ごとに月が分かれ、<tr><th class="date">D日(曜)</th><td><strong><a>アーティスト</a></strong><span>タイトル</span>...</td></tr>
+async function freeBudokan() {
+  try {
+    const res = await fetch('https://schedule.enjoy-live.net/schedule.php?hall_id=3', {
+      headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
+      signal: AbortSignal.timeout(TIMEOUT),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const today = new Date().toISOString().slice(0, 10);
+    const events = [];
+    for (const art of html.matchAll(/<article class="calendar" id="(\d{4})-(\d{1,2})">([\s\S]*?)<\/article>/g)) {
+      const year = Number(art[1]), month = Number(art[2]);
+      for (const row of art[3].matchAll(/<tr>\s*<th class="date">(\d{1,2})日\([^)]*\)<\/th>([\s\S]*?)<\/tr>/g)) {
+        const day = Number(row[1]);
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (date < today) continue;
+        for (const m of row[2].matchAll(/<strong><a[^>]*>([^<]*)<\/a><\/strong><span>([^<]*)<\/span>/g)) {
+          const artist = decodeEntities(m[1]).trim();
+          const title = decodeEntities(m[2]).trim();
+          const name = title ? `${artist} ${title}` : artist;
+          if (!isValidEventName(name)) continue;
+          events.push({ date, name, start: '', end: '', demand: guessDemand(name, 14000) });
+        }
+      }
+    }
+    if (events.length > 0) return events;
+  } catch (_) {}
+  return [];
+}
 
 // トヨタアリーナ東京: SSR Next.js、/events/ から取得
 // <li class="bg-gray-f5..."> ブロック、テキスト "2026.M.D(曜) MAIN ARENA EVENT_NAME 開催時間：..."
@@ -504,7 +546,7 @@ export default async function handler(req, res) {
     fetchWithFallback(freeGarden,
       ['https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/'],
       null, '東京ガーデンシアター', 8000),
-    fetchWithFallback(() => Promise.resolve([]),
+    fetchWithFallback(freeBudokan,
       ['https://www.nipponbudokan.or.jp/houseplan/', 'https://www.nipponbudokan.or.jp/'],
       'www.nipponbudokan.or.jp', '日本武道館', 14000),
     fetchWithFallback(() => Promise.resolve([]),
