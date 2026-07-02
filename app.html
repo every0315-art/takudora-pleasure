@@ -3475,11 +3475,12 @@
     const posOpts = { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 };
     const onPos = pos => {
       window._currentPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-      // つけ待ち中に開始地点から150m以上離れたら、オーバーレイを自動で再表示する
+      // つけ待ち開始から3分以内に開始地点から200m以上離れたら、オーバーレイを自動で再表示する
       if (typeof _waitState !== 'undefined' && _waitState?.startLat != null && _waitState?.startLng != null) {
+        const elapsedMs = Date.now() - _waitState.startedAt.getTime();
         const distKm = haversineKm(_waitState.startLat, _waitState.startLng, pos.coords.latitude, pos.coords.longitude);
         const overlay = document.getElementById('wait-overlay');
-        if (distKm * 1000 >= 150 && overlay && !overlay.classList.contains('show')) {
+        if (elapsedMs <= 3 * 60 * 1000 && distKm * 1000 >= 200 && overlay && !overlay.classList.contains('show')) {
           showWaitOverlay();
         }
       }
