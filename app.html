@@ -2323,6 +2323,12 @@
 </div>
 
 <script>
+  // escHtml helper（他のどのコードよりも先に定義しておく必要がある。
+  // スクリプト末尾で定義していたところ、途中の同期処理から先に
+  // 呼び出されてReferenceErrorとなりスクリプト全体の初期化が
+  // 止まってしまう不具合があったため先頭に移動した）
+  window.escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
   // SW完全無効化・キャッシュ強制削除
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
@@ -8400,11 +8406,6 @@
   function refreshGroupTabButton() {
     const btn = document.getElementById('tab-btn-group');
     if (btn) btn.style.display = (_sb && _sbUser) ? 'block' : 'none';
-  }
-
-  // escHtml helper（未定義の場合のみ）
-  if (typeof escHtml === 'undefined') {
-    window.escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 </script>
 </body>
