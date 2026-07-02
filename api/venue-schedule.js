@@ -431,6 +431,37 @@ async function freeKokuritsu() {
   return events;
 }
 
+// 東京ドーム公式スケジュール: 野球+コンサート+イベント全部入りのカレンダーHTML
+// "◯◯年◯月"見出し区間ごとに c-mod-calender__item(日別) → detail-in(イベント別) を解析
+function parseTokyoDomeSchedule(html) {
+  const events = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const headings = [...html.matchAll(/(\d{4})年0?(\d{1,2})月/g)].map(m => ({ pos: m.index, year: Number(m[1]), month: Number(m[2]) }));
+  for (let i = 0; i < headings.length; i++) {
+    const { pos, year, month } = headings[i];
+    const end = i + 1 < headings.length ? headings[i + 1].pos : html.length;
+    const segment = html.slice(pos, end);
+    for (const item of segment.matchAll(/<tr class="c-mod-calender__item">([\s\S]*?)<\/tr>/g)) {
+      const block = item[1];
+      const dayM = block.match(/c-mod-calender__day">(\d{1,2})</);
+      if (!dayM) continue;
+      const date = `${year}-${String(month).padStart(2, '0')}-${String(Number(dayM[1])).padStart(2, '0')}`;
+      if (date < today) continue;
+      for (const detail of block.matchAll(/<div class="c-mod-calender__detail-in">([\s\S]*?)<\/div><!-- \/c-mod-calender__detail-in -->/g)) {
+        const db = detail[1];
+        const nameM = db.match(/c-mod-calender__links">\s*<a[^>]*>([^<]*)<\/a>/);
+        if (!nameM) continue;
+        const name = nameM[1].trim();
+        if (name === 'TOKYO DOME TOUR' || !isValidEventName(name)) continue;
+        const timeText = db.match(/c-txt-caption-01">([^<]*)<\/p>/)?.[1]?.trim() || '';
+        const startM = timeText.match(/(?:開演|開始)\s*([\d:]+)/) || timeText.match(/^([\d:]+)/);
+        events.push({ date, name, start: startM?.[1] || '', end: '', demand: guessDemand(name, 55000) });
+      }
+    }
+  }
+  return events;
+}
+
 async function freeDome() {
   try {
     const res = await fetch('https://www.tokyo-dome.co.jp/dome/event/schedule.html', {
@@ -439,6 +470,8 @@ async function freeDome() {
     });
     if (!res.ok) return [];
     const html = await res.text();
+    const events = parseTokyoDomeSchedule(html);
+    if (events.length > 0) return events;
     const ldEvents = extractJsonLdEvents(html);
     if (ldEvents.length > 0) return ldEvents.filter(e => isValidEventName(e.name));
   } catch (_) {}
