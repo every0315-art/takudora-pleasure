@@ -1840,9 +1840,13 @@
           <span class="pub-label">生年月日</span>
           <label class="toggle-sw"><input type="checkbox" id="pub-birthdate"><span class="toggle-track"></span></label>
         </div>
-        <div class="pub-row" style="border-bottom:none;">
+        <div class="pub-row">
           <span class="pub-label">経験年数</span>
           <label class="toggle-sw"><input type="checkbox" id="pub-experience"><span class="toggle-track"></span></label>
+        </div>
+        <div class="pub-row" style="border-bottom:none;">
+          <span class="pub-label">会社</span>
+          <label class="toggle-sw"><input type="checkbox" id="pub-company"><span class="toggle-track"></span></label>
         </div>
       </div>
       <button onclick="savePublicSettings()"
@@ -6803,6 +6807,7 @@
     setChk('pub-stand',      pub.stand);
     setChk('pub-birthdate',  pub.birthdate);
     setChk('pub-experience', pub.experience);
+    setChk('pub-company',    pub.company);
   }
 
   function applySalarySettingsToUI(s) {
@@ -6896,6 +6901,7 @@
       stand:      document.getElementById('pub-stand').checked,
       birthdate:  document.getElementById('pub-birthdate').checked,
       experience: document.getElementById('pub-experience').checked,
+      company:    document.getElementById('pub-company').checked,
     };
     localStorage.setItem(PUB_KEY, JSON.stringify(pub));
     sbPush(PUB_KEY, JSON.stringify(pub));
@@ -6932,6 +6938,10 @@
         birthdate: profile.birthdate || null,
         experience_public: pub.experience,
         experience: profile.experience || null,
+        // 所属行燈は常時表示(既存のaffiliation欄と同じ扱い)、会社名はトグルで公開可否を選べる
+        affiliation: profile.group || null,
+        company_public: pub.company,
+        company: profile.company || null,
       }).eq('group_id', _group.id).eq('user_id', _sbUser.id);
     }
   }
@@ -8056,25 +8066,33 @@
       const exTaxStr = m.sales_amount_extax != null ? `（税抜 ¥${Number(m.sales_amount_extax).toLocaleString()}）` : '';
       rows.push(['今月の売上', `¥${Number(m.sales_amount).toLocaleString()}（税込）${exTaxStr}`]);
     }
-    if (m.favorite_stand_public && m.favorite_stands && m.favorite_stands.length > 0) {
-      rows.push(['よく使う乗り場', escHtml(m.favorite_stands.join('、'))]);
-    }
     if (m.birthdate_public && m.birthdate) {
       const age = calcAge(m.birthdate);
       rows.push(['生年月日', `${m.birthdate}${age != null ? `（${age}歳）` : ''}`]);
     }
     if (m.experience_public && m.experience) rows.push(['経験年数', escHtml(m.experience)]);
+    if (m.company_public && m.company) rows.push(['会社', escHtml(m.company)]);
+
+    const hasStands = m.favorite_stand_public && m.favorite_stands && m.favorite_stands.length > 0;
+    const standsHtml = hasStands ? `
+      <div class="pub-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <span class="pub-label">よく使う乗り場</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;width:100%;">
+          ${m.favorite_stands.map(s => `<div style="font-size:13px;color:var(--text);">・${escHtml(s)}</div>`).join('')}
+        </div>
+      </div>` : '';
+
     body.innerHTML = `
       <div style="text-align:center;margin-bottom:16px;">
         <div class="member-avatar" style="width:56px;height:56px;font-size:22px;margin:0 auto 8px;">${escHtml((m.display_name||'?').slice(0,1))}</div>
         <div style="font-size:16px;font-weight:700;color:var(--white);">${escHtml(m.display_name||'名無し')}</div>
         <div style="font-size:12px;color:var(--gray);">${escHtml(m.affiliation||'')}</div>
       </div>
-      ${rows.length === 0
+      ${rows.length === 0 && !hasStands
         ? '<div style="text-align:center;color:var(--gray);font-size:13px;padding:8px;">公開されている情報はありません</div>'
         : rows.map(([label, val]) => `
           <div class="pub-row"><span class="pub-label">${label}</span><span style="color:var(--text);font-size:13px;">${val}</span></div>
-        `).join('')}
+        `).join('') + standsHtml}
     `;
   }
 
