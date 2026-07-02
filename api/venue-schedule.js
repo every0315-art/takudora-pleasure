@@ -107,7 +107,8 @@ ${text}`,
     const result = [];
     for (const e of events) {
       if (!isValidEventName(e.name)) continue;
-      if (e.date < today) continue;
+      // 開催中(開始日は過去でも終了日が未来)のイベントも表示するため、
+      // 開始日ではなく終了日で足切りする
       const endDate = e.endDate || e.date;
       if (endDate >= today) {
         result.push({ date: e.date, endDate, name: e.name, start: e.start || '', end: e.end || '', demand: guessDemand(e.name, capacity) });
