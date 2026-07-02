@@ -3884,10 +3884,6 @@
     _latestAnnouncements.slice(0, 1).forEach(a => {
       if (a.content) items.push('📢 ' + a.content.slice(0, 30));
     });
-    // ニュース（3時間以内のみ。それ以前のものは流さない）
-    _latestNews.filter(n => !n.pub || now - new Date(n.pub).getTime() < THREE_H).slice(0, 3).forEach(n => {
-      if (n.title) items.push('📰 ' + n.title.slice(0, 40));
-    });
     // イベント
     document.querySelectorAll('#top-event-list [data-event-name]').forEach((n, i) => {
       if (i < 2) items.push('📅 ' + n.dataset.eventName?.slice(0, 30));
@@ -3901,6 +3897,10 @@
     // 電車遅延（路線名＋状況）
     _trainAlerts.slice(0, 3).forEach(l => {
       items.push(`🚆 ${l.name} ${l.status}`);
+    });
+    // ニュース（3時間以内のみ。それ以前のものは流さない）最後に表示
+    _latestNews.filter(n => !n.pub || now - new Date(n.pub).getTime() < THREE_H).slice(0, 3).forEach(n => {
+      if (n.title) items.push('📰 ' + n.title.slice(0, 40));
     });
 
     if (items.length === 0) { el.textContent = '新着情報を読込中…'; return; }
