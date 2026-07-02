@@ -7196,10 +7196,13 @@
 
   async function sbGoogleLogin() {
     if (!_sb) { alert('認証機能が読み込めていません。ページを再読み込みしてください（アプリ内ブラウザの場合はSafariで開き直してください）'); return; }
-    await _sb.auth.signInWithOAuth({
+    const { error } = await _sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: location.origin + '/app' }
     });
+    // 成功時はブラウザがGoogleへ遷移するためここには到達しない。
+    // エラー時は何も表示されず無反応に見えてしまうため、失敗を可視化する
+    if (error) alert('Googleログインでエラーが発生しました: ' + error.message);
   }
 
   function sbErrorMsg(msg) {
