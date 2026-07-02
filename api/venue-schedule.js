@@ -313,8 +313,49 @@ async function freeGiants() {
   return fetchNpbVenueGames(['東京ドーム', '後楽'], '巨人');
 }
 
+// 神宮球場: プロ野球以外に東京六大学/東都大学野球・高校野球・コンサート等も
+// 開催されるため、公式サイトのJSON API(全カテゴリ網羅)を使う
+// data.json構造: [ [{blogCategory,year,yearData:[{month,monthData:[{day,dayData:[{time,category,value:[{team1,team2}]}]}]}]}], ... ] の3グループ
+async function freeJingu() {
+  try {
+    const res = await fetch('https://www.jingu-stadium.com/event/json/data.json', {
+      headers: { 'User-Agent': UA, 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(TIMEOUT),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const today = new Date().toISOString().slice(0, 10);
+    const nowYear = new Date().getFullYear();
+    const events = [];
+    for (const group of data) {
+      for (const bc of group) {
+        if (bc.year < nowYear) continue;
+        for (const md of bc.yearData || []) {
+          for (const dd of md.monthData || []) {
+            for (const item of dd.dayData || []) {
+              const date = `${bc.year}-${String(md.month).padStart(2, '0')}-${String(dd.day).padStart(2, '0')}`;
+              if (date < today) continue;
+              const category = (item.category || '').trim();
+              if (!category) continue;
+              const matches = (item.value || [])
+                .filter(v => !v.cancel)
+                .map(v => `${stripTags(v.team1 || '')} vs ${stripTags(v.team2 || '')}`)
+                .filter(s => s !== ' vs ');
+              const name = matches.length > 0 ? `${category}：${matches.join('／')}` : category;
+              if (!isValidEventName(name)) continue;
+              const demand = /プロ野球|高等学校野球選手権|都市対抗/.test(category) ? 'high' : 'medium';
+              events.push({ date, name, start: item.time || '', end: '', demand });
+            }
+          }
+        }
+      }
+    }
+    return events;
+  } catch (_) { return []; }
+}
+
 async function freeSwallows() {
-  return fetchNpbVenueGames(['神宮'], 'ヤクルト');
+  return freeJingu();
 }
 
 // 武道館: 公式サイトにスケジュールなし → enjoy-live.net(ライブ会場スケジュールまとめサイト)を使用
