@@ -8073,6 +8073,8 @@
       return;
     }
     const rows = [];
+    if (m.affiliation) rows.push(['所属提灯', escHtml(m.affiliation)]);
+    if (m.company_public && m.company) rows.push(['所属会社', escHtml(m.company)]);
     if (m.sales_public && m.sales_amount != null) {
       const exTaxStr = m.sales_amount_extax != null ? `（税抜 ¥${Number(m.sales_amount_extax).toLocaleString()}）` : '';
       rows.push(['今月の売上', `¥${Number(m.sales_amount).toLocaleString()}（税込）${exTaxStr}`]);
@@ -8082,7 +8084,6 @@
       rows.push(['生年月日', `${m.birthdate}${age != null ? `（${age}歳）` : ''}`]);
     }
     if (m.experience_public && m.experience) rows.push(['経験年数', escHtml(m.experience)]);
-    if (m.company_public && m.company) rows.push(['会社', escHtml(m.company)]);
 
     const hasStands = m.favorite_stand_public && m.favorite_stands && m.favorite_stands.length > 0;
     const standsHtml = hasStands ? `
@@ -8097,7 +8098,6 @@
       <div style="text-align:center;margin-bottom:16px;">
         <div class="member-avatar" style="width:56px;height:56px;font-size:22px;margin:0 auto 8px;">${escHtml((m.display_name||'?').slice(0,1))}</div>
         <div style="font-size:16px;font-weight:700;color:var(--white);">${escHtml(m.display_name||'名無し')}</div>
-        <div style="font-size:12px;color:var(--gray);">${escHtml(m.affiliation||'')}</div>
       </div>
       ${rows.length === 0 && !hasStands
         ? '<div style="text-align:center;color:var(--gray);font-size:13px;padding:8px;">公開されている情報はありません</div>'
