@@ -7773,8 +7773,10 @@
         sMain.innerHTML = log.map(w => {
           const dt = new Date(w.started_at);
           const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+          const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
+          const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
           return `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10px;margin-top:3px;">
-            <span style="color:var(--text);">${escHtml(w.stand_name||'不明')} / ${escHtml(nameByUser[w.user_id]||'名無し')}</span>
+            <span style="color:var(--text);"><span style="color:var(--yellow);font-weight:700;">${mins}分</span> ${escHtml(w.stand_name||'不明')} / ${escHtml(nameByUser[w.user_id]||'名無し')}</span>
             <span style="color:var(--gray);flex-shrink:0;">${dtStr}</span>
           </div>`;
         }).join('');
