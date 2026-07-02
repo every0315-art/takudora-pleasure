@@ -7,6 +7,16 @@ function stripTags(html) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// "18:30" + 135分 → "20:45" のように分の繰り上がりを正しく処理して終演予想時刻を作る
+function addMinutesToTime(start, minutes) {
+  const [h, m] = start.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return '';
+  const total = h * 60 + m + minutes;
+  const hh = Math.floor(total / 60) % 24;
+  const mm = total % 60;
+  return `${hh}:${String(mm).padStart(2, '0')}頃`;
+}
+
 function decodeEntities(text) {
   return text
     .replace(/&(?:ldquo|rdquo);/g, '"')
@@ -424,7 +434,9 @@ async function freeToyota() {
         .trim().slice(0, 60);
       if (!isValidEventName(name)) continue;
       const timeM = text.match(/開催時間[：:](\d{1,2}:\d{2})/);
-      events.push({ date, name, start: timeM?.[1] || '', end: '', demand: guessDemand(name, 10000) });
+      const start = timeM?.[1] || '';
+      // コンサート/ライブ会場のため開演の2時間15分後を終演予想とする
+      events.push({ date, name, start, end: start ? addMinutesToTime(start, 135) : '', demand: guessDemand(name, 10000) });
     }
     return events;
   } catch (_) { return []; }
@@ -473,7 +485,7 @@ async function freeKokuritsu() {
   const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
   const events = [];
-  const re = /(?:スポーツ|音楽|その他)\s+(.+?)\s+日程\s+(\d{4})\s+(\d{2})\/(\d{2})\s*[月火水木金土日]\s*(?:(\d{4})\s+(\d{2})\/(\d{2})\s*[月火水木金土日])?\s*(?:開始時間\s+([^\s主催]+))?/g;
+  const re = /(スポーツ|音楽|その他)\s+(.+?)\s+日程\s+(\d{4})\s+(\d{2})\/(\d{2})\s*[月火水木金土日]\s*(?:(\d{4})\s+(\d{2})\/(\d{2})\s*[月火水木金土日])?\s*(?:開始時間\s+([^\s主催]+))?/g;
   for (let mi = 0; mi < 4; mi++) {
     const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
     const ym = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -486,12 +498,15 @@ async function freeKokuritsu() {
                        .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
       re.lastIndex = 0;
       for (const m of text.matchAll(re)) {
-        const name = m[1].replace(/&quot;/g, '"').trim().slice(0, 60);
-        const date = `${m[2]}-${m[3]}-${m[4]}`;
-        const endDate = m[5] ? `${m[5]}-${m[6]}-${m[7]}` : date;
-        const startTime = m[8]?.match(/\d+:\d+/)?.[0] || '';
+        const category = m[1];
+        const name = m[2].replace(/&quot;/g, '"').trim().slice(0, 60);
+        const date = `${m[3]}-${m[4]}-${m[5]}`;
+        const endDate = m[6] ? `${m[6]}-${m[7]}-${m[8]}` : date;
+        const startTime = m[9]?.match(/\d+:\d+/)?.[0] || '';
         if (date < today || !isValidEventName(name)) continue;
-        events.push({ date, endDate: endDate !== date ? endDate : undefined, name, start: startTime, end: '', demand: guessDemand(name, 68000) });
+        // 音楽(コンサート)は開演の2時間15分後を終演予想とする。スポーツ等は所要時間が読めないため空
+        const end = (category === '音楽' && startTime) ? addMinutesToTime(startTime, 135) : '';
+        events.push({ date, endDate: endDate !== date ? endDate : undefined, name, start: startTime, end, demand: guessDemand(name, 68000) });
       }
     } catch (_) {}
   }
@@ -524,8 +539,8 @@ function parseTokyoDomeSchedule(html) {
         const startM = timeText.match(/(?:開演|開始)\s*([\d:]+)/) || timeText.match(/^([\d:]+)/);
         const start = startM?.[1] || '';
         const tag = db.match(/c-txt-tag__item[^"]*">([^<]*)</)?.[1] || '';
-        // 野球は試合時間が概ね3時間程度で終演予想を計算、コンサート等は所要時間が読めないため空
-        const end = (tag.includes('野球') && start) ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : '';
+        // 野球は試合時間が概ね3時間、コンサートは開演の2時間15分後を終演予想とする
+        const end = start ? (tag.includes('野球') ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : addMinutesToTime(start, 135)) : '';
         events.push({ date, name, start, end, demand: guessDemand(name, 55000) });
       }
     }
