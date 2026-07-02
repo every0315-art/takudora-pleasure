@@ -3824,8 +3824,9 @@
           const [cls, label] = DEMAND_MAP[e.demand] || DEMAND_MAP.medium;
           const timeLabel = e.start ? (e.end ? '開演 '+e.start+' → <strong style="color:var(--white);">終演 '+e.end+'</strong>' : '開演 '+e.start) : '';
           const endD = e.endDate && e.endDate !== e.date ? new Date(e.endDate) : null;
-          const dateRange = endD ? `${mo}/${day}〜${endD.getMonth()+1}/${endD.getDate()}` : `${mo}月${day}日`;
-          const meta = [timeLabel, endD ? `（〜${endD.getMonth()+1}/${endD.getDate()}）` : ''].filter(Boolean).join(' ');
+          const days = endD ? Math.round((endD - d) / 86400000) + 1 : 1;
+          // （X日間）は今後7日カード/TOPタイルの複数日イベント展開処理が読むマーカーなので必ず付ける
+          const meta = [timeLabel, endD ? `（〜${endD.getMonth()+1}/${endD.getDate()}）` : '', days > 1 ? `（${days}日間）` : ''].filter(Boolean).join(' ');
           return '<div class="event-item"><div class="event-date"><div class="event-month">'+mo+'月</div><div class="event-day">'+day+'</div></div><div class="event-info"><div class="event-name">'+e.name+'</div>'+(meta?'<div class="event-meta">'+meta+'</div>':'')+'<div class="event-demand"><span class="badge '+cls+'">'+label+'</span></div></div></div>';
         }).join('');
       }
