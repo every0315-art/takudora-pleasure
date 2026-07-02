@@ -364,6 +364,7 @@ async function freeSwallows() {
 
 // 武道館: 公式サイトにスケジュールなし → enjoy-live.net(ライブ会場スケジュールまとめサイト)を使用
 // <article class="calendar" id="YYYY-M"> ごとに月が分かれ、<tr><th class="date">D日(曜)</th><td><strong><a>アーティスト</a></strong><span>タイトル</span>...</td></tr>
+// ※このソースは開演時間の情報を持たないため start/end は空のまま(コンサートは公演ごとに時間が異なり推測不可)
 async function freeBudokan() {
   try {
     const res = await fetch('https://schedule.enjoy-live.net/schedule.php?hall_id=3', {
@@ -521,7 +522,11 @@ function parseTokyoDomeSchedule(html) {
         if (name === 'TOKYO DOME TOUR' || !isValidEventName(name)) continue;
         const timeText = db.match(/c-txt-caption-01">([^<]*)<\/p>/)?.[1]?.trim() || '';
         const startM = timeText.match(/(?:開演|開始)\s*([\d:]+)/) || timeText.match(/^([\d:]+)/);
-        events.push({ date, name, start: startM?.[1] || '', end: '', demand: guessDemand(name, 55000) });
+        const start = startM?.[1] || '';
+        const tag = db.match(/c-txt-tag__item[^"]*">([^<]*)</)?.[1] || '';
+        // 野球は試合時間が概ね3時間程度で終演予想を計算、コンサート等は所要時間が読めないため空
+        const end = (tag.includes('野球') && start) ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : '';
+        events.push({ date, name, start, end, demand: guessDemand(name, 55000) });
       }
     }
   }
@@ -566,7 +571,8 @@ async function freeBigsight() {
         for (const li of data.itemListElement) {
           const ev = li.item;
           if (!ev || ev['@type'] !== 'Event' || !ev.name || !ev.startDate) continue;
-          events.push({ date: ev.startDate, endDate: ev.endDate || ev.startDate, name: ev.name, start: '', end: '', demand: guessDemand(ev.name, 50000) });
+          // kaboot.netのJSON-LDは時間情報を持たないため、展示会の一般的な開催時間(10:00-17:00)を仮定
+          events.push({ date: ev.startDate, endDate: ev.endDate || ev.startDate, name: ev.name, start: '10:00', end: '17:00', demand: guessDemand(ev.name, 50000) });
         }
       }
     } catch (_) {}
