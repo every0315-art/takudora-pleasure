@@ -2329,6 +2329,10 @@
   // 止まってしまう不具合があったため先頭に移動した）
   window.escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+  // 業務タイマーの状態(swState)も、カメラ監視処理(checkHanedaCam等)から
+  // 参照するためescHtml同様にスクリプト先頭で宣言しておく
+  let swState = 'idle', swStart = 0, swElapsed = 0, swTimer = null;
+
   // SW完全無効化・キャッシュ強制削除
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
@@ -2925,7 +2929,9 @@
   }
 
   // 国際線第2プール 車両有無チェック（2分おき、APIがサーバー側で画像取得）
+  // Claude Haikuを使う有料APIのため、業務タイマー稼働中(swState==='running')のみ実行する
   async function checkHanedaCam() {
+    if (swState !== 'running') return;
     try {
       const r = await fetch('/api/haneda-cam', { signal: AbortSignal.timeout(35000) });
       if (!r.ok) return;
@@ -2938,6 +2944,7 @@
 
   // 国内線待機場 車列数チェック（2分おき、APIがサーバー側で画像取得）
   async function checkHanedaCam2() {
+    if (swState !== 'running') return;
     try {
       const r = await fetch('/api/haneda-cam?n=2', { signal: AbortSignal.timeout(35000) });
       if (!r.ok) return;
@@ -2950,6 +2957,7 @@
 
   // 八重洲待機所・乗場 車両有無チェック（2分おき、APIがサーバー側で画像取得）
   async function checkYaesuCam() {
+    if (swState !== 'running') return;
     try {
       const r = await fetch('/api/yaesu-cam', { signal: AbortSignal.timeout(35000) });
       if (!r.ok) return;
@@ -4592,7 +4600,6 @@
 
   // 管理者の場合、静的投稿に削除ボタンを追加
   // ストップウォッチ（idle→running→stopped→idle）
-  let swState = 'idle', swStart = 0, swElapsed = 0, swTimer = null;
   const pad = n => String(n).padStart(2, '0');
   function swTick() {
     swElapsed = Date.now() - swStart;
