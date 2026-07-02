@@ -2126,6 +2126,11 @@
   <div style="font-size:10px;color:rgba(252,165,165,.7);margin-top:2px;" id="usage-alert-sub"></div>
   <button onclick="document.getElementById('usage-alert-banner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fca5a5;font-size:18px;cursor:pointer;">×</button>
 </div>
+<div id="inapp-browser-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:2100;background:#7f1d1d;border-bottom:1px solid #f87171;padding:10px 16px;text-align:center;">
+  <div style="font-size:13px;font-weight:700;color:#fca5a5;">⚠️ アプリ内ブラウザで開いています</div>
+  <div style="font-size:11px;color:rgba(252,165,165,.85);margin-top:2px;">ログイン・新規登録が正常に動作しない場合があります。右上（または下部）の「•••」から「Safariで開く」を選んでください</div>
+  <button onclick="document.getElementById('inapp-browser-banner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fca5a5;font-size:18px;cursor:pointer;">×</button>
+</div>
 <!-- 初回セットアップモーダル -->
 <!-- 報告モーダル -->
 <div id="login-gate" style="position:fixed;inset:0;z-index:2000;background:var(--navy-dark);display:none;align-items:center;justify-content:center;padding:24px;">
@@ -7035,6 +7040,18 @@
     renderMonthlySummary();
     alert('日報データを削除しました。');
   }
+
+  // ── アプリ内ブラウザ検知(LINE/Instagram/Facebook等) ──
+  // これらのアプリ内ブラウザはlocalStorageの永続化が制限されることがあり、
+  // Supabaseのセッション保持・ログイン処理が正常に動かない原因になるため警告を出す
+  (function detectInAppBrowser() {
+    const ua = navigator.userAgent || '';
+    const isInApp = /Line\//i.test(ua) || /FBAN|FBAV/i.test(ua) || /Instagram/i.test(ua) || /Twitter/i.test(ua);
+    if (isInApp) {
+      const el = document.getElementById('inapp-browser-banner');
+      if (el) el.style.display = 'block';
+    }
+  })();
 
   // ── SUPABASE ──────────────────────────────────────────────────────
   let _sb = null;
