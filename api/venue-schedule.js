@@ -501,6 +501,42 @@ async function freeDome() {
 
 // 両国国技館: 日本相撲協会「年間日程表」(令和年表記)から東京場所(国技館開催)の初日を取得
 // <table class="mdTable4 type3"> の各行: 場所名/会場/前売り開始日/番付発表/初日/千秋楽
+// 東京ビッグサイト: kaboot.net(展示会カレンダーまとめサイト)の月別ページ
+// JSON-LD ItemList > itemListElement[].item(Event) で構造化されている
+async function freeBigsight() {
+  const now = new Date();
+  const events = [];
+  for (let mi = 0; mi < 4; mi++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
+    const year = d.getFullYear(), month = d.getMonth() + 1;
+    try {
+      const url = `https://kaboot.net/exhibition_calendar/summary/${year}-${String(month).padStart(2, '0')}-bigsight.php`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
+      if (!res.ok) continue;
+      const html = await res.text();
+      for (const block of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+        let data;
+        try { data = JSON.parse(block[1]); } catch (_) { continue; }
+        if (data['@type'] !== 'ItemList' || !Array.isArray(data.itemListElement)) continue;
+        for (const li of data.itemListElement) {
+          const ev = li.item;
+          if (!ev || ev['@type'] !== 'Event' || !ev.name || !ev.startDate) continue;
+          events.push({ date: ev.startDate, endDate: ev.endDate || ev.startDate, name: ev.name, start: '', end: '', demand: guessDemand(ev.name, 50000) });
+        }
+      }
+    } catch (_) {}
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const seen = new Set();
+  return events.filter(e => {
+    if ((e.endDate || e.date) < today) return false;
+    const key = `${e.date}|${e.name}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return isValidEventName(e.name);
+  });
+}
+
 async function freeSumo() {
   try {
     const res = await fetch('https://www.sumo.or.jp/Admission/schedule/', {
@@ -562,7 +598,7 @@ export default async function handler(req, res) {
     fetchWithFallback(freeBudokan,
       ['https://www.nipponbudokan.or.jp/'],
       'www.nipponbudokan.or.jp', '日本武道館', 14000),
-    fetchWithFallback(() => Promise.resolve([]),
+    fetchWithFallback(freeBigsight,
       ['https://www.bigsight.jp/visitor/event/'],
       'www.bigsight.jp', '東京ビッグサイト', 50000),
     fetchWithFallback(() => Promise.resolve([]),
