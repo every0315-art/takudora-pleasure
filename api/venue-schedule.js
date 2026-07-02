@@ -560,7 +560,7 @@ export default async function handler(req, res) {
       ['https://www.shopping-sumitomo-rd.com/tokyo_garden_theater/schedule/'],
       null, '東京ガーデンシアター', 8000),
     fetchWithFallback(freeBudokan,
-      ['https://www.nipponbudokan.or.jp/houseplan/', 'https://www.nipponbudokan.or.jp/'],
+      ['https://www.nipponbudokan.or.jp/'],
       'www.nipponbudokan.or.jp', '日本武道館', 14000),
     fetchWithFallback(() => Promise.resolve([]),
       ['https://www.bigsight.jp/visitor/event/'],
