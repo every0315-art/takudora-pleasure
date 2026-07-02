@@ -3500,7 +3500,7 @@
           main: lineName,
           sub: `${st.dir || ''}${st.status}（${stopLabel}）→ 再開後に東京駅へ乗客集中の恐れ`,
           serious: true,
-          tab: 'tab-train',
+          tab: 'train',
         });
       } else if (st.status === '遅延') {
         alerts.push({
@@ -3509,7 +3509,7 @@
           sub: `${st.dir || ''}遅延運転中`,
           serious: false,
           delay: true,
-          tab: 'tab-train',
+          tab: 'train',
         });
       } else if (st.status === '平常運転' && st.resumedAt) {
         // 見合わせ→再開から2時間以内はアラート継続
@@ -3521,7 +3521,7 @@
             main: `${lineName} 運転再開`,
             sub: `約${stoppedMin}分の停止後に再開 → 東京駅に乗客が大量流入する可能性`,
             serious: true,
-            tab: 'tab-train',
+            tab: 'train',
           });
         } else {
           // 2時間経過でリセット
@@ -3545,7 +3545,7 @@
         sub: l.status + (l.message ? `：${l.message.slice(0,30)}` : ''),
         serious: isSerious,
         delay: isDelay,
-        tab: 'tab-train',
+        tab: 'train',
       });
     }
 
@@ -3568,7 +3568,7 @@
             sub: `${nearPosts.length}件の投稿が近くにあります`,
             serious: false,
             delay: true,
-            tab: 'tab-community',
+            tab: 'community',
           });
         }
       } else {
@@ -3627,7 +3627,7 @@
         main: `${_hanedaBigDelayCount}便が1時間以上遅延`,
         sub: '到着ラッシュ・需要増の可能性',
         serious: true,
-        tab: 'tab-haneda',
+        tab: 'haneda',
       });
     }
 
@@ -3644,7 +3644,7 @@
         main: `${lnFlights.length}便が深夜に遅延到着予定`,
         sub: `最遅 ${latestH}:${latestM}頃 → 空港タクシー乗り場に乗客集中の可能性`,
         serious: true,
-        tab: 'tab-haneda',
+        tab: 'haneda',
       });
     }
 
@@ -3660,7 +3660,7 @@
       if (km > 2) continue;
       const timeStr = `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
       const label = diff >= 0 ? `終電${diff}分前` : `終電${Math.abs(diff)}分後`;
-      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）`, serious: true, tab: 'tab-train' });
+      alerts.push({ tag: '🚃 終電アラート', main: t.line, sub: `${t.from}→${t.to} ${timeStr}（${label}）`, serious: true, tab: 'train' });
     }
 
     // イベント終演±15分 かつ 会場5km以内
@@ -3685,7 +3685,7 @@
         const name = item.querySelector('.event-name')?.textContent?.trim() || '';
         const timeStr = `${endMatch[1]}:${endMatch[2]}`;
         const label = diff >= 0 ? `終演${diff}分前` : `終演${Math.abs(diff)}分後`;
-        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）`, serious: true, tab: 'tab-event' });
+        alerts.push({ tag: '🚨 終演ピックアップ', main: venueTitle, sub: `${name.slice(0,14)} ${timeStr}（${label}）`, serious: true, tab: 'event' });
       });
     });
 
