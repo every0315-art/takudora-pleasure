@@ -47,7 +47,7 @@ function extractJsonLdEvents(html) {
         const endRaw = item.endDate || item.endTime || '';
         const endD = endRaw ? new Date(endRaw) : null;
         const start = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        const end = endD && !isNaN(endD) ? `${String(endD.getHours()).padStart(2,'0')}:${String(endD.getMinutes()).padStart(2,'0')}頃` : '';
+        const end = endD && !isNaN(endD) ? `${String(endD.getHours()).padStart(2,'0')}:${String(endD.getMinutes()).padStart(2,'0')}頃` : '21:00';
         events.push({ date, name, start, end, demand: guessDemand(name, 0) });
       }
     } catch (_) {}
@@ -121,7 +121,7 @@ ${text}`,
       // 開始日ではなく終了日で足切りする
       const endDate = e.endDate || e.date;
       if (endDate >= today) {
-        result.push({ date: e.date, endDate, name: e.name, start: e.start || '', end: e.end || '', demand: guessDemand(e.name, capacity) });
+        result.push({ date: e.date, endDate, name: e.name, start: e.start || '', end: e.end || '21:00', demand: guessDemand(e.name, capacity) });
       }
     }
     console.error(`[venue-ai:${venueName}] parsed ${events.length} raw events, ${result.length} after filtering`);
@@ -149,7 +149,7 @@ async function fetchWordPressEvents(domain, capacity) {
         if (!name || !dateStr || dateStr < today || !isValidEventName(name)) continue;
         const body = stripTags(post.content?.rendered || post.excerpt?.rendered || '');
         const timeM = body.match(/(?:開演|開場|START)[^\d]*(\d{1,2}:\d{2})/);
-        events.push({ date: dateStr, name, start: timeM ? timeM[1] : '', end: '', demand: guessDemand(name, capacity) });
+        events.push({ date: dateStr, name, start: timeM ? timeM[1] : '', end: '21:00', demand: guessDemand(name, capacity) });
       }
       if (events.length > 0) return events;
     } catch (_) {}
@@ -355,9 +355,9 @@ async function freeJingu() {
               if (!isValidEventName(name)) continue;
               const demand = /プロ野球|高等学校野球選手権|都市対抗/.test(category) ? 'high' : 'medium';
               const start = item.time || '';
-              // 野球系は試合時間が概ね3時間程度で終演予想を計算、それ以外は不明なため空
+              // 野球系は試合時間が概ね3時間程度で終演予想を計算、それ以外は不明なため21時で統一
               const isBaseball = /野球/.test(category);
-              const end = (isBaseball && start) ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : '';
+              const end = (isBaseball && start) ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : '21:00';
               events.push({ date, name, start, end, demand });
             }
           }
@@ -396,7 +396,7 @@ async function freeBudokan() {
           const title = decodeEntities(m[2]).trim();
           const name = title ? `${artist} ${title}` : artist;
           if (!isValidEventName(name)) continue;
-          events.push({ date, name, start: '', end: '', demand: guessDemand(name, 14000) });
+          events.push({ date, name, start: '', end: '21:00', demand: guessDemand(name, 14000) });
         }
       }
     }
@@ -435,25 +435,20 @@ async function freeToyota() {
       if (!isValidEventName(name)) continue;
       const timeM = text.match(/開催時間[：:](\d{1,2}:\d{2})/);
       const start = timeM?.[1] || '';
-      // コンサート/ライブ会場のため開演の2時間15分後を終演予想とする
-      events.push({ date, name, start, end: start ? addMinutesToTime(start, 135) : '', demand: guessDemand(name, 10000) });
+      // コンサート/ライブ会場のため開演の2時間15分後を終演予想とする(開演不明時は21時で統一)
+      events.push({ date, name, start, end: start ? addMinutesToTime(start, 135) : '21:00', demand: guessDemand(name, 10000) });
     }
     return events;
   } catch (_) { return []; }
 }
 
 // 東京ガーデンシアター: shopping-sumitomo-rd.com から取得
-// テキスト形式: "07 03 Fri. [07 05 Sun.] コンサート・ショー EVENT_NAME"
+// 一覧ページ(<li class="event_all">...</li>)で日付/名前を取得し、
+// 各イベントの詳細ページ(【開場】HH:MM【開演】HH:MM)から開演時刻を取得する
 async function freeGarden() {
   const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
-  const events = [];
-  const DAYS = 'Mon|Tue|Wed|Thu|Fri|Sat|Sun';
-  const re = new RegExp(
-    `(\\d{2}) (\\d{2}) (?:${DAYS})\\. (?:(\\d{2}) (\\d{2}) (?:${DAYS})\\. )?` +
-    `(?:コンサート[^\\s]*|展示[^\\s]*|スポーツ|その他) (.+?)(?= \\d{2} \\d{2} (?:${DAYS})\\.|$)`,
-    'g'
-  );
+  const items = [];
   for (let mi = 0; mi < 3; mi++) {
     const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -465,18 +460,34 @@ async function freeGarden() {
       });
       if (!res.ok) continue;
       const html = await res.text();
-      const text = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '')
-                       .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-      for (const m of text.matchAll(re)) {
-        const date = `${year}-${m[1]}-${m[2]}`;
-        const endDate = m[3] ? `${year}-${m[3]}-${m[4]}` : date;
-        const name = m[5].trim().replace(/&#\d+;/g, '').trim().slice(0, 60);
-        if (date < today || !isValidEventName(name)) continue;
-        events.push({ date, endDate: endDate !== date ? endDate : undefined, name, start: '', end: '', demand: guessDemand(name, 8000) });
+      for (const li of html.matchAll(/<li class="event_all[^"]*"><a href="([^"]+)">([\s\S]*?)<\/a>\s*<\/li>/g)) {
+        const href = li[1];
+        const block = li[2];
+        const ymds = [...block.matchAll(/<div class="m">(\d{2})<\/div>\s*<div class="d">(\d{2})<\/div>/g)];
+        if (ymds.length === 0) continue;
+        const date = `${year}-${ymds[0][1]}-${ymds[0][2]}`;
+        const endDate = ymds.length > 1 ? `${year}-${ymds[1][1]}-${ymds[1][2]}` : date;
+        if (endDate < today) continue;
+        const player = decodeEntities(stripTags(block.match(/<div class="player"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''));
+        const title = decodeEntities(stripTags(block.match(/<div class="title"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''));
+        const name = (player ? `${player} ${title}` : title).trim().slice(0, 60);
+        if (!isValidEventName(name)) continue;
+        items.push({ date, endDate: endDate !== date ? endDate : undefined, name, href });
       }
     } catch (_) {}
   }
-  return events;
+  // 詳細ページから開演時刻を並行取得
+  const details = await Promise.allSettled(items.map(it =>
+    fetch(it.href, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) })
+      .then(r => r.ok ? r.text() : '')
+      .then(html => html.match(/【開演】\s*(\d{1,2}:\d{2})/)?.[1] || '')
+  ));
+  return items.map((it, i) => {
+    const start = details[i].status === 'fulfilled' ? details[i].value : '';
+    // コンサート・ショー会場のため開演の2時間15分後を終演予想とする(開演不明時は21時で統一)
+    const end = start ? addMinutesToTime(start, 135) : '21:00';
+    return { date: it.date, endDate: it.endDate, name: it.name, start, end, demand: guessDemand(it.name, 8000) };
+  });
 }
 
 // 国立競技場 (MUFGスタジアム): jns-e.com から取得
@@ -505,7 +516,7 @@ async function freeKokuritsu() {
         const startTime = m[9]?.match(/\d+:\d+/)?.[0] || '';
         if (date < today || !isValidEventName(name)) continue;
         // 音楽(コンサート)は開演の2時間15分後を終演予想とする。スポーツ等は所要時間が読めないため空
-        const end = (category === '音楽' && startTime) ? addMinutesToTime(startTime, 135) : '';
+        const end = (category === '音楽' && startTime) ? addMinutesToTime(startTime, 135) : '21:00';
         events.push({ date, endDate: endDate !== date ? endDate : undefined, name, start: startTime, end, demand: guessDemand(name, 68000) });
       }
     } catch (_) {}
@@ -540,7 +551,7 @@ function parseTokyoDomeSchedule(html) {
         const start = startM?.[1] || '';
         const tag = db.match(/c-txt-tag__item[^"]*">([^<]*)</)?.[1] || '';
         // 野球は試合時間が概ね3時間、コンサートは開演の2時間15分後を終演予想とする
-        const end = start ? (tag.includes('野球') ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : addMinutesToTime(start, 135)) : '';
+        const end = start ? (tag.includes('野球') ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : addMinutesToTime(start, 135)) : '21:00';
         events.push({ date, name, start, end, demand: guessDemand(name, 55000) });
       }
     }
