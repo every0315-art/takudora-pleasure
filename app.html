@@ -2131,6 +2131,13 @@
   <div style="font-size:11px;color:rgba(252,165,165,.85);margin-top:2px;">ログイン・新規登録が正常に動作しない場合があります。右上（または下部）の「•••」から「Safariで開く」を選んでください</div>
   <button onclick="document.getElementById('inapp-browser-banner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fca5a5;font-size:18px;cursor:pointer;">×</button>
 </div>
+<!-- メンバープロフィールモーダル(公開設定で許可した項目のみ表示、?member=<id>のリンクでも開ける) -->
+<div id="member-profile-modal" style="position:fixed;inset:0;z-index:1900;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeMemberProfile()">
+  <div style="background:var(--navy-mid);border:1px solid rgba(201,168,76,.35);border-radius:16px;padding:24px;width:100%;max-width:360px;position:relative;">
+    <button onclick="closeMemberProfile()" style="position:absolute;right:14px;top:14px;background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;">×</button>
+    <div id="member-profile-body"></div>
+  </div>
+</div>
 <!-- 初回セットアップモーダル -->
 <!-- 報告モーダル -->
 <div id="login-gate" style="position:fixed;inset:0;z-index:2000;background:var(--navy-dark);display:none;align-items:center;justify-content:center;padding:24px;">
@@ -6881,7 +6888,7 @@
     } catch(e) { console.warn('syncGroupDisplayName:', e); }
   }
 
-  function savePublicSettings() {
+  async function savePublicSettings() {
     const pub = {
       sales:      document.getElementById('pub-sales').checked,
       stand:      document.getElementById('pub-stand').checked,
@@ -6891,6 +6898,34 @@
     localStorage.setItem(PUB_KEY, JSON.stringify(pub));
     sbPush(PUB_KEY, JSON.stringify(pub));
     showMsg('pub-save-msg', '保存しました ✓');
+    // グループメンバーページで見られる実データ・公開可否をgroup_membersに反映する
+    // (user_dataはRLSで本人しか読めないため、グループ内共有はgroup_members経由で行う)
+    if (_sb && _sbUser && _group) {
+      const profile = loadProfile() || {};
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const monthSales = loadReports()
+        .filter(r => r.date && r.date.startsWith(ym) && r.sales != null)
+        .reduce((sum, r) => sum + Number(r.sales), 0);
+      const { data: myWaits } = await _sb.from('waiting_records')
+        .select('stand_name').eq('group_id', _group.id).eq('user_id', _sbUser.id).not('stand_name', 'is', null);
+      let favoriteStand = null;
+      if (myWaits && myWaits.length > 0) {
+        const counts = {};
+        myWaits.forEach(w => { counts[w.stand_name] = (counts[w.stand_name] || 0) + 1; });
+        favoriteStand = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      }
+      await _sb.from('group_members').update({
+        sales_public: pub.sales,
+        sales_amount: monthSales,
+        favorite_stand_public: pub.stand,
+        favorite_stand: favoriteStand,
+        birthdate_public: pub.birthdate,
+        birthdate: profile.birthdate || null,
+        experience_public: pub.experience,
+        experience: profile.experience || null,
+      }).eq('group_id', _group.id).eq('user_id', _sbUser.id);
+    }
   }
 
   function saveSalarySettings() {
@@ -7955,11 +7990,11 @@
     const salesShare = _group.sales_share;
     el.innerHTML = data.map(m => {
       const isMe = m.user_id === _sbUser?.id;
-      const showSales = salesShare && m.sales_public;
+      const showSales = salesShare && m.sales_public && m.sales_amount != null;
       const salesHtml = showSales
-        ? `<div class="member-sales-txt" id="member-sales-${m.user_id}">—</div>`
+        ? `<div class="member-sales-txt">¥${Number(m.sales_amount).toLocaleString()}</div>`
         : '';
-      return `<div class="member-row">
+      return `<div class="member-row" style="cursor:pointer;" onclick="openMemberProfile('${m.id}')">
         <div class="member-avatar">${(m.display_name||'?').slice(0,1)}</div>
         <div class="member-info">
           <div class="member-name-txt">${escHtml(m.display_name||'名無し')} ${isMe?'<span style="font-size:10px;color:var(--gold)">(自分)</span>':''}</div>
@@ -7968,28 +8003,65 @@
         ${salesHtml}
       </div>`;
     }).join('');
+  }
 
-    if (salesShare) {
-      data.filter(m => m.sales_public).forEach(m => fetchMemberSales(m.user_id));
+  // メンバーのプロフィールページ(公開設定で許可した項目のみ)をURLで開閉する
+  // ?member=<group_members.id> で直接リンクからも表示可能
+  function openMemberProfile(memberId) {
+    const url = new URL(location.href);
+    url.searchParams.set('member', memberId);
+    history.pushState({}, '', url);
+    loadMemberProfile(memberId);
+  }
+
+  function closeMemberProfile() {
+    const url = new URL(location.href);
+    url.searchParams.delete('member');
+    history.pushState({}, '', url);
+    document.getElementById('member-profile-modal').style.display = 'none';
+  }
+
+  async function loadMemberProfile(memberId) {
+    const modal = document.getElementById('member-profile-modal');
+    const body = document.getElementById('member-profile-body');
+    if (!modal || !body || !_sb) return;
+    modal.style.display = 'flex';
+    body.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div>';
+    // is_group_member RLSにより、同じグループのメンバーしか閲覧できない
+    const { data: m } = await _sb.from('group_members').select('*').eq('id', memberId).maybeSingle();
+    if (!m) {
+      body.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">見つかりません（同じグループのメンバーのみ閲覧できます）</div>';
+      return;
     }
+    const rows = [];
+    if (m.sales_public && m.sales_amount != null) rows.push(['今月の売上', `¥${Number(m.sales_amount).toLocaleString()}`]);
+    if (m.favorite_stand_public && m.favorite_stand) rows.push(['よく使う乗り場', escHtml(m.favorite_stand)]);
+    if (m.birthdate_public && m.birthdate) rows.push(['生年月日', m.birthdate]);
+    if (m.experience_public && m.experience) rows.push(['経験年数', escHtml(m.experience)]);
+    body.innerHTML = `
+      <div style="text-align:center;margin-bottom:16px;">
+        <div class="member-avatar" style="width:56px;height:56px;font-size:22px;margin:0 auto 8px;">${escHtml((m.display_name||'?').slice(0,1))}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--white);">${escHtml(m.display_name||'名無し')}</div>
+        <div style="font-size:12px;color:var(--gray);">${escHtml(m.affiliation||'')}</div>
+      </div>
+      ${rows.length === 0
+        ? '<div style="text-align:center;color:var(--gray);font-size:13px;padding:8px;">公開されている情報はありません</div>'
+        : rows.map(([label, val]) => `
+          <div class="pub-row"><span class="pub-label">${label}</span><span style="color:var(--text);font-size:13px;">${val}</span></div>
+        `).join('')}
+    `;
   }
 
-  async function fetchMemberSales(userId) {
-    const el = document.getElementById('member-sales-' + userId);
-    if (!el) return;
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    const { data } = await _sb.from('user_data')
-      .select('value').eq('user_id', userId).eq('key', 'reports').maybeSingle();
-    if (!data?.value) return;
-    try {
-      const reports = JSON.parse(data.value);
-      const monthTotal = reports
-        .filter(r => r.date && r.date.startsWith(ym))
-        .reduce((s, r) => s + (Number(r.meterAmount) || 0), 0);
-      el.textContent = monthTotal > 0 ? `¥${monthTotal.toLocaleString()}` : '—';
-    } catch (_) {}
-  }
+  // ページ読込時にURLに?member=が付いていれば直接プロフィールを開く
+  window.addEventListener('load', () => {
+    const memberId = new URL(location.href).searchParams.get('member');
+    if (memberId) {
+      const tryOpen = () => { if (_sb) loadMemberProfile(memberId); else setTimeout(tryOpen, 300); };
+      tryOpen();
+      const modal = document.getElementById('member-profile-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+  });
 
   // ── 管理パネル ────────────────────────────────────────
   async function loadAdminPanel() {
