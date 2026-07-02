@@ -6904,22 +6904,28 @@
       const profile = loadProfile() || {};
       const now = new Date();
       const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const monthSales = loadReports()
-        .filter(r => r.date && r.date.startsWith(ym) && r.sales != null)
-        .reduce((sum, r) => sum + Number(r.sales), 0);
+      const monthReports = loadReports().filter(r => r.date && r.date.startsWith(ym) && r.sales != null);
+      // r.salesは税込金額。税抜は明細のtaxがあればそれを使い、無ければ10%概算で控除
+      const monthSales = monthReports.reduce((sum, r) => sum + Number(r.sales), 0);
+      const monthSalesExTax = monthReports.reduce((sum, r) => {
+        const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
+        return sum + (Number(r.sales) - tax);
+      }, 0);
       const { data: myWaits } = await _sb.from('waiting_records')
         .select('stand_name').eq('group_id', _group.id).eq('user_id', _sbUser.id).not('stand_name', 'is', null);
-      let favoriteStand = null;
+      // よく使う乗り場は上位5箇所まで
+      let favoriteStands = [];
       if (myWaits && myWaits.length > 0) {
         const counts = {};
         myWaits.forEach(w => { counts[w.stand_name] = (counts[w.stand_name] || 0) + 1; });
-        favoriteStand = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+        favoriteStands = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name]) => name);
       }
       await _sb.from('group_members').update({
         sales_public: pub.sales,
         sales_amount: monthSales,
+        sales_amount_extax: monthSalesExTax,
         favorite_stand_public: pub.stand,
-        favorite_stand: favoriteStand,
+        favorite_stands: favoriteStands,
         birthdate_public: pub.birthdate,
         birthdate: profile.birthdate || null,
         experience_public: pub.experience,
@@ -7992,7 +7998,7 @@
       const isMe = m.user_id === _sbUser?.id;
       const showSales = salesShare && m.sales_public && m.sales_amount != null;
       const salesHtml = showSales
-        ? `<div class="member-sales-txt">¥${Number(m.sales_amount).toLocaleString()}</div>`
+        ? `<div class="member-sales-txt">¥${Number(m.sales_amount).toLocaleString()}<span style="font-size:9px;color:var(--gray);margin-left:2px;">税込</span></div>`
         : '';
       return `<div class="member-row" style="cursor:pointer;" onclick="openMemberProfile('${m.id}')">
         <div class="member-avatar">${(m.display_name||'?').slice(0,1)}</div>
@@ -8021,6 +8027,16 @@
     document.getElementById('member-profile-modal').style.display = 'none';
   }
 
+  function calcAge(birthdateStr) {
+    const b = new Date(birthdateStr);
+    if (isNaN(b)) return null;
+    const now = new Date();
+    let age = now.getFullYear() - b.getFullYear();
+    const m = now.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+    return age;
+  }
+
   async function loadMemberProfile(memberId) {
     const modal = document.getElementById('member-profile-modal');
     const body = document.getElementById('member-profile-body');
@@ -8034,9 +8050,17 @@
       return;
     }
     const rows = [];
-    if (m.sales_public && m.sales_amount != null) rows.push(['今月の売上', `¥${Number(m.sales_amount).toLocaleString()}`]);
-    if (m.favorite_stand_public && m.favorite_stand) rows.push(['よく使う乗り場', escHtml(m.favorite_stand)]);
-    if (m.birthdate_public && m.birthdate) rows.push(['生年月日', m.birthdate]);
+    if (m.sales_public && m.sales_amount != null) {
+      const exTaxStr = m.sales_amount_extax != null ? `（税抜 ¥${Number(m.sales_amount_extax).toLocaleString()}）` : '';
+      rows.push(['今月の売上', `¥${Number(m.sales_amount).toLocaleString()}（税込）${exTaxStr}`]);
+    }
+    if (m.favorite_stand_public && m.favorite_stands && m.favorite_stands.length > 0) {
+      rows.push(['よく使う乗り場', escHtml(m.favorite_stands.join('、'))]);
+    }
+    if (m.birthdate_public && m.birthdate) {
+      const age = calcAge(m.birthdate);
+      rows.push(['生年月日', `${m.birthdate}${age != null ? `（${age}歳）` : ''}`]);
+    }
     if (m.experience_public && m.experience) rows.push(['経験年数', escHtml(m.experience)]);
     body.innerHTML = `
       <div style="text-align:center;margin-bottom:16px;">
