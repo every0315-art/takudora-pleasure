@@ -344,7 +344,11 @@ async function freeJingu() {
               const name = matches.length > 0 ? `${category}：${matches.join('／')}` : category;
               if (!isValidEventName(name)) continue;
               const demand = /プロ野球|高等学校野球選手権|都市対抗/.test(category) ? 'high' : 'medium';
-              events.push({ date, name, start: item.time || '', end: '', demand });
+              const start = item.time || '';
+              // 野球系は試合時間が概ね3時間程度で終演予想を計算、それ以外は不明なため空
+              const isBaseball = /野球/.test(category);
+              const end = (isBaseball && start) ? `${parseInt(start, 10) + 3}:${start.split(':')[1]}頃` : '';
+              events.push({ date, name, start, end, demand });
             }
           }
         }
