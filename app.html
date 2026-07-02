@@ -7074,6 +7074,17 @@
     }
   } catch(e) { console.warn('Supabase init:', e); }
 
+  // Supabase SDK自体が読み込めていない(CDNブロック等)場合、ボタンが無反応になる
+  // だけで原因が分からないため、ユーザーに見える形でエラーを出す
+  if (!_sb) {
+    const el = document.getElementById('inapp-browser-banner');
+    if (el) {
+      el.style.display = 'block';
+      el.querySelector('div:nth-child(1)').textContent = '⚠️ 認証機能の読み込みに失敗しました';
+      el.querySelector('div:nth-child(2)').textContent = '通信環境をご確認のうえ、ページを再読み込みしてください（アプリ内ブラウザが原因の場合はSafariで開き直してください）';
+    }
+  }
+
   // 認証完了を待たずにコミュニティ投稿を即時読み込み（公開データのため認証不要）
   if (_sb) refreshCommunityPosts();
 
@@ -7184,7 +7195,7 @@
   }
 
   async function sbGoogleLogin() {
-    if (!_sb) return;
+    if (!_sb) { alert('認証機能が読み込めていません。ページを再読み込みしてください（アプリ内ブラウザの場合はSafariで開き直してください）'); return; }
     await _sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: location.origin + '/app' }
@@ -7341,7 +7352,7 @@
   }
 
   async function gateSubmit() {
-    if (!_sb) return;
+    if (!_sb) { document.getElementById('gate-msg').style.color='#ff6b6b'; document.getElementById('gate-msg').textContent='認証機能が読み込めていません。ページを再読み込みしてください（アプリ内ブラウザの場合はSafariで開き直してください）'; return; }
     const email = document.getElementById('gate-email').value.trim();
     const password = document.getElementById('gate-password').value;
     const msg = document.getElementById('gate-msg');
