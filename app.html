@@ -3985,9 +3985,12 @@
           <div style="font-size:13px;font-weight:600;">${s.name}</div>
         </div>`;
       }).join('');
-      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(terminal)}`;
+      // 更新情報の取得元(スケジュール掲載サイト)にリンクする
+      const srcUrl = entries[0]?.sourceUrl;
       return `<div style="margin-bottom:10px;">
-        <a href="${mapUrl}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);font-weight:700;padding:6px 0 2px;display:inline-block;text-decoration:none;">${terminal} ↗</a>
+        ${srcUrl
+          ? `<a href="${srcUrl}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);font-weight:700;padding:6px 0 2px;display:inline-block;text-decoration:none;">${terminal} ↗</a>`
+          : `<div style="font-size:11px;color:var(--gold);font-weight:700;padding:6px 0 2px;">${terminal}</div>`}
         ${rows}
       </div>`;
     }).join('');

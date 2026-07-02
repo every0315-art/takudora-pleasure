@@ -73,6 +73,7 @@ async function fetchOgasawara() {
           arrival: tokyoArrival,
           departure: '',
           terminal: '竹芝客船ターミナル',
+          sourceUrl: 'https://www.ogasawarakaiun.co.jp/service/',
         });
       }
     });
@@ -173,7 +174,13 @@ ${texts.join('\n\n')}`;
     const text = data.content?.[0]?.text || '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return { items: [], ok: false, error: 'Claude returned no JSON' };
-    return { items: JSON.parse(jsonMatch[0]), ok: true };
+    const items = JSON.parse(jsonMatch[0]).map(it => ({
+      ...it,
+      sourceUrl: (it.terminal || '').includes('晴海')
+        ? 'https://www.tptc.co.jp/terminal/guide/harumi'
+        : 'https://www.tptc.co.jp/terminal/guide/cruise',
+    }));
+    return { items, ok: true };
   } catch (e) {
     console.error('[ships] claude error:', e.message);
     return { items: [], ok: false, error: e.message };
