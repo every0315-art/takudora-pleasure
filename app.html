@@ -4038,8 +4038,17 @@
     });
 
     upcoming.sort((a, b) => a.itemDate - b.itemDate || a.endMin - b.endMin);
-    const todayEvents = upcoming.filter(e => e.isToday);
-    const displayEvents = todayEvents.length > 0 ? todayEvents : upcoming.slice(0, 4);
+    // 同じイベントが「各会場」個別カードと全国イベント一覧の両方に載っている場合、
+    // 同名・同日で重複表示されるためここで除去する
+    const seenKeys = new Set();
+    const deduped = upcoming.filter(e => {
+      const key = e.name + '|' + e.itemDate.getTime();
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
+    const todayEvents = deduped.filter(e => e.isToday);
+    const displayEvents = todayEvents.length > 0 ? todayEvents : deduped.slice(0, 4);
 
     if (displayEvents.length === 0) {
       listEl.innerHTML = '<span style="font-size:12px;color:var(--gray);">近日のイベントなし</span>';
