@@ -3473,7 +3473,17 @@
   window._currentPos = null;
   if (navigator.geolocation) {
     const posOpts = { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 };
-    const onPos = pos => { window._currentPos = { lat: pos.coords.latitude, lon: pos.coords.longitude }; };
+    const onPos = pos => {
+      window._currentPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      // つけ待ち中に開始地点から150m以上離れたら、オーバーレイを自動で再表示する
+      if (typeof _waitState !== 'undefined' && _waitState?.startLat != null && _waitState?.startLng != null) {
+        const distKm = haversineKm(_waitState.startLat, _waitState.startLng, pos.coords.latitude, pos.coords.longitude);
+        const overlay = document.getElementById('wait-overlay');
+        if (distKm * 1000 >= 150 && overlay && !overlay.classList.contains('show')) {
+          showWaitOverlay();
+        }
+      }
+    };
     navigator.geolocation.getCurrentPosition(onPos, () => {}, posOpts);
     setInterval(() => navigator.geolocation.getCurrentPosition(onPos, () => {}, posOpts), 120000);
   }
@@ -8354,22 +8364,25 @@
 
     const now = new Date();
     let waitRecordId = null;
+    let startLat = null, startLng = null;
     if (_sb && _sbUser && _group) {
       const { latitude: lat, longitude: lng } = await new Promise(resolve => {
         navigator.geolocation?.getCurrentPosition(pos => resolve(pos.coords), () => resolve({}));
       }).catch(() => ({}));
+      startLat = lat || null; startLng = lng || null;
       const { data } = await _sb.from('waiting_records').insert({
         group_id: _group.id,
         user_id: _sbUser.id,
         stand_name: resolvedStand || null,
-        lat: lat || null, lng: lng || null,
+        lat: startLat, lng: startLng,
         started_at: now.toISOString(),
         status: 'waiting',
       }).select().single();
       waitRecordId = data?.id || null;
     }
 
-    _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId };
+    // 開始地点から150m以上離れたら自動でオーバーレイを再表示するために座標を保持
+    _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId, startLat, startLng };
     showWaitOverlay();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
