@@ -256,7 +256,8 @@ function parseNpbMonthDetail(html, venueKeywords, teamName, year) {
     const team2 = block.match(/class="team2">([^<]*)</);
     const place = block.match(/class="place">([^<]*)</);
     if (!team1 || !place) continue;
-    const placeText = place[1].trim();
+    // 球場名は表示上「神　宮」のように全角スペース区切りで入る場合があるため除去してから比較
+    const placeText = place[1].replace(/[\s　]/g, '');
     if (!venueKeywords.some(k => placeText.includes(k))) continue;
     const date = `${year}-${mmdd.slice(0, 2)}-${mmdd.slice(2, 4)}`;
     if (date < today) continue;
@@ -269,9 +270,9 @@ function parseNpbMonthDetail(html, venueKeywords, teamName, year) {
   return events;
 }
 
-async function freeGiants() {
-  // npb.jp/games/{年}/ は直近1週間分しか出ないため、月別詳細ページ(当月+翌月+翌々月)を使う
-  // 年またぎ(12月→1月)も自動対応
+// npb.jpは全球団・全球場の試合を掲載しているため、球団別にサイトを分けず
+// 会場キーワードで絞り込む共通関数にまとめる(球団サイトごとの個別スクレイピングは不要)
+async function fetchNpbVenueGames(venueKeywords, teamName) {
   const now = new Date();
   const events = [];
   for (let mi = 0; mi < 3; mi++) {
@@ -281,7 +282,7 @@ async function freeGiants() {
       const url = `https://npb.jp/games/${year}/schedule_${String(month).padStart(2, '0')}_detail.html`;
       const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
       if (!res.ok) continue;
-      events.push(...parseNpbMonthDetail(await res.text(), ['東京ドーム', '後楽'], '巨人', year));
+      events.push(...parseNpbMonthDetail(await res.text(), venueKeywords, teamName, year));
     } catch (_) {}
   }
   if (events.length > 0) return events;
@@ -289,41 +290,18 @@ async function freeGiants() {
   try {
     const res = await fetch(`https://npb.jp/games/${now.getFullYear()}/`, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
     if (!res.ok) return [];
-    const r = parseNpbPage(await res.text(), ['東京ドーム', '後楽'], '巨人');
+    const r = parseNpbPage(await res.text(), venueKeywords, teamName);
     if (r.length > 0) return r;
   } catch (_) {}
   return [];
 }
 
+async function freeGiants() {
+  return fetchNpbVenueGames(['東京ドーム', '後楽'], '巨人');
+}
+
 async function freeSwallows() {
-  // ヤクルトサイトはカレンダーグリッド形式
-  // href="/game/YYYYMM#day-YYYYMMDD" + c-calendar__day-stadium で神宮試合を特定
-  const today = new Date().toISOString().slice(0, 10);
-  const now = new Date();
-  const events = [];
-  for (let mi = 0; mi < 3; mi++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
-    const year = d.getFullYear(), month = d.getMonth() + 1;
-    const ym = `${year}${String(month).padStart(2,'0')}`;
-    try {
-      const url = `https://www.yakult-swallows.co.jp/game?year=${year}&month=${month}`;
-      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
-      if (!res.ok) continue;
-      const html = await res.text();
-      for (const m of html.matchAll(new RegExp(`href="/game/${ym}#day-(\\d{8})"[\\s\\S]{0,600}?c-calendar__day-stadium">([^<]+)`, 'g'))) {
-        const ds = m[1], stadium = m[2].trim();
-        if (!stadium.includes('神宮')) continue;
-        const date = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
-        if (date < today) continue;
-        const block = html.slice(m.index, m.index + 600);
-        const teamM = block.match(/alt="([^"]{2,8})"/);
-        const timeM = block.match(/c-calendar__day-stats--time">\s*([\d:]+)/);
-        const start = timeM?.[1] || '18:00';
-        events.push({ date, name: `ヤクルト vs ${teamM?.[1] || '相手チーム'}`, start, end: `${parseInt(start)+2}:30頃`, demand: 'medium' });
-      }
-    } catch (_) {}
-  }
-  return events;
+  return fetchNpbVenueGames(['神宮'], 'ヤクルト');
 }
 
 // 武道館: 公式サイトにコンサートスケジュールなし → Claude Haiku にまかせる（free関数なし）
