@@ -498,21 +498,33 @@ async function freeDome() {
   return [];
 }
 
+// 両国国技館: 日本相撲協会「年間日程表」(令和年表記)から東京場所(国技館開催)の初日を取得
+// <table class="mdTable4 type3"> の各行: 場所名/会場/前売り開始日/番付発表/初日/千秋楽
 async function freeSumo() {
   try {
-    const res = await fetch('https://www.sumo.or.jp/Sumo_DB/Match/basho/', {
+    const res = await fetch('https://www.sumo.or.jp/Admission/schedule/', {
       headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' },
       signal: AbortSignal.timeout(TIMEOUT),
     });
+    if (!res.ok) return [];
     const html = await res.text();
+    const today = new Date().toISOString().slice(0, 10);
     const events = [];
-    for (const m of html.matchAll(/(\d{4})年(\d{1,2})月(\d{1,2})日[^<]*[〜～\-].*?(\d{1,2})月(\d{1,2})日/g)) {
-      if (!['01','05','09'].includes(m[2].padStart(2,'0'))) continue;
-      const start = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-      for (let i = 0; i < 15; i++) {
-        const d = new Date(start); d.setDate(d.getDate() + i);
-        const date = d.toISOString().slice(0, 10);
-        events.push({ date, name: '大相撲 東京場所', start: '8:00', end: '18:00頃', demand: i >= 12 ? 'high' : 'medium' });
+    for (const table of html.matchAll(/<table class="mdTable4 type3">([\s\S]*?)<\/table>/g)) {
+      for (const row of table[1].matchAll(/<tr>([\s\S]*?)<\/tr>/g)) {
+        const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(c => stripTags(c[1]));
+        if (cells.length < 6) continue;
+        if (!cells[1].includes('国技館')) continue;
+        const m = cells[4].match(/令和(\d+)年\s*(\d{1,2})\/(\d{1,2})/);
+        if (!m) continue;
+        const year = Number(m[1]) + 2018;
+        const start = `${year}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+        for (let i = 0; i < 15; i++) {
+          const d = new Date(start); d.setDate(d.getDate() + i);
+          const date = d.toISOString().slice(0, 10);
+          if (date < today) continue;
+          events.push({ date, name: '大相撲 東京場所', start: '8:00', end: '18:00頃', demand: i >= 12 ? 'high' : 'medium' });
+        }
       }
     }
     return events;
