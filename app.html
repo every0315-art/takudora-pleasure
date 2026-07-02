@@ -7216,7 +7216,7 @@
     try {
       const fn = _sbTab === 'login'
         ? _sb.auth.signInWithPassword({ email, password })
-        : _sb.auth.signUp({ email, password });
+        : _sb.auth.signUp({ email, password, options: { emailRedirectTo: 'https://pleasure.delivery-every.com/app' } });
       const { data, error } = await fn;
       if (error) throw error;
       if (_sbTab === 'signup' && !data.session) {
@@ -7333,7 +7333,7 @@
     try {
       const fn = _gateTab === 'login'
         ? _sb.auth.signInWithPassword({ email, password })
-        : _sb.auth.signUp({ email, password });
+        : _sb.auth.signUp({ email, password, options: { emailRedirectTo: 'https://pleasure.delivery-every.com/app' } });
       const { data, error } = await fn;
       if (error) throw error;
       if (_gateTab === 'signup' && !data.session) {
