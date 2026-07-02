@@ -7960,10 +7960,11 @@
         const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
         const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
         const canDelete = isAdmin || w.user_id === _sbUser?.id;
-        // 表示順: 日付・時間・待ち時間・場所・ネーム
+        // 表示順: 日付・時間・待ち時間・場所・ネーム（待ち時間は本人・管理者が編集可能）
+        const canEdit = canDelete;
         html += `<div class="wait-row"><div class="wait-row-top">
           <span style="color:var(--gray)">${dateStr} ${timeStr}</span>
-          <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
+          <span style="color:var(--yellow);font-weight:700;">${mins}分${canEdit ? `<button onclick="editWaitingMinutes('${w.id}', ${mins})" style="background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:0 2px;">✎</button>` : ''}</span>
           <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
           <span style="color:var(--gold)">${escHtml(nickname)}</span>
           ${canDelete ? `<button onclick="deleteWaitingRecord('${w.id}')" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
@@ -7976,6 +7977,18 @@
   async function deleteWaitingRecord(id) {
     if (!_sb || !confirm('このログを削除しますか？')) return;
     await _sb.from('waiting_records').delete().eq('id', id);
+    loadStandsInfo();
+    if (typeof updateGroupTiles === 'function') updateGroupTiles();
+  }
+
+  // つけ待ち時間(分)を本人・管理者が修正する
+  async function editWaitingMinutes(id, currentMins) {
+    if (!_sb) return;
+    const input = prompt('つけ待ち時間（分）を入力してください', String(currentMins));
+    if (input === null) return;
+    const mins = parseInt(input, 10);
+    if (isNaN(mins) || mins < 0) { alert('0以上の数値を入力してください'); return; }
+    await _sb.from('waiting_records').update({ wait_minutes: mins }).eq('id', id);
     loadStandsInfo();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
