@@ -7276,12 +7276,10 @@
   }
 
   function sbSignOut() {
-    // signOutの完了を待たずに、まずローカルのセッションを強制削除する
-    try {
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith('sb-') || k.includes('supabase') || k.includes('auth-token')) localStorage.removeItem(k);
-      });
-    } catch(e) { console.warn(e); }
+    // 認証トークンだけでなくプロフィール・日報・設定など全ローカルデータを消す。
+    // 認証キーだけ消して他を残すと、同じ端末で別アカウントにログインした際に
+    // 前のユーザーのプロフィール名や日報が新しいユーザーに表示され続けてしまう
+    try { localStorage.clear(); } catch(e) { console.warn(e); }
     // signOutは投げっぱなし（awaitしない＝固まらない）
     try { if (_sb) _sb.auth.signOut({ scope: 'local' }).catch(() => {}); } catch(e) {}
     _sbUser = null;
