@@ -798,12 +798,12 @@
             </div>
           </div>
         </div>
-        <!-- 現在地投稿（行の高さいっぱいに表示、天気カードと隙間なく揃える） -->
-        <button onclick="openReportModal()" style="grid-column:2;grid-row:1;height:100%;width:100%;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;">
+        <!-- 現在地投稿（付待ちと同じ高さになるようaspect-ratioで揃える） -->
+        <button onclick="openReportModal()" style="grid-column:2;grid-row:1;align-self:start;aspect-ratio:1/1.2;width:100%;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;">
           現在地<br>投稿
         </button>
-        <!-- 付待ち（行の高さいっぱいに表示、タイマーと隙間なく揃える） -->
-        <button id="wait-start-btn" onclick="startWaiting()" style="grid-column:2;grid-row:2;height:100%;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">付待ち</button>
+        <!-- 付待ち（現在地投稿と同じ高さになるようaspect-ratioで揃える） -->
+        <button id="wait-start-btn" onclick="startWaiting()" style="grid-column:2;grid-row:2;align-self:start;aspect-ratio:1/1.2;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">付待ち</button>
         <!-- タイマー（左列・下段、内側余白を詰めて全体の高さを抑える） -->
         <div class="fixed-card fixed-card-timer" style="padding:1px 8px;">
           <button id="sw-btn" onclick="swAction()" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:none;background:var(--green);color:#000;cursor:pointer;white-space:nowrap;flex-shrink:0;">乗務開始</button>
