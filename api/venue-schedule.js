@@ -78,10 +78,17 @@ ${text}`,
     }),
     signal: AbortSignal.timeout(30000),
   });
+  if (!res.ok) {
+    console.error(`[venue-ai:${venueName}] Claude API error ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    return [];
+  }
   const data = await res.json();
   const content = data.content?.[0]?.text || '';
   const m = content.match(/\[[\s\S]*\]/);
-  if (!m) return [];
+  if (!m) {
+    console.error(`[venue-ai:${venueName}] no JSON array found in response: ${content.slice(0, 300)}`);
+    return [];
+  }
   try {
     const events = JSON.parse(m[0]);
     const today = new Date().toISOString().slice(0, 10);
@@ -94,8 +101,12 @@ ${text}`,
         result.push({ date: e.date, endDate, name: e.name, start: e.start || '', end: e.end || '', demand: guessDemand(e.name, capacity) });
       }
     }
+    console.error(`[venue-ai:${venueName}] parsed ${events.length} raw events, ${result.length} after filtering`);
     return result;
-  } catch (_) { return []; }
+  } catch (e) {
+    console.error(`[venue-ai:${venueName}] JSON.parse failed: ${e.message} raw: ${m[0].slice(0, 300)}`);
+    return [];
+  }
 }
 
 // ── WordPress REST API ──
@@ -146,7 +157,7 @@ async function fetchWithFallback(freeFn, htmlUrls, domain, venueName, capacity) 
       // 4. 最終手段: Claude Haiku
       const aiEvents = await callClaudeForEvents(html, venueName, capacity);
       if (aiEvents.length > 0) return aiEvents;
-    } catch (_) {}
+    } catch (e) { console.error(`[venue-fallback:${venueName}] ${url} failed: ${e.message}`); }
   }
   return [];
 }
@@ -235,7 +246,7 @@ function parseNpbPage(html, venueKeywords, teamName) {
 // ── 各会場の無料取得関数 ──
 // npb.jp/games/2026/schedule_MM_detail.html 専用パーサー（月別・全試合掲載）
 // <tr id="dateMMDD">内に team1/team2/place/time が入る形式
-function parseNpbMonthDetail(html, venueKeywords, teamName) {
+function parseNpbMonthDetail(html, venueKeywords, teamName, year) {
   const events = [];
   const today = new Date().toISOString().slice(0, 10);
   for (const m of html.matchAll(/<tr id="date(\d{4})"[^>]*>([\s\S]*?)<\/tr>/g)) {
@@ -247,7 +258,7 @@ function parseNpbMonthDetail(html, venueKeywords, teamName) {
     if (!team1 || !place) continue;
     const placeText = place[1].trim();
     if (!venueKeywords.some(k => placeText.includes(k))) continue;
-    const date = `2026-${mmdd.slice(0, 2)}-${mmdd.slice(2, 4)}`;
+    const date = `${year}-${mmdd.slice(0, 2)}-${mmdd.slice(2, 4)}`;
     if (date < today) continue;
     const timeM = block.match(/class="time">([^<]*)</);
     const start = timeM?.[1]?.trim() || '18:00';
@@ -259,23 +270,24 @@ function parseNpbMonthDetail(html, venueKeywords, teamName) {
 }
 
 async function freeGiants() {
-  // npb.jp/games/2026/ は直近1週間分しか出ないため、月別詳細ページ(当月+翌月)を使う
+  // npb.jp/games/{年}/ は直近1週間分しか出ないため、月別詳細ページ(当月+翌月+翌々月)を使う
+  // 年またぎ(12月→1月)も自動対応
   const now = new Date();
   const events = [];
-  for (let mi = 0; mi < 2; mi++) {
-    const month = now.getMonth() + 1 + mi;
-    if (month > 12) break; // 年またぎは非対応(URLが/games/2026/固定のため)
+  for (let mi = 0; mi < 3; mi++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + mi, 1);
+    const year = d.getFullYear(), month = d.getMonth() + 1;
     try {
-      const url = `https://npb.jp/games/2026/schedule_${String(month).padStart(2, '0')}_detail.html`;
+      const url = `https://npb.jp/games/${year}/schedule_${String(month).padStart(2, '0')}_detail.html`;
       const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
       if (!res.ok) continue;
-      events.push(...parseNpbMonthDetail(await res.text(), ['東京ドーム', '後楽'], '巨人'));
+      events.push(...parseNpbMonthDetail(await res.text(), ['東京ドーム', '後楽'], '巨人', year));
     } catch (_) {}
   }
   if (events.length > 0) return events;
   // フォールバック: 直近1週間ページ
   try {
-    const res = await fetch('https://npb.jp/games/2026/', { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
+    const res = await fetch(`https://npb.jp/games/${now.getFullYear()}/`, { headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ja' }, signal: AbortSignal.timeout(TIMEOUT) });
     if (!res.ok) return [];
     const r = parseNpbPage(await res.text(), ['東京ドーム', '後楽'], '巨人');
     if (r.length > 0) return r;
