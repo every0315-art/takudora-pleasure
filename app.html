@@ -4844,6 +4844,7 @@
       swState = 'stopped';
       showSwToast(SW_MSG_END[Math.floor(Math.random() * SW_MSG_END.length)]);
       syncShiftStatus(null);
+      if (typeof syncPublicProfileData === 'function') syncPublicProfileData();
     } else {
       clearInterval(swTimer);
       swState = 'idle'; swElapsed = 0;
@@ -5148,6 +5149,7 @@
     localStorage.setItem(REPORT_KEY, JSON.stringify(reports));
     sbPush(REPORT_KEY, JSON.stringify(reports));
     renderReportHistory();
+    if (typeof syncPublicProfileData === 'function') syncPublicProfileData();
   }
 
   function deleteReport(date) {
@@ -6924,6 +6926,53 @@
     } catch(e) { console.warn('syncGroupDisplayName:', e); }
   }
 
+  // グループメンバーページで見られる実データ・公開可否をgroup_membersに反映する
+  // (user_dataはRLSで本人しか読めないため、グループ内共有はgroup_members経由で行う)。
+  // 公開設定画面での保存時だけでなく、日報保存・乗務終了・つけ待ち終了時にも
+  // 自動で呼び出して最新化する
+  async function syncPublicProfileData(pub) {
+    if (!_sb || !_sbUser || !_group) return;
+    pub = pub || loadPublicSettings() || {};
+    const profile = loadProfile() || {};
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const monthReports = loadReports().filter(r => r.date && r.date.startsWith(ym) && r.sales != null);
+    // r.salesは税込金額。税抜は明細のtaxがあればそれを使い、無ければ10%概算で控除
+    const monthSales = monthReports.reduce((sum, r) => sum + Number(r.sales), 0);
+    const monthSalesExTax = monthReports.reduce((sum, r) => {
+      const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
+      return sum + (Number(r.sales) - tax);
+    }, 0);
+    let favoriteStands = [];
+    try {
+      const { data: myWaits } = await _sb.from('waiting_records')
+        .select('stand_name').eq('group_id', _group.id).eq('user_id', _sbUser.id).not('stand_name', 'is', null);
+      // よく使う乗り場は上位5箇所まで
+      if (myWaits && myWaits.length > 0) {
+        const counts = {};
+        myWaits.forEach(w => { counts[w.stand_name] = (counts[w.stand_name] || 0) + 1; });
+        favoriteStands = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name]) => name);
+      }
+    } catch (_) {}
+    try {
+      await _sb.from('group_members').update({
+        sales_public: !!pub.sales,
+        sales_amount: monthSales,
+        sales_amount_extax: monthSalesExTax,
+        favorite_stand_public: !!pub.stand,
+        favorite_stands: favoriteStands,
+        birthdate_public: !!pub.birthdate,
+        birthdate: profile.birthdate || null,
+        experience_public: !!pub.experience,
+        experience: profile.experience || null,
+        // 所属行燈は常時表示(既存のaffiliation欄と同じ扱い)、会社名はトグルで公開可否を選べる
+        affiliation: profile.group || null,
+        company_public: !!pub.company,
+        company: profile.company || null,
+      }).eq('group_id', _group.id).eq('user_id', _sbUser.id);
+    } catch (_) {}
+  }
+
   async function savePublicSettings() {
     const pub = {
       sales:      document.getElementById('pub-sales').checked,
@@ -6935,44 +6984,7 @@
     localStorage.setItem(PUB_KEY, JSON.stringify(pub));
     sbPush(PUB_KEY, JSON.stringify(pub));
     showMsg('pub-save-msg', '保存しました ✓');
-    // グループメンバーページで見られる実データ・公開可否をgroup_membersに反映する
-    // (user_dataはRLSで本人しか読めないため、グループ内共有はgroup_members経由で行う)
-    if (_sb && _sbUser && _group) {
-      const profile = loadProfile() || {};
-      const now = new Date();
-      const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const monthReports = loadReports().filter(r => r.date && r.date.startsWith(ym) && r.sales != null);
-      // r.salesは税込金額。税抜は明細のtaxがあればそれを使い、無ければ10%概算で控除
-      const monthSales = monthReports.reduce((sum, r) => sum + Number(r.sales), 0);
-      const monthSalesExTax = monthReports.reduce((sum, r) => {
-        const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
-        return sum + (Number(r.sales) - tax);
-      }, 0);
-      const { data: myWaits } = await _sb.from('waiting_records')
-        .select('stand_name').eq('group_id', _group.id).eq('user_id', _sbUser.id).not('stand_name', 'is', null);
-      // よく使う乗り場は上位5箇所まで
-      let favoriteStands = [];
-      if (myWaits && myWaits.length > 0) {
-        const counts = {};
-        myWaits.forEach(w => { counts[w.stand_name] = (counts[w.stand_name] || 0) + 1; });
-        favoriteStands = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name]) => name);
-      }
-      await _sb.from('group_members').update({
-        sales_public: pub.sales,
-        sales_amount: monthSales,
-        sales_amount_extax: monthSalesExTax,
-        favorite_stand_public: pub.stand,
-        favorite_stands: favoriteStands,
-        birthdate_public: pub.birthdate,
-        birthdate: profile.birthdate || null,
-        experience_public: pub.experience,
-        experience: profile.experience || null,
-        // 所属行燈は常時表示(既存のaffiliation欄と同じ扱い)、会社名はトグルで公開可否を選べる
-        affiliation: profile.group || null,
-        company_public: pub.company,
-        company: profile.company || null,
-      }).eq('group_id', _group.id).eq('user_id', _sbUser.id);
-    }
+    await syncPublicProfileData(pub);
   }
 
   function saveSalarySettings() {
@@ -8450,6 +8462,7 @@
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = 'つけ待ち<br>投稿';
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
+    if (typeof syncPublicProfileData === 'function') syncPublicProfileData();
   }
 
   async function cancelWaiting() {
@@ -8463,6 +8476,7 @@
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = 'つけ待ち<br>投稿';
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
+    if (typeof syncPublicProfileData === 'function') syncPublicProfileData();
   }
 
   // 乗車以外の理由でつけ待ちを終える（離脱・無線離脱）共通処理
@@ -8482,6 +8496,7 @@
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = 'つけ待ち<br>投稿';
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
+    if (typeof syncPublicProfileData === 'function') syncPublicProfileData();
   }
 
   async function leaveWaiting() {
