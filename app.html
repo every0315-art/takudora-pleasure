@@ -4875,6 +4875,17 @@
     } catch(e) {}
   })();
 
+  // タブ切替・スリープ復帰等でバックグラウンドのsetIntervalがブラウザに間引かれ、
+  // 画面に戻ってもタイマー表示が止まって見えることがあるため、画面が可視化された
+  // 瞬間に強制的に再同期する（表示のズレ・停止に見える現象への対策）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (swState !== 'running' || !swStart) return;
+    swElapsed = Date.now() - swStart;
+    swTick();
+    if (!swTimer) swTimer = setInterval(() => { swTick(); swSave(); }, 500);
+  });
+
   // イベントアイテムをタップでイベントページへ
   const eventLinks = {
     '=LOVE STADIUM LIVE': 'https://eplus.jp/sf/search?keyword=%3DLOVE',
