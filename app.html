@@ -8325,6 +8325,12 @@
     if (_waitState) { showWaitOverlay(); return; }
     let resolvedStand = standName;
 
+    // デバッグ：状態確認
+    const _dbg = `sb=${!!_sb} user=${!!_sbUser} group=${!!_group} geo=${!!navigator.geolocation}`;
+    console.log('[startWaiting]', _dbg);
+    const _dbgBtn = document.getElementById('wait-start-btn');
+    if (_dbgBtn) _dbgBtn.textContent = '取得中…';
+
     // 位置情報を1回だけ取得（タイムアウト5秒、失敗しても続行）
     let startLat = null, startLng = null;
     if (navigator.geolocation) {
