@@ -45,7 +45,7 @@ async function checkImage(b64, apiKey) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=60');
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
