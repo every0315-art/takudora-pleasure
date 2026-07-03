@@ -347,11 +347,22 @@ async function freeJingu() {
               if (date < today) continue;
               const category = (item.category || '').trim();
               if (!category) continue;
+              // プロ野球はteam1/team2が<img alt="チーム名">形式、大学野球等はプレーンテキストのため両対応
+              const teamName = t => {
+                const altM = (t || '').match(/alt=['"]([^'"]+)['"]/);
+                return altM ? altM[1].trim() : stripTags(t || '');
+              };
+              // プロ野球は東京ドームと同じ「チームAーチームB」形式、それ以外はカテゴリ名を残す
+              const isProBaseball = category === 'プロ野球';
               const matches = (item.value || [])
                 .filter(v => !v.cancel)
-                .map(v => `${stripTags(v.team1 || '')} vs ${stripTags(v.team2 || '')}`)
-                .filter(s => s !== ' vs ');
-              const name = matches.length > 0 ? `${category}：${matches.join('／')}` : category;
+                .map(v => isProBaseball
+                  ? `${teamName(v.team1)}ー${teamName(v.team2)}`
+                  : `${teamName(v.team1)} vs ${teamName(v.team2)}`)
+                .filter(s => s !== 'ー' && s !== ' vs ');
+              const name = matches.length === 0 ? category
+                : isProBaseball ? matches.join('／')
+                : `${category}：${matches.join('／')}`;
               if (!isValidEventName(name)) continue;
               const demand = /プロ野球|高等学校野球選手権|都市対抗/.test(category) ? 'high' : 'medium';
               const start = item.time || '';
