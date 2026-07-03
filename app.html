@@ -8325,12 +8325,6 @@
     if (_waitState) { showWaitOverlay(); return; }
     let resolvedStand = standName;
 
-    // デバッグ：状態確認
-    const _dbg = `sb=${!!_sb} user=${!!_sbUser} group=${!!_group} geo=${!!navigator.geolocation}`;
-    console.log('[startWaiting]', _dbg);
-    const _dbgBtn = document.getElementById('wait-start-btn');
-    if (_dbgBtn) _dbgBtn.textContent = '取得中…';
-
     // 位置情報を1回だけ取得（タイムアウト5秒、失敗しても続行）
     let startLat = null, startLng = null;
     if (navigator.geolocation) {
@@ -8346,7 +8340,11 @@
     }
 
     if (!resolvedStand && _sb && _group && startLat != null) {
-      const { data: stands } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id).catch(() => ({ data: [] }));
+      let stands = [];
+      try {
+        const res = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
+        stands = res.data || [];
+      } catch (_) {}
       if (stands && stands.length > 0) {
         const nearest = stands.reduce((best, s) => {
           const d = Math.hypot(s.lat - startLat, s.lng - startLng) * 111000;
@@ -8376,15 +8374,17 @@
     const now = new Date();
     let waitRecordId = null;
     if (_sb && _sbUser && _group) {
-      const { data } = await _sb.from('waiting_records').insert({
-        group_id: _group.id,
-        user_id: _sbUser.id,
-        stand_name: resolvedStand || null,
-        lat: startLat, lng: startLng,
-        started_at: now.toISOString(),
-        status: 'waiting',
-      }).select().single().catch(() => ({ data: null }));
-      waitRecordId = data?.id || null;
+      try {
+        const { data } = await _sb.from('waiting_records').insert({
+          group_id: _group.id,
+          user_id: _sbUser.id,
+          stand_name: resolvedStand || null,
+          lat: startLat, lng: startLng,
+          started_at: now.toISOString(),
+          status: 'waiting',
+        }).select().single();
+        waitRecordId = data?.id || null;
+      } catch (_) {}
     }
 
     _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId, startLat, startLng };
