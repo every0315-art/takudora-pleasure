@@ -8325,52 +8325,51 @@
     if (_waitState) { showWaitOverlay(); return; }
     let resolvedStand = standName;
 
-    if (!resolvedStand && navigator.geolocation && _group) {
-      const result = await new Promise(resolve => {
-        navigator.geolocation.getCurrentPosition(async pos => {
-          const { latitude: lat, longitude: lng } = pos.coords;
-          const { data: stands } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
-          if (stands && stands.length > 0) {
-            const nearest = stands.reduce((best, s) => {
-              const d = Math.hypot(s.lat - lat, s.lng - lng) * 111000;
-              return d < best.dist ? { stand: s, dist: d } : best;
-            }, { stand: null, dist: Infinity });
-            if (nearest.dist < 150) {
-              const confirmed = confirm(`「${nearest.stand.name}」でつけ待ちを開始しますか？`);
-              resolve(confirmed ? { name: nearest.stand.name, cancelled: false } : { name: null, cancelled: true });
-              return;
-            }
-          }
-          // 近くに登録済みの乗り場がない場合、その場で新規登録するか確認する
-          const wantsRegister = confirm('近くに登録済みの乗り場がありません。この場所を新しい乗り場として登録しますか？');
-          if (wantsRegister) {
-            const newName = (prompt('乗り場名を入力してください', '') || '').trim();
-            if (newName) {
-              const { data: newStand, error } = await _sb.from('taxi_stands').insert({
-                group_id: _group.id, name: newName, lat, lng, created_by: _sbUser.id,
-              }).select().single();
-              if (!error && newStand) {
-                resolve({ name: newStand.name, cancelled: false });
-                return;
-              }
-              alert('乗り場の登録に失敗しました: ' + (error?.message || ''));
-            }
-          }
-          resolve({ name: null, cancelled: false });
-        }, () => resolve({ name: null, cancelled: false }), { timeout: 5000 });
+    // 位置情報を1回だけ取得（タイムアウト5秒、失敗しても続行）
+    let startLat = null, startLng = null;
+    if (navigator.geolocation) {
+      const coords = await new Promise(resolve => {
+        const t = setTimeout(() => resolve(null), 5000);
+        navigator.geolocation.getCurrentPosition(
+          pos => { clearTimeout(t); resolve(pos.coords); },
+          ()  => { clearTimeout(t); resolve(null); },
+          { timeout: 5000, maximumAge: 30000 }
+        );
       });
-      if (result.cancelled) return; // キャンセル時はつけ待ちを開始しない
-      resolvedStand = result.name;
+      if (coords) { startLat = coords.latitude; startLng = coords.longitude; }
+    }
+
+    if (!resolvedStand && _sb && _group && startLat != null) {
+      const { data: stands } = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id).catch(() => ({ data: [] }));
+      if (stands && stands.length > 0) {
+        const nearest = stands.reduce((best, s) => {
+          const d = Math.hypot(s.lat - startLat, s.lng - startLng) * 111000;
+          return d < best.dist ? { stand: s, dist: d } : best;
+        }, { stand: null, dist: Infinity });
+        if (nearest.stand && nearest.dist < 150) {
+          const confirmed = confirm(`「${nearest.stand.name}」でつけ待ちを開始しますか？`);
+          if (!confirmed) return;
+          resolvedStand = nearest.stand.name;
+        }
+      }
+      if (!resolvedStand) {
+        const wantsRegister = confirm('近くに登録済みの乗り場がありません。この場所を新しい乗り場として登録しますか？');
+        if (wantsRegister) {
+          const newName = (prompt('乗り場名を入力してください', '') || '').trim();
+          if (newName) {
+            const { data: newStand, error } = await _sb.from('taxi_stands').insert({
+              group_id: _group.id, name: newName, lat: startLat, lng: startLng, created_by: _sbUser.id,
+            }).select().single();
+            if (!error && newStand) resolvedStand = newStand.name;
+            else if (error) alert('乗り場の登録に失敗しました: ' + error.message);
+          }
+        }
+      }
     }
 
     const now = new Date();
     let waitRecordId = null;
-    let startLat = null, startLng = null;
     if (_sb && _sbUser && _group) {
-      const { latitude: lat, longitude: lng } = await new Promise(resolve => {
-        navigator.geolocation?.getCurrentPosition(pos => resolve(pos.coords), () => resolve({}));
-      }).catch(() => ({}));
-      startLat = lat || null; startLng = lng || null;
       const { data } = await _sb.from('waiting_records').insert({
         group_id: _group.id,
         user_id: _sbUser.id,
@@ -8378,11 +8377,10 @@
         lat: startLat, lng: startLng,
         started_at: now.toISOString(),
         status: 'waiting',
-      }).select().single();
+      }).select().single().catch(() => ({ data: null }));
       waitRecordId = data?.id || null;
     }
 
-    // 開始地点から150m以上離れたら自動でオーバーレイを再表示するために座標を保持
     _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId, startLat, startLng };
     showWaitOverlay();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
