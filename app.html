@@ -4903,6 +4903,8 @@
     if (!swTimer) swTimer = setInterval(() => { swTick(); swSave(); }, 500);
   });
 
+  restoreWaitState();
+
   // イベントアイテムをタップでイベントページへ
   const eventLinks = {
     '=LOVE STADIUM LIVE': 'https://eplus.jp/sf/search?keyword=%3DLOVE',
@@ -8366,6 +8368,32 @@
   let _waitState = null;
   let _waitInterval = null;
 
+  function saveWaitState() {
+    if (_waitState) {
+      localStorage.setItem('waitState', JSON.stringify({
+        startedAt: _waitState.startedAt.toISOString(),
+        standName: _waitState.standName,
+        recordId:  _waitState.recordId,
+        startLat:  _waitState.startLat,
+        startLng:  _waitState.startLng,
+      }));
+    } else {
+      localStorage.removeItem('waitState');
+    }
+  }
+
+  function restoreWaitState() {
+    try {
+      const saved = localStorage.getItem('waitState');
+      if (!saved) return;
+      const s = JSON.parse(saved);
+      _waitState = { ...s, startedAt: new Date(s.startedAt) };
+      showWaitOverlay();
+    } catch(e) {
+      localStorage.removeItem('waitState');
+    }
+  }
+
   async function startWaiting(standName = null) {
     if (_waitState) { showWaitOverlay(); return; }
     let resolvedStand = standName;
@@ -8450,6 +8478,7 @@
     }
 
     _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId, startLat, startLng };
+    saveWaitState();
     showWaitOverlay();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
@@ -8514,6 +8543,7 @@
       }).eq('id', _waitState.recordId);
     }
     _waitState = null;
+    saveWaitState();
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = 'つけ待ち<br>投稿';
@@ -8528,6 +8558,7 @@
       await _sb.from('waiting_records').update({ status: 'cancelled' }).eq('id', _waitState.recordId);
     }
     _waitState = null;
+    saveWaitState();
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = 'つけ待ち<br>投稿';
@@ -8548,6 +8579,7 @@
       }).eq('id', _waitState.recordId);
     }
     _waitState = null;
+    saveWaitState();
     document.getElementById('wait-overlay').classList.remove('show');
     const btn = document.getElementById('wait-start-btn');
     if (btn) btn.innerHTML = 'つけ待ち<br>投稿';
