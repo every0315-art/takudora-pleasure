@@ -8362,25 +8362,42 @@
       if (coords) { startLat = coords.latitude; startLng = coords.longitude; }
     }
 
-    if (!resolvedStand && _sb && _group && startLat != null) {
+    if (!resolvedStand && _sb && _group) {
       let stands = [];
       try {
         const res = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
         stands = res.data || [];
       } catch (_) {}
-      if (stands && stands.length > 0) {
+
+      // 現在地から一番近い登録済み乗り場を提案（150m以内のみ）
+      if (startLat != null && stands.length > 0) {
         const nearest = stands.reduce((best, s) => {
           const d = Math.hypot(s.lat - startLat, s.lng - startLng) * 111000;
           return d < best.dist ? { stand: s, dist: d } : best;
         }, { stand: null, dist: Infinity });
         if (nearest.stand && nearest.dist < 150) {
-          const confirmed = confirm(`「${nearest.stand.name}」でつけ待ちを開始しますか？`);
-          if (!confirmed) return;
-          resolvedStand = nearest.stand.name;
+          if (confirm(`「${nearest.stand.name}」でつけ待ちを開始しますか？`)) {
+            resolvedStand = nearest.stand.name;
+          }
         }
       }
-      if (!resolvedStand) {
-        const wantsRegister = confirm('近くに登録済みの乗り場がありません。この場所を新しい乗り場として登録しますか？');
+
+      // 現在地に一致する乗り場がない/断った場合、位置に関わらず登録済み一覧から任意に選べるようにする
+      if (!resolvedStand && stands.length > 0) {
+        if (confirm('現在地とは違う乗り場を選びますか？（キャンセルで新規登録に進みます）')) {
+          const list = stands.map((s, i) => `${i + 1}. ${s.name}`).join('\n');
+          const input = prompt(`乗り場を番号で選択してください\n${list}`, '');
+          if (input !== null) {
+            const idx = parseInt(input, 10) - 1;
+            if (idx >= 0 && idx < stands.length) resolvedStand = stands[idx].name;
+            else if (input.trim() !== '') alert('番号が正しくありません');
+          }
+        }
+      }
+
+      // それでも決まらなければ、この場所を新しい乗り場として登録する
+      if (!resolvedStand && startLat != null) {
+        const wantsRegister = confirm('この場所を新しい乗り場として登録しますか？');
         if (wantsRegister) {
           const newName = (prompt('乗り場名を入力してください', '') || '').trim();
           if (newName) {
