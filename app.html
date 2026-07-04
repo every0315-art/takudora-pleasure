@@ -7996,7 +7996,8 @@
         const canDelete = isAdmin || w.user_id === _sbUser?.id;
         // 表示順: 日付・時間・待ち時間・場所・ネーム（待ち時間は本人・管理者が編集可能）
         const canEdit = canDelete;
-        const STATUS_LABEL = { waiting: '待機中', boarded: '乗車', cancelled: 'キャンセル', left: '離脱', radio_left: '無線離脱' };
+        const BOARD_RESULT_LABEL = { long: 'ロング', middle: 'ミドル', bad: '残念' };
+        const STATUS_LABEL = { waiting: '待機中', boarded: `乗車${w.board_result ? `（${BOARD_RESULT_LABEL[w.board_result] || w.board_result}）` : ''}`, cancelled: 'キャンセル', left: '離脱', radio_left: '無線離脱' };
         const STATUS_COLOR = { waiting: 'var(--green)', boarded: 'var(--gold)', cancelled: 'var(--gray)', left: '#e08080', radio_left: '#e08080' };
         const statusLabel = STATUS_LABEL[w.status] || w.status || '不明';
         const statusColor = STATUS_COLOR[w.status] || 'var(--gray)';
@@ -8468,8 +8469,18 @@
     if (btn) btn.innerHTML = `つけ待ち中<br>${m}:${s}`;
   }
 
+  // 乗車時に実車の結果を選ばせる（ロング/ミドル/残念）。キャンセル操作ならnullを返す
+  async function pickBoardResult() {
+    const input = prompt('乗車結果を選んでください\n1. ロング\n2. ミドル\n3. 残念', '');
+    if (input === null) return null;
+    const map = { '1': 'long', '2': 'middle', '3': 'bad' };
+    return map[input.trim()] || null;
+  }
+
   async function boardedWaiting() {
     if (!_waitState) return;
+    const choice = await pickBoardResult();
+    if (choice === null) return; // キャンセルされたら乗車確定しない
     clearInterval(_waitInterval);
     const mins = Math.round((Date.now() - _waitState.startedAt.getTime()) / 60000);
     if (_sb && _waitState.recordId) {
@@ -8477,6 +8488,7 @@
         boarded_at: new Date().toISOString(),
         wait_minutes: mins,
         status: 'boarded',
+        board_result: choice,
       }).eq('id', _waitState.recordId);
     }
     _waitState = null;
