@@ -1503,6 +1503,22 @@
     </div>
   </div>
 
+  <!-- 乗車結果選択モーダル -->
+  <div class="wait-overlay" id="board-result-modal" style="display:none;z-index:10001;">
+    <div class="wait-popup">
+      <div class="wait-popup-title">乗車結果</div>
+      <select id="board-result-select" style="width:100%;margin:12px 0;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:14px;">
+        <option value="bad">残念</option>
+        <option value="middle">ミドル</option>
+        <option value="long">ロング</option>
+      </select>
+      <div class="wait-actions">
+        <button onclick="resolveBoardResult(null)" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
+        <button onclick="resolveBoardResult(document.getElementById('board-result-select').value)" style="background:var(--green);color:#000;flex:2;">決定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 乗り場情報（グループの乗場情報を独立タブ化） -->
   <div class="tab-pane" id="tab-stands-info">
     <div id="group-stands-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
@@ -8469,12 +8485,18 @@
     if (btn) btn.innerHTML = `つけ待ち中<br>${m}:${s}`;
   }
 
-  // 乗車時に実車の結果を選ばせる（ロング/ミドル/残念）。キャンセル操作ならnullを返す
+  // 乗車時に実車の結果をプルダウンで選ばせる（残念/ミドル/ロング）。キャンセル操作ならnullを返す
+  let _boardResultResolve = null;
   async function pickBoardResult() {
-    const input = prompt('乗車結果を選んでください\n1. ロング\n2. ミドル\n3. 残念', '');
-    if (input === null) return null;
-    const map = { '1': 'long', '2': 'middle', '3': 'bad' };
-    return map[input.trim()] || null;
+    const modal = document.getElementById('board-result-modal');
+    const sel = document.getElementById('board-result-select');
+    sel.value = 'bad';
+    modal.style.display = 'flex';
+    return new Promise(resolve => { _boardResultResolve = resolve; });
+  }
+  function resolveBoardResult(value) {
+    document.getElementById('board-result-modal').style.display = 'none';
+    if (_boardResultResolve) { _boardResultResolve(value); _boardResultResolve = null; }
   }
 
   async function boardedWaiting() {
