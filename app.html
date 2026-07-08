@@ -8617,11 +8617,16 @@
     const nearbyIds = new Set(nearby.map(x => x.stand.id));
     const others = (allStands || []).filter(s => !nearbyIds.has(s.id)).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
     if (others.length > 0) {
-      html += `<div style="font-size:11px;color:var(--gray);margin:16px 0 8px;">その他の登録済み乗り場</div>`;
-      html += others.map(stand => `
-        <button onclick="confirmStandSelect(${escHtml(JSON.stringify(stand.name))})" style="width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:14px;cursor:pointer;">
-          ${escHtml(stand.name)}
-        </button>`).join('');
+      html += `
+        <div style="font-size:11px;color:var(--gray);margin:16px 0 8px;">その他の登録済み乗り場</div>
+        <div style="display:flex;gap:8px;">
+          <select id="stand-select-others" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+            <option value="">乗り場を選択…</option>
+            ${others.map(stand => `<option value="${escHtml(stand.name)}">${escHtml(stand.name)}</option>`).join('')}
+          </select>
+          <button onclick="confirmStandSelectFromDropdown()" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(255,180,40,.4);background:rgba(255,180,40,.12);color:var(--yellow);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">開始</button>
+        </div>
+      `;
     }
 
     html += `
@@ -8643,6 +8648,13 @@
   async function confirmStandSelect(standName) {
     closeStandSelectCard();
     await startWaiting(standName);
+  }
+
+  async function confirmStandSelectFromDropdown() {
+    const sel = document.getElementById('stand-select-others');
+    const name = sel?.value;
+    if (!name) return;
+    await confirmStandSelect(name);
   }
 
   async function startWaitingWithoutStand() {
