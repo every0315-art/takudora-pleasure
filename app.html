@@ -8614,6 +8614,15 @@
       html += '<div style="text-align:center;color:var(--gray);font-size:13px;padding:12px 0;">近くに登録された乗り場はありません</div>';
     }
 
+    html += `
+      <div style="font-size:11px;color:var(--gray);margin:16px 0 8px;">新しい乗り場を登録</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px;">
+        <input id="stand-select-new-name" type="text" maxlength="30" placeholder="乗り場名（例：渋谷駅 南口）" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+        <button onclick="registerAndStartWaiting()" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(255,180,40,.4);background:rgba(255,180,40,.12);color:var(--yellow);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">登録して開始</button>
+      </div>
+      <div id="stand-select-msg" style="font-size:11px;color:var(--yellow);min-height:14px;margin-bottom:8px;"></div>
+    `;
+
     const nearbyIds = new Set(nearby.map(x => x.stand.id));
     const others = (allStands || []).filter(s => !nearbyIds.has(s.id)).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
     if (others.length > 0) {
@@ -8629,15 +8638,6 @@
       `;
     }
 
-    html += `
-      <div style="font-size:11px;color:var(--gray);margin:16px 0 8px;">新しい乗り場を登録</div>
-      <div style="display:flex;gap:8px;margin-bottom:4px;">
-        <input id="stand-select-new-name" type="text" maxlength="30" placeholder="乗り場名（例：渋谷駅 南口）" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
-        <button onclick="registerAndStartWaiting()" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(255,180,40,.4);background:rgba(255,180,40,.12);color:var(--yellow);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">登録して開始</button>
-      </div>
-      <div id="stand-select-msg" style="font-size:11px;color:var(--yellow);min-height:14px;margin-bottom:8px;"></div>
-      <button onclick="startWaitingWithoutStand()" style="width:100%;background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;cursor:pointer;padding:6px 0;">乗り場を指定せず開始する</button>
-    `;
     body.innerHTML = html;
   }
 
@@ -8655,11 +8655,6 @@
     const name = sel?.value;
     if (!name) return;
     await confirmStandSelect(name);
-  }
-
-  async function startWaitingWithoutStand() {
-    closeStandSelectCard();
-    await startWaiting(null);
   }
 
   async function registerAndStartWaiting() {
