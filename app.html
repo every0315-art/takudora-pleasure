@@ -8066,6 +8066,7 @@
   async function deleteWaitingRecord(id) {
     if (!_sb || !confirm('このログを削除しますか？')) return;
     await _sb.from('waiting_records').delete().eq('id', id);
+    closeWaitDetail();
     loadStandsInfo();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
@@ -8118,7 +8119,8 @@
         <div class="wait-actions">
           <button onclick="closeWaitDetail()" style="background:rgba(255,255,255,.1);color:var(--white);">閉じる</button>
           <button onclick="saveWaitDetail('${id}')" style="background:var(--green);color:#000;flex:2;">保存</button>
-        </div>`;
+        </div>
+        <button onclick="deleteWaitingRecord('${id}')" style="width:100%;margin-top:8px;padding:12px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">このログを削除</button>`;
     } else {
       const statusLabel = Object.fromEntries(WAIT_STATUS_OPTIONS)[w.status] || w.status || '不明';
       html += `
