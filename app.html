@@ -1538,6 +1538,17 @@
     </div>
   </div>
 
+  <!-- つけ待ちログ詳細 -->
+  <div class="wait-overlay" id="wait-detail-modal" style="display:none;z-index:10001;" onclick="if(event.target===this)closeWaitDetail()">
+    <div class="wait-popup">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="wait-popup-title">つけ待ち詳細</div>
+        <button onclick="closeWaitDetail()" style="background:none;border:none;color:var(--gray);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+      <div id="wait-detail-body" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
   <!-- 乗り場情報（グループの乗場情報を独立タブ化） -->
   <div class="tab-pane" id="tab-stands-info">
     <div id="group-stands-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
@@ -8019,10 +8030,14 @@
       <button onclick="onWaitButtonClick()" style="padding:10px 24px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
     </div>`;
 
+    _waitLogCache = {};
+    _waitLogNameByUser = nameByUser;
+
     if (log.length > 0) {
       const isAdmin = _groupMember?.role === 'admin';
-      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">つけ待ちログ</div>';
+      html += '<div style="font-size:11px;color:var(--gray);margin:12px 0 6px;">つけ待ちログ（タップで詳細）</div>';
       log.forEach(w => {
+        _waitLogCache[w.id] = w;
         const dt = new Date(w.started_at);
         const dateStr = `${dt.getMonth()+1}/${dt.getDate()}`;
         const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
@@ -8030,19 +8045,18 @@
         const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
         const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
         const canDelete = isAdmin || w.user_id === _sbUser?.id;
-        // 表示順: 日付・時間・待ち時間・場所・ネーム（待ち時間は本人・管理者が編集可能）
-        const canEdit = canDelete;
         const STATUS_LABEL = { waiting: '待機中', boarded: `乗車${w.board_result ? `（${boardResultLabel(w.board_result)}）` : ''}`, cancelled: 'キャンセル', left: '離脱', radio_left: '無線離脱' };
         const STATUS_COLOR = { waiting: 'var(--green)', boarded: 'var(--gold)', cancelled: 'var(--gray)', left: '#e08080', radio_left: '#e08080' };
         const statusLabel = STATUS_LABEL[w.status] || w.status || '不明';
         const statusColor = STATUS_COLOR[w.status] || 'var(--gray)';
-        html += `<div class="wait-row"><div class="wait-row-top">
+        // 表示順: 日付・時間・待ち時間・場所・ネーム（タップで詳細を開き、本人・管理者はステータス/時間/場所を編集可能）
+        html += `<div class="wait-row" onclick="openWaitDetail('${w.id}')" style="cursor:pointer;"><div class="wait-row-top">
           <span style="color:var(--gray)">${dateStr} ${timeStr}</span>
-          <span style="color:var(--yellow);font-weight:700;">${mins}分${canEdit ? `<button onclick="editWaitingMinutes('${w.id}', ${mins})" style="background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:0 2px;">✎</button>` : ''}</span>
+          <span style="color:var(--yellow);font-weight:700;">${mins}分</span>
           <span style="color:var(--text)">${escHtml(w.stand_name||'不明')}</span>
           <span style="color:var(--gold)">${escHtml(nickname)}</span>
           <span style="color:${statusColor};font-size:10px;border:1px solid ${statusColor};border-radius:4px;padding:1px 5px;">${escHtml(statusLabel)}</span>
-          ${canDelete ? `<button onclick="deleteWaitingRecord('${w.id}')" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
+          ${canDelete ? `<button onclick="event.stopPropagation();deleteWaitingRecord('${w.id}')" style="margin-left:auto;background:none;border:none;color:var(--gray);font-size:12px;cursor:pointer;padding:2px 4px;">✕</button>` : ''}
         </div></div>`;
       });
     }
@@ -8056,14 +8070,91 @@
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
 
-  // つけ待ち時間(分)を本人・管理者が修正する
-  async function editWaitingMinutes(id, currentMins) {
-    if (!_sb) return;
-    const input = prompt('つけ待ち時間（分）を入力してください', String(currentMins));
-    if (input === null) return;
-    const mins = parseInt(input, 10);
-    if (isNaN(mins) || mins < 0) { alert('0以上の数値を入力してください'); return; }
-    await _sb.from('waiting_records').update({ wait_minutes: mins }).eq('id', id);
+  // ── つけ待ちログ詳細（本人・管理者はステータス/時間/場所を編集可能） ──
+  let _waitLogCache = {};
+  let _waitLogNameByUser = {};
+  const WAIT_STATUS_OPTIONS = [
+    ['waiting', '待機中'], ['boarded', '乗車'], ['cancelled', 'キャンセル'], ['left', '離脱'], ['radio_left', '無線離脱'],
+  ];
+
+  function toDatetimeLocalValue(dt) {
+    return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+
+  function openWaitDetail(id) {
+    const w = _waitLogCache[id];
+    if (!w) return;
+    const isAdmin = _groupMember?.role === 'admin';
+    const canEdit = isAdmin || w.user_id === _sbUser?.id;
+    const nickname = _waitLogNameByUser[w.user_id] || '名無し';
+    const dt = new Date(w.started_at);
+    const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
+    const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
+
+    const body = document.getElementById('wait-detail-body');
+    let html = `<div style="font-size:12px;color:var(--gray);margin-bottom:12px;">${escHtml(nickname)}</div>`;
+
+    if (canEdit) {
+      html += `
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">開始日時</div>
+          <input id="wait-detail-datetime" type="datetime-local" value="${toDatetimeLocalValue(dt)}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">待ち時間（分）</div>
+          <input id="wait-detail-minutes" type="number" min="0" value="${mins}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">乗り場</div>
+          <input id="wait-detail-stand" type="text" maxlength="30" value="${escHtml(w.stand_name || '')}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">ステータス</div>
+          <select id="wait-detail-status" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+            ${WAIT_STATUS_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === w.status ? 'selected' : ''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div id="wait-detail-msg" style="font-size:11px;color:var(--yellow);min-height:14px;margin-bottom:6px;"></div>
+        <div class="wait-actions">
+          <button onclick="closeWaitDetail()" style="background:rgba(255,255,255,.1);color:var(--white);">閉じる</button>
+          <button onclick="saveWaitDetail('${id}')" style="background:var(--green);color:#000;flex:2;">保存</button>
+        </div>`;
+    } else {
+      const statusLabel = Object.fromEntries(WAIT_STATUS_OPTIONS)[w.status] || w.status || '不明';
+      html += `
+        <div style="font-size:13px;color:var(--white);line-height:2;">
+          <div>日時: ${escHtml(dt.toLocaleString('ja-JP'))}</div>
+          <div>待ち時間: ${mins}分</div>
+          <div>乗り場: ${escHtml(w.stand_name || '不明')}</div>
+          <div>ステータス: ${escHtml(statusLabel)}</div>
+        </div>`;
+    }
+
+    body.innerHTML = html;
+    document.getElementById('wait-detail-modal').style.display = 'flex';
+  }
+
+  function closeWaitDetail() {
+    document.getElementById('wait-detail-modal').style.display = 'none';
+  }
+
+  async function saveWaitDetail(id) {
+    const msg = document.getElementById('wait-detail-msg');
+    const dtVal = document.getElementById('wait-detail-datetime').value;
+    const mins = parseInt(document.getElementById('wait-detail-minutes').value, 10);
+    const stand = document.getElementById('wait-detail-stand').value.trim();
+    const status = document.getElementById('wait-detail-status').value;
+    if (!dtVal) { msg.textContent = '日時を入力してください'; return; }
+    if (isNaN(mins) || mins < 0) { msg.textContent = '待ち時間は0以上の数値で入力してください'; return; }
+    msg.textContent = '保存中…';
+    const { error } = await _sb.from('waiting_records').update({
+      started_at: new Date(dtVal).toISOString(),
+      wait_minutes: mins,
+      stand_name: stand || null,
+      status,
+    }).eq('id', id);
+    if (error) { msg.textContent = '保存に失敗しました: ' + error.message; return; }
+    closeWaitDetail();
     loadStandsInfo();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
   }
