@@ -8077,6 +8077,8 @@
   const WAIT_STATUS_OPTIONS = [
     ['waiting', '待機中'], ['boarded', '乗車'], ['cancelled', 'キャンセル'], ['left', '離脱'], ['radio_left', '無線離脱'],
   ];
+  const BOARD_RESULT_VALUES = ['0', '2000', '4000', '6000', '8000', '10000', '12000', '14000', '16000', '18000', '20000'];
+  const BOARD_RESULT_OPTIONS = BOARD_RESULT_VALUES.map(v => [v, boardResultLabel(v)]);
 
   function toDatetimeLocalValue(dt) {
     return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -8091,6 +8093,13 @@
     const dt = new Date(w.started_at);
     const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
     const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
+
+    const boardVal = w.board_result != null ? String(w.board_result) : '';
+    let boardOptionsHtml = '<option value="">未設定</option>';
+    if (boardVal && !BOARD_RESULT_VALUES.includes(boardVal)) {
+      boardOptionsHtml += `<option value="${escHtml(boardVal)}" selected>${escHtml(boardResultLabel(boardVal))}（旧データ）</option>`;
+    }
+    boardOptionsHtml += BOARD_RESULT_OPTIONS.map(([v, l]) => `<option value="${v}" ${boardVal === v ? 'selected' : ''}>${l}</option>`).join('');
 
     const body = document.getElementById('wait-detail-body');
     let html = `<div style="font-size:12px;color:var(--gray);margin-bottom:12px;">${escHtml(nickname)}</div>`;
@@ -8115,6 +8124,12 @@
             ${WAIT_STATUS_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === w.status ? 'selected' : ''}>${l}</option>`).join('')}
           </select>
         </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">運賃帯（乗車時）</div>
+          <select id="wait-detail-board-result" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+            ${boardOptionsHtml}
+          </select>
+        </div>
         <div id="wait-detail-msg" style="font-size:11px;color:var(--yellow);min-height:14px;margin-bottom:6px;"></div>
         <div class="wait-actions">
           <button onclick="closeWaitDetail()" style="background:rgba(255,255,255,.1);color:var(--white);">閉じる</button>
@@ -8129,6 +8144,7 @@
           <div>待ち時間: ${mins}分</div>
           <div>乗り場: ${escHtml(w.stand_name || '不明')}</div>
           <div>ステータス: ${escHtml(statusLabel)}</div>
+          ${boardVal ? `<div>運賃帯: ${escHtml(boardResultLabel(boardVal))}</div>` : ''}
         </div>`;
     }
 
@@ -8146,6 +8162,7 @@
     const mins = parseInt(document.getElementById('wait-detail-minutes').value, 10);
     const stand = document.getElementById('wait-detail-stand').value.trim();
     const status = document.getElementById('wait-detail-status').value;
+    const boardResult = document.getElementById('wait-detail-board-result').value;
     if (!dtVal) { msg.textContent = '日時を入力してください'; return; }
     if (isNaN(mins) || mins < 0) { msg.textContent = '待ち時間は0以上の数値で入力してください'; return; }
     msg.textContent = '保存中…';
@@ -8154,6 +8171,7 @@
       wait_minutes: mins,
       stand_name: stand || null,
       status,
+      board_result: boardResult || null,
     }).eq('id', id);
     if (error) { msg.textContent = '保存に失敗しました: ' + error.message; return; }
     closeWaitDetail();
