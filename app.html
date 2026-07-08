@@ -1517,11 +1517,19 @@
   <!-- 乗車結果選択モーダル -->
   <div class="wait-overlay" id="board-result-modal" style="display:none;z-index:10001;">
     <div class="wait-popup">
-      <div class="wait-popup-title">乗車結果</div>
+      <div class="wait-popup-title">乗車結果（運賃）</div>
       <select id="board-result-select" style="width:100%;margin:12px 0;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:14px;">
-        <option value="bad">残念</option>
-        <option value="middle">ミドル</option>
-        <option value="long">ロング</option>
+        <option value="0">〜2000円</option>
+        <option value="2000">2000〜4000円</option>
+        <option value="4000">4000〜6000円</option>
+        <option value="6000">6000〜8000円</option>
+        <option value="8000">8000〜10000円</option>
+        <option value="10000">10000〜12000円</option>
+        <option value="12000">12000〜14000円</option>
+        <option value="14000">14000〜16000円</option>
+        <option value="16000">16000〜18000円</option>
+        <option value="18000">18000〜20000円</option>
+        <option value="20000">20000円以上</option>
       </select>
       <div class="wait-actions">
         <button onclick="resolveBoardResult(null)" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
@@ -8024,8 +8032,7 @@
         const canDelete = isAdmin || w.user_id === _sbUser?.id;
         // 表示順: 日付・時間・待ち時間・場所・ネーム（待ち時間は本人・管理者が編集可能）
         const canEdit = canDelete;
-        const BOARD_RESULT_LABEL = { long: 'ロング', middle: 'ミドル', bad: '残念' };
-        const STATUS_LABEL = { waiting: '待機中', boarded: `乗車${w.board_result ? `（${BOARD_RESULT_LABEL[w.board_result] || w.board_result}）` : ''}`, cancelled: 'キャンセル', left: '離脱', radio_left: '無線離脱' };
+        const STATUS_LABEL = { waiting: '待機中', boarded: `乗車${w.board_result ? `（${boardResultLabel(w.board_result)}）` : ''}`, cancelled: 'キャンセル', left: '離脱', radio_left: '無線離脱' };
         const STATUS_COLOR = { waiting: 'var(--green)', boarded: 'var(--gold)', cancelled: 'var(--gray)', left: '#e08080', radio_left: '#e08080' };
         const statusLabel = STATUS_LABEL[w.status] || w.status || '不明';
         const statusColor = STATUS_COLOR[w.status] || 'var(--gray)';
@@ -8572,12 +8579,22 @@
     if (btn) btn.innerHTML = `つけ待ち中<br>${m}:${s}`;
   }
 
-  // 乗車時に実車の結果をプルダウンで選ばせる（残念/ミドル/ロング）。キャンセル操作ならnullを返す
+  // 運賃帯の値（円、2000円刻み）をラベル文字列に変換。旧データ（残念/ミドル/ロング）も表示できるよう残す
+  function boardResultLabel(value) {
+    const LEGACY_LABEL = { long: 'ロング', middle: 'ミドル', bad: '残念' };
+    if (LEGACY_LABEL[value]) return LEGACY_LABEL[value];
+    const n = Number(value);
+    if (Number.isNaN(n)) return value;
+    if (n >= 20000) return '20000円以上';
+    return `${n}〜${n + 2000}円`;
+  }
+
+  // 乗車時に運賃帯（2000円刻み、最大20000円以上）をプルダウンで選ばせる。キャンセル操作ならnullを返す
   let _boardResultResolve = null;
   async function pickBoardResult() {
     const modal = document.getElementById('board-result-modal');
     const sel = document.getElementById('board-result-select');
-    sel.value = 'bad';
+    sel.value = '0';
     modal.style.display = 'flex';
     return new Promise(resolve => { _boardResultResolve = resolve; });
   }
