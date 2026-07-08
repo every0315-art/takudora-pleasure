@@ -8590,10 +8590,10 @@
         .sort((a, b) => a.dist - b.dist);
     }
 
-    renderStandSelectBody(nearby, lat);
+    renderStandSelectBody(nearby, lat, stands);
   }
 
-  function renderStandSelectBody(nearby, lat) {
+  function renderStandSelectBody(nearby, lat, allStands) {
     const body = document.getElementById('stand-select-body');
     let html = '';
     if (nearby.length > 0) {
@@ -8606,6 +8606,16 @@
       html += '<div style="text-align:center;color:var(--gray);font-size:13px;padding:12px 0;">現在地を取得できませんでした</div>';
     } else {
       html += '<div style="text-align:center;color:var(--gray);font-size:13px;padding:12px 0;">近くに登録された乗り場はありません</div>';
+    }
+
+    const nearbyIds = new Set(nearby.map(x => x.stand.id));
+    const others = (allStands || []).filter(s => !nearbyIds.has(s.id)).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    if (others.length > 0) {
+      html += `<div style="font-size:11px;color:var(--gray);margin:16px 0 8px;">その他の登録済み乗り場</div>`;
+      html += others.map(stand => `
+        <button onclick="confirmStandSelect(${escHtml(JSON.stringify(stand.name))})" style="width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:14px;cursor:pointer;">
+          ${escHtml(stand.name)}
+        </button>`).join('');
     }
 
     html += `
