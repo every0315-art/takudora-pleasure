@@ -1524,17 +1524,10 @@
     <div class="wait-popup">
       <div class="wait-popup-title">乗車結果（運賃）</div>
       <select id="board-result-select" style="width:100%;margin:12px 0;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:14px;">
-        <option value="0">〜2000円</option>
-        <option value="2000">2000〜4000円</option>
-        <option value="4000">4000〜6000円</option>
-        <option value="6000">6000〜8000円</option>
-        <option value="8000">8000〜10000円</option>
-        <option value="10000">10000〜12000円</option>
-        <option value="12000">12000〜14000円</option>
-        <option value="14000">14000〜16000円</option>
-        <option value="16000">16000〜18000円</option>
-        <option value="18000">18000〜20000円</option>
-        <option value="20000">20000円以上</option>
+        <option value="bad">ショート（〜2000円）</option>
+        <option value="smiddle">Sミドル（2000〜4000円）</option>
+        <option value="middle">ミドル（4000〜10000円）</option>
+        <option value="long">ロング（10000円以上）</option>
       </select>
       <div class="wait-actions">
         <button onclick="resolveBoardResult(null)" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
@@ -8088,7 +8081,7 @@
   const WAIT_STATUS_OPTIONS = [
     ['waiting', '待機中'], ['boarded', '乗車'], ['cancelled', 'キャンセル'], ['left', '離脱'], ['radio_left', '無線離脱'],
   ];
-  const BOARD_RESULT_VALUES = ['0', '2000', '4000', '6000', '8000', '10000', '12000', '14000', '16000', '18000', '20000'];
+  const BOARD_RESULT_VALUES = ['bad', 'smiddle', 'middle', 'long'];
   const BOARD_RESULT_OPTIONS = BOARD_RESULT_VALUES.map(v => [v, boardResultLabel(v)]);
 
   function toDatetimeLocalValue(dt) {
@@ -8096,6 +8089,58 @@
   }
 
   const WAIT_STATUS_COLOR = { waiting: 'var(--green)', boarded: 'var(--gold)', cancelled: 'var(--gray)', left: '#e08080', radio_left: '#e08080' };
+
+  // 日本の祝日（春分・秋分は近似計算、振替休日込み）
+  const WEEKDAY_KANJI = ['日', '月', '火', '水', '木', '金', '土'];
+  function nthMondayOfMonth(year, month, n) {
+    const first = new Date(year, month - 1, 1);
+    const firstMonday = 1 + ((8 - first.getDay()) % 7);
+    return firstMonday + (n - 1) * 7;
+  }
+  function dateKey(dt) {
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
+  function getJapaneseHolidays(year) {
+    const holidays = {};
+    const add = (m, d, name) => { holidays[dateKey(new Date(year, m - 1, d))] = name; };
+    add(1, 1, '元日');
+    add(1, nthMondayOfMonth(year, 1, 2), '成人の日');
+    add(2, 11, '建国記念の日');
+    if (year >= 2020) add(2, 23, '天皇誕生日');
+    add(3, Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4)), '春分の日');
+    add(4, 29, '昭和の日');
+    add(5, 3, '憲法記念日');
+    add(5, 4, 'みどりの日');
+    add(5, 5, 'こどもの日');
+    add(7, nthMondayOfMonth(year, 7, 3), '海の日');
+    add(8, 11, '山の日');
+    add(9, nthMondayOfMonth(year, 9, 3), '敬老の日');
+    add(9, Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4)), '秋分の日');
+    add(10, nthMondayOfMonth(year, 10, 2), 'スポーツの日');
+    add(11, 3, '文化の日');
+    add(11, 23, '勤労感謝の日');
+    // 振替休日: 祝日が日曜のとき、その次の祝日でない日を休日にする
+    for (const key of Object.keys(holidays)) {
+      const [y, m, d] = key.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      if (dt.getDay() === 0) {
+        const next = new Date(dt);
+        do { next.setDate(next.getDate() + 1); } while (holidays[dateKey(next)]);
+        holidays[dateKey(next)] = '振替休日';
+      }
+    }
+    return holidays;
+  }
+  function getHolidayName(dt) {
+    return getJapaneseHolidays(dt.getFullYear())[dateKey(dt)] || null;
+  }
+  function formatDateWithWeekday(dt) {
+    const m = dt.getMonth() + 1, d = dt.getDate();
+    const hh = String(dt.getHours()).padStart(2, '0'), mm = String(dt.getMinutes()).padStart(2, '0');
+    const holiday = getHolidayName(dt);
+    const weekdayLabel = WEEKDAY_KANJI[dt.getDay()] + (holiday ? `・${holiday}` : '');
+    return `${m}/${d}(${weekdayLabel}) ${hh}:${mm}`;
+  }
 
   function openWaitDetail(id) {
     renderWaitDetailCard(id);
@@ -8116,7 +8161,7 @@
     const statusColor = WAIT_STATUS_COLOR[w.status] || 'var(--gray)';
 
     const rows = [
-      ['日時', escHtml(dt.toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))],
+      ['日時', escHtml(formatDateWithWeekday(dt))],
       ['乗り場', escHtml(w.stand_name || '不明')],
       ['待ち時間', `${mins}分`],
       ['ステータス', `<span style="color:${statusColor};font-size:11px;border:1px solid ${statusColor};border-radius:4px;padding:2px 8px;">${escHtml(statusLabel)}</span>`],
@@ -8743,22 +8788,22 @@
     if (btn) btn.innerHTML = `つけ待ち中<br>${m}:${s}`;
   }
 
-  // 運賃帯の値（円、2000円刻み）をラベル文字列に変換。旧データ（残念/ミドル/ロング）も表示できるよう残す
+  // 運賃帯の値をラベル文字列に変換。過去に一時運用していた2000円刻みの数値データも表示できるよう残す
   function boardResultLabel(value) {
-    const LEGACY_LABEL = { long: 'ロング', middle: 'ミドル', bad: '残念' };
-    if (LEGACY_LABEL[value]) return LEGACY_LABEL[value];
+    const LABEL = { bad: 'ショート（〜2000円）', smiddle: 'Sミドル（2000〜4000円）', middle: 'ミドル（4000〜10000円）', long: 'ロング（10000円以上）' };
+    if (LABEL[value]) return LABEL[value];
     const n = Number(value);
     if (Number.isNaN(n)) return value;
     if (n >= 20000) return '20000円以上';
     return `${n}〜${n + 2000}円`;
   }
 
-  // 乗車時に運賃帯（2000円刻み、最大20000円以上）をプルダウンで選ばせる。キャンセル操作ならnullを返す
+  // 乗車時に運賃帯（ショート/Sミドル/ミドル/ロング）をプルダウンで選ばせる。キャンセル操作ならnullを返す
   let _boardResultResolve = null;
   async function pickBoardResult() {
     const modal = document.getElementById('board-result-modal');
     const sel = document.getElementById('board-result-select');
-    sel.value = '0';
+    sel.value = 'bad';
     modal.style.display = 'flex';
     return new Promise(resolve => { _boardResultResolve = resolve; });
   }
