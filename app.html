@@ -814,7 +814,7 @@
           <button onclick="openReportModal()" style="flex:1;min-height:0;width:100%;background:var(--red);border:none;border-radius:8px;cursor:pointer;color:var(--white);font-size:9px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;">
             現在地<br>投稿
           </button>
-          <button id="wait-start-btn" onclick="startWaiting()" style="flex:1;min-height:0;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">つけ待ち<br>投稿</button>
+          <button id="wait-start-btn" onclick="onWaitButtonClick()" style="flex:1;min-height:0;width:100%;border-radius:8px;border:1px solid rgba(255,180,40,.5);background:rgba(255,180,40,.12);color:var(--yellow);font-size:9px;font-weight:700;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;">つけ待ち<br>投稿</button>
         </div>
       </div>
 
@@ -1503,6 +1503,17 @@
     </div>
   </div>
 
+  <!-- つけ待ち開始：乗り場選択カード -->
+  <div class="wait-overlay" id="stand-select-overlay" onclick="if(event.target===this)closeStandSelectCard()">
+    <div class="wait-popup">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="wait-popup-title">つけ待ち開始</div>
+        <button onclick="closeStandSelectCard()" style="background:none;border:none;color:var(--gray);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+      <div id="stand-select-body" style="margin-top:12px;max-height:60vh;overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <!-- 乗車結果選択モーダル -->
   <div class="wait-overlay" id="board-result-modal" style="display:none;z-index:10001;">
     <div class="wait-popup">
@@ -1523,7 +1534,7 @@
   <div class="tab-pane" id="tab-stands-info">
     <div id="group-stands-list"><div style="text-align:center;color:var(--gray);font-size:13px;padding:16px;">読み込み中…</div></div>
     <div style="margin-top:8px;text-align:center;">
-      <button onclick="startWaiting()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
+      <button onclick="onWaitButtonClick()" style="padding:12px 28px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
     </div>
   </div>
 
@@ -3493,7 +3504,7 @@
       window._currentPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
       // つけ待ち開始から3分以内に開始地点から200m以上離れたら、オーバーレイを自動で再表示する
       if (typeof _waitState !== 'undefined' && _waitState?.startLat != null && _waitState?.startLng != null) {
-        const elapsedMs = Date.now() - _waitState.startedAt.getTime();
+        const elapsedMs = Date.now() - new Date(_waitState.startedAt).getTime();
         const distKm = haversineKm(_waitState.startLat, _waitState.startLng, pos.coords.latitude, pos.coords.longitude);
         const overlay = document.getElementById('wait-overlay');
         if (elapsedMs <= 3 * 60 * 1000 && distKm * 1000 >= 200 && overlay && !overlay.classList.contains('show')) {
@@ -4698,6 +4709,7 @@
       setInterval(loadHanedaArr,        60000),
       setInterval(updatePickupAlerts,   60000),
       setInterval(updateTicker,         30000),
+      setInterval(() => { if (typeof updateGroupTiles === 'function') updateGroupTiles(); }, 30000),
     ];
   }
   function stopLiveUpdates() {
@@ -4902,8 +4914,6 @@
     swTick();
     if (!swTimer) swTimer = setInterval(() => { swTick(); swSave(); }, 500);
   });
-
-  restoreWaitState();
 
   // イベントアイテムをタップでイベントページへ
   const eventLinks = {
@@ -7998,7 +8008,7 @@
     }
 
     let html = `<div style="text-align:center;margin-bottom:10px;">
-      <button onclick="startWaiting()" style="padding:10px 24px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
+      <button onclick="onWaitButtonClick()" style="padding:10px 24px;background:rgba(255,180,40,.15);border:1px solid rgba(255,180,40,.4);color:var(--yellow);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">つけ待ち開始</button>
     </div>`;
 
     if (log.length > 0) {
@@ -8367,36 +8377,22 @@
   // ── 客待ちシステム ────────────────────────────────────
   let _waitState = null;
   let _waitInterval = null;
+  const WAIT_STATE_KEY = 'waitState';
 
   function saveWaitState() {
-    if (_waitState) {
-      localStorage.setItem('waitState', JSON.stringify({
-        startedAt: _waitState.startedAt.toISOString(),
-        standName: _waitState.standName,
-        recordId:  _waitState.recordId,
-        startLat:  _waitState.startLat,
-        startLng:  _waitState.startLng,
-      }));
-    } else {
-      localStorage.removeItem('waitState');
-    }
+    if (_waitState) localStorage.setItem(WAIT_STATE_KEY, JSON.stringify(_waitState));
+    else localStorage.removeItem(WAIT_STATE_KEY);
   }
 
-  function restoreWaitState() {
-    try {
-      const saved = localStorage.getItem('waitState');
-      if (!saved) return;
-      const s = JSON.parse(saved);
-      _waitState = { ...s, startedAt: new Date(s.startedAt) };
-      showWaitOverlay();
-    } catch(e) {
-      localStorage.removeItem('waitState');
-    }
+  // つけ待ちボタン押下時の入口。すでに客待ち中ならオーバーレイを開くだけ、
+  // そうでなければ乗り場選択カードを開く
+  function onWaitButtonClick() {
+    if (_waitState) { showWaitOverlay(); return; }
+    openStandSelectCard();
   }
 
   async function startWaiting(standName = null) {
     if (_waitState) { showWaitOverlay(); return; }
-    let resolvedStand = standName;
 
     // 位置情報を1回だけ取得（タイムアウト5秒、失敗しても続行）
     let startLat = null, startLng = null;
@@ -8412,55 +8408,6 @@
       if (coords) { startLat = coords.latitude; startLng = coords.longitude; }
     }
 
-    if (!resolvedStand && _sb && _group) {
-      let stands = [];
-      try {
-        const res = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
-        stands = res.data || [];
-      } catch (_) {}
-
-      // 現在地から一番近い登録済み乗り場を提案（150m以内のみ）
-      if (startLat != null && stands.length > 0) {
-        const nearest = stands.reduce((best, s) => {
-          const d = Math.hypot(s.lat - startLat, s.lng - startLng) * 111000;
-          return d < best.dist ? { stand: s, dist: d } : best;
-        }, { stand: null, dist: Infinity });
-        if (nearest.stand && nearest.dist < 150) {
-          if (confirm(`「${nearest.stand.name}」でつけ待ちを開始しますか？`)) {
-            resolvedStand = nearest.stand.name;
-          }
-        }
-      }
-
-      // 現在地に一致する乗り場がない/断った場合、位置に関わらず登録済み一覧から任意に選べるようにする
-      if (!resolvedStand && stands.length > 0) {
-        if (confirm('現在地とは違う乗り場を選びますか？（キャンセルで新規登録に進みます）')) {
-          const list = stands.map((s, i) => `${i + 1}. ${s.name}`).join('\n');
-          const input = prompt(`乗り場を番号で選択してください\n${list}`, '');
-          if (input !== null) {
-            const idx = parseInt(input, 10) - 1;
-            if (idx >= 0 && idx < stands.length) resolvedStand = stands[idx].name;
-            else if (input.trim() !== '') alert('番号が正しくありません');
-          }
-        }
-      }
-
-      // それでも決まらなければ、この場所を新しい乗り場として登録する
-      if (!resolvedStand && startLat != null) {
-        const wantsRegister = confirm('この場所を新しい乗り場として登録しますか？');
-        if (wantsRegister) {
-          const newName = (prompt('乗り場名を入力してください', '') || '').trim();
-          if (newName) {
-            const { data: newStand, error } = await _sb.from('taxi_stands').insert({
-              group_id: _group.id, name: newName, lat: startLat, lng: startLng, created_by: _sbUser.id,
-            }).select().single();
-            if (!error && newStand) resolvedStand = newStand.name;
-            else if (error) alert('乗り場の登録に失敗しました: ' + error.message);
-          }
-        }
-      }
-    }
-
     const now = new Date();
     let waitRecordId = null;
     if (_sb && _sbUser && _group) {
@@ -8468,7 +8415,7 @@
         const { data } = await _sb.from('waiting_records').insert({
           group_id: _group.id,
           user_id: _sbUser.id,
-          stand_name: resolvedStand || null,
+          stand_name: standName || null,
           lat: startLat, lng: startLng,
           started_at: now.toISOString(),
           status: 'waiting',
@@ -8477,7 +8424,7 @@
       } catch (_) {}
     }
 
-    _waitState = { startedAt: now, standName: resolvedStand, recordId: waitRecordId, startLat, startLng };
+    _waitState = { startedAt: now.toISOString(), standName, recordId: waitRecordId, startLat, startLng };
     saveWaitState();
     showWaitOverlay();
     if (typeof updateGroupTiles === 'function') updateGroupTiles();
@@ -8486,6 +8433,117 @@
   async function startWaitingAt(standName) {
     await startWaiting(standName);
   }
+
+  // ── 乗り場選択カード ──────────────────────────────────
+  let _standSelectCoords = null;
+  async function openStandSelectCard() {
+    const overlay = document.getElementById('stand-select-overlay');
+    const body = document.getElementById('stand-select-body');
+    overlay.classList.add('show');
+    body.innerHTML = '<div style="text-align:center;color:var(--gray);font-size:13px;padding:20px;">現在地を取得中…</div>';
+
+    let lat = null, lng = null;
+    if (navigator.geolocation) {
+      const coords = await new Promise(resolve => {
+        const t = setTimeout(() => resolve(null), 5000);
+        navigator.geolocation.getCurrentPosition(
+          pos => { clearTimeout(t); resolve(pos.coords); },
+          ()  => { clearTimeout(t); resolve(null); },
+          { timeout: 5000, maximumAge: 30000 }
+        );
+      });
+      if (coords) { lat = coords.latitude; lng = coords.longitude; }
+    }
+    _standSelectCoords = { lat, lng };
+
+    let stands = [];
+    if (_sb && _group) {
+      try {
+        const res = await _sb.from('taxi_stands').select('*').eq('group_id', _group.id);
+        stands = res.data || [];
+      } catch (_) {}
+    }
+
+    let nearby = [];
+    if (lat != null) {
+      nearby = stands
+        .map(s => ({ stand: s, dist: Math.hypot(s.lat - lat, s.lng - lng) * 111000 }))
+        .filter(x => x.dist <= 100)
+        .sort((a, b) => a.dist - b.dist);
+    }
+
+    renderStandSelectBody(nearby, lat);
+  }
+
+  function renderStandSelectBody(nearby, lat) {
+    const body = document.getElementById('stand-select-body');
+    let html = '';
+    if (nearby.length > 0) {
+      html += '<div style="font-size:11px;color:var(--gray);margin:0 0 8px;">現在地から100m以内の乗り場</div>';
+      html += nearby.map(({ stand, dist }) => `
+        <button onclick="confirmStandSelect(${escHtml(JSON.stringify(stand.name))})" style="width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+          <span>${escHtml(stand.name)}</span><span style="font-size:11px;color:var(--gray);">${Math.round(dist)}m</span>
+        </button>`).join('');
+    } else if (lat == null) {
+      html += '<div style="text-align:center;color:var(--gray);font-size:13px;padding:12px 0;">現在地を取得できませんでした</div>';
+    } else {
+      html += '<div style="text-align:center;color:var(--gray);font-size:13px;padding:12px 0;">近くに登録された乗り場はありません</div>';
+    }
+
+    html += `
+      <div style="font-size:11px;color:var(--gray);margin:16px 0 8px;">新しい乗り場を登録</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px;">
+        <input id="stand-select-new-name" type="text" maxlength="30" placeholder="乗り場名（例：渋谷駅 南口）" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
+        <button onclick="registerAndStartWaiting()" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(255,180,40,.4);background:rgba(255,180,40,.12);color:var(--yellow);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">登録して開始</button>
+      </div>
+      <div id="stand-select-msg" style="font-size:11px;color:var(--yellow);min-height:14px;margin-bottom:8px;"></div>
+      <button onclick="startWaitingWithoutStand()" style="width:100%;background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;cursor:pointer;padding:6px 0;">乗り場を指定せず開始する</button>
+    `;
+    body.innerHTML = html;
+  }
+
+  function closeStandSelectCard() {
+    document.getElementById('stand-select-overlay').classList.remove('show');
+  }
+
+  async function confirmStandSelect(standName) {
+    closeStandSelectCard();
+    await startWaiting(standName);
+  }
+
+  async function startWaitingWithoutStand() {
+    closeStandSelectCard();
+    await startWaiting(null);
+  }
+
+  async function registerAndStartWaiting() {
+    const input = document.getElementById('stand-select-new-name');
+    const msg = document.getElementById('stand-select-msg');
+    const name = (input?.value || '').trim();
+    if (!name) { if (msg) msg.textContent = '乗り場名を入力してください'; return; }
+    if (!_sb || !_sbUser || !_group) { if (msg) msg.textContent = 'グループに参加していません'; return; }
+    const { lat, lng } = _standSelectCoords || {};
+    if (lat == null) { if (msg) msg.textContent = '現在地を取得できないため登録できません'; return; }
+    if (msg) msg.textContent = '登録中…';
+    const { data: newStand, error } = await _sb.from('taxi_stands').insert({
+      group_id: _group.id, name, lat, lng, created_by: _sbUser.id,
+    }).select().single();
+    if (error) { if (msg) msg.textContent = '登録に失敗しました: ' + error.message; return; }
+    closeStandSelectCard();
+    await startWaiting(newStand.name);
+  }
+
+  // 起動時に復元（アプリを閉じてもつけ待ち状態を維持する）
+  (function waitRestore() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WAIT_STATE_KEY) || 'null');
+      if (!saved) return;
+      _waitState = saved;
+      clearInterval(_waitInterval);
+      _waitInterval = setInterval(updateWaitTimer, 1000);
+      updateWaitTimer();
+    } catch (_) {}
+  })();
 
   function showWaitOverlay() {
     if (!_waitState) return;
@@ -8507,7 +8565,7 @@
     const el  = document.getElementById('wait-timer-display');
     const btn = document.getElementById('wait-start-btn');
     if (!_waitState) return;
-    const secs = Math.floor((Date.now() - _waitState.startedAt.getTime()) / 1000);
+    const secs = Math.floor((Date.now() - new Date(_waitState.startedAt).getTime()) / 1000);
     const m = String(Math.floor(secs / 60)).padStart(2, '0');
     const s = String(secs % 60).padStart(2, '0');
     if (el) el.textContent = `${m}:${s}`;
@@ -8533,7 +8591,7 @@
     const choice = await pickBoardResult();
     if (choice === null) return; // キャンセルされたら乗車確定しない
     clearInterval(_waitInterval);
-    const mins = Math.round((Date.now() - _waitState.startedAt.getTime()) / 60000);
+    const mins = Math.round((Date.now() - new Date(_waitState.startedAt).getTime()) / 60000);
     if (_sb && _waitState.recordId) {
       await _sb.from('waiting_records').update({
         boarded_at: new Date().toISOString(),
@@ -8570,7 +8628,7 @@
   async function endWaitingWithStatus(status) {
     if (!_waitState) return;
     clearInterval(_waitInterval);
-    const mins = Math.round((Date.now() - _waitState.startedAt.getTime()) / 60000);
+    const mins = Math.round((Date.now() - new Date(_waitState.startedAt).getTime()) / 60000);
     if (_sb && _waitState.recordId) {
       await _sb.from('waiting_records').update({
         boarded_at: new Date().toISOString(),
