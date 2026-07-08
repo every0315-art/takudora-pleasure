@@ -313,6 +313,11 @@
     .wait-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:700; flex-shrink:0; }
     .wait-badge-waiting { background:rgba(255,180,40,.15); color:var(--yellow); }
     .wait-badge-boarded { background:rgba(39,174,96,.15); color:var(--green); }
+    .wait-detail-card { background:rgba(255,255,255,.04); border-radius:12px; padding:2px 14px; margin-bottom:16px; }
+    .wait-detail-row { display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.06); gap:10px; }
+    .wait-detail-row:last-child { border-bottom:none; }
+    .wait-detail-row-label { font-size:12px; color:var(--gray); flex-shrink:0; }
+    .wait-detail-row-value { font-size:13px; color:var(--white); font-weight:700; text-align:right; }
     .member-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:6px; }
     .member-avatar { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
     .member-info { flex:1; min-width:0; }
@@ -8090,12 +8095,53 @@
     return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   }
 
+  const WAIT_STATUS_COLOR = { waiting: 'var(--green)', boarded: 'var(--gold)', cancelled: 'var(--gray)', left: '#e08080', radio_left: '#e08080' };
+
   function openWaitDetail(id) {
+    renderWaitDetailCard(id);
+    document.getElementById('wait-detail-modal').style.display = 'flex';
+  }
+
+  function renderWaitDetailCard(id) {
     const w = _waitLogCache[id];
     if (!w) return;
     const isAdmin = _groupMember?.role === 'admin';
     const canEdit = isAdmin || w.user_id === _sbUser?.id;
     const nickname = _waitLogNameByUser[w.user_id] || '名無し';
+    const dt = new Date(w.started_at);
+    const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
+    const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
+    const boardVal = w.board_result != null ? String(w.board_result) : '';
+    const statusLabel = Object.fromEntries(WAIT_STATUS_OPTIONS)[w.status] || w.status || '不明';
+    const statusColor = WAIT_STATUS_COLOR[w.status] || 'var(--gray)';
+
+    const rows = [
+      ['日時', escHtml(dt.toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))],
+      ['乗り場', escHtml(w.stand_name || '不明')],
+      ['待ち時間', `${mins}分`],
+      ['ステータス', `<span style="color:${statusColor};font-size:11px;border:1px solid ${statusColor};border-radius:4px;padding:2px 8px;">${escHtml(statusLabel)}</span>`],
+    ];
+    if (boardVal) rows.push(['運賃帯', escHtml(boardResultLabel(boardVal))]);
+
+    const body = document.getElementById('wait-detail-body');
+    body.innerHTML = `
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-size:14px;color:var(--gold);font-weight:700;">${escHtml(nickname)}</div>
+      </div>
+      <div class="wait-detail-card">
+        ${rows.map(([label, valueHtml]) => `
+          <div class="wait-detail-row">
+            <span class="wait-detail-row-label">${label}</span>
+            <span class="wait-detail-row-value">${valueHtml}</span>
+          </div>`).join('')}
+      </div>
+      ${canEdit ? `<button onclick="renderWaitDetailEdit('${id}')" style="width:100%;padding:14px;background:rgba(255,180,40,.12);border:1px solid rgba(255,180,40,.4);color:var(--yellow);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">編集する</button>` : ''}
+    `;
+  }
+
+  function renderWaitDetailEdit(id) {
+    const w = _waitLogCache[id];
+    if (!w) return;
     const dt = new Date(w.started_at);
     const endMs = w.boarded_at ? new Date(w.boarded_at).getTime() : Date.now();
     const mins = w.wait_minutes ?? Math.max(0, Math.floor((endMs - dt.getTime()) / 60000));
@@ -8108,10 +8154,7 @@
     boardOptionsHtml += BOARD_RESULT_OPTIONS.map(([v, l]) => `<option value="${v}" ${boardVal === v ? 'selected' : ''}>${l}</option>`).join('');
 
     const body = document.getElementById('wait-detail-body');
-    let html = `<div style="font-size:12px;color:var(--gray);margin-bottom:12px;">${escHtml(nickname)}</div>`;
-
-    if (canEdit) {
-      html += `
+    body.innerHTML = `
         <div style="margin-bottom:10px;">
           <div style="font-size:11px;color:var(--gray);margin-bottom:4px;">開始日時</div>
           <input id="wait-detail-datetime" type="datetime-local" value="${toDatetimeLocalValue(dt)}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--white);font-size:13px;">
@@ -8138,24 +8181,11 @@
         </div>
         <div id="wait-detail-msg" style="font-size:11px;color:var(--yellow);min-height:14px;margin-bottom:6px;"></div>
         <div class="wait-actions">
-          <button onclick="closeWaitDetail()" style="background:rgba(255,255,255,.1);color:var(--white);">閉じる</button>
+          <button onclick="renderWaitDetailCard('${id}')" style="background:rgba(255,255,255,.1);color:var(--white);">キャンセル</button>
           <button onclick="saveWaitDetail('${id}')" style="background:var(--green);color:#000;flex:2;">保存</button>
         </div>
-        <button onclick="deleteWaitingRecord('${id}')" style="width:100%;margin-top:8px;padding:12px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">このログを削除</button>`;
-    } else {
-      const statusLabel = Object.fromEntries(WAIT_STATUS_OPTIONS)[w.status] || w.status || '不明';
-      html += `
-        <div style="font-size:13px;color:var(--white);line-height:2;">
-          <div>日時: ${escHtml(dt.toLocaleString('ja-JP'))}</div>
-          <div>待ち時間: ${mins}分</div>
-          <div>乗り場: ${escHtml(w.stand_name || '不明')}</div>
-          <div>ステータス: ${escHtml(statusLabel)}</div>
-          ${boardVal ? `<div>運賃帯: ${escHtml(boardResultLabel(boardVal))}</div>` : ''}
-        </div>`;
-    }
-
-    body.innerHTML = html;
-    document.getElementById('wait-detail-modal').style.display = 'flex';
+        <button onclick="deleteWaitingRecord('${id}')" style="width:100%;margin-top:8px;padding:12px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">このログを削除</button>
+    `;
   }
 
   function closeWaitDetail() {
