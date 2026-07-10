@@ -5350,9 +5350,37 @@
     const period = getMonthPeriod();
     if (periodEl) periodEl.textContent = period.label;
     const reports = loadReports().filter(r => r.date && r.date >= period.start && r.date <= period.end);
+    el.innerHTML = buildMonthSummaryHtml(reports, period, { showProjection: true, emptyMessage: '今月のデータがありません' });
+  }
+
+  // 締め日・支払日を反映した給与支払い月キー（"YYYY-M"）を返す
+  function getPayMonthKey(dateStr) {
+    const sal = JSON.parse(localStorage.getItem('userSalarySettings') || '{}');
+    const closingDay = Number(sal.closingDay) || loadClosingDay() || 0;
+    const payday = Number(sal.payday) || 0;
+    const [y, mo, d] = dateStr.split('-').map(Number);
+    let periodY = y, periodM = mo;
+    if (closingDay && d > closingDay) {
+      periodM = mo + 1;
+      if (periodM > 12) { periodM = 1; periodY = y + 1; }
+    }
+    let payY = periodY, payM = periodM;
+    if (payday && closingDay && payday <= closingDay) {
+      payM = periodM + 1;
+      if (payM > 12) { payM = 1; payY = periodY + 1; }
+    }
+    return `${payY}-${payM}`;
+  }
+
+  // 給与支払い月（年間売上と同じ判定ロジック）に属する日報を取得（売上のある日のみ）
+  function getReportsForPayMonth(year, m) {
+    return loadReports().filter(r => r.date && r.sales != null && getPayMonthKey(r.date) === `${year}-${m}`);
+  }
+
+  function buildMonthSummaryHtml(reports, period, opts = {}) {
+    const showProjection = opts.showProjection !== false;
     if (reports.length === 0) {
-      el.innerHTML = '<div style="color:var(--gray);font-size:12px;text-align:center;padding:12px 0;">今月のデータがありません</div>';
-      return;
+      return `<div style="color:var(--gray);font-size:12px;text-align:center;padding:12px 0;">${opts.emptyMessage || 'データがありません'}</div>`;
     }
     let totalSales = 0, totalSalesExTax = 0, totalDistance = 0, totalTrips = 0, totalMinutes = 0;
     let distanceCount = 0, tripsCount = 0, timeCount = 0;
@@ -5376,7 +5404,24 @@
     const salesCount = reports.filter(r => r.sales != null).length;
     const avgSales = salesCount ? Math.round(totalSales / salesCount) : null;
     const avgSalesExTax = salesCount ? Math.round(totalSalesExTax / salesCount) : null;
-    el.innerHTML = `${(() => {
+    return `${!showProjection ? `
+      <div style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:12px 14px;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:6px;">
+          <div>
+            <div style="font-size:10px;color:rgba(201,168,76,.6);margin-bottom:3px;">売上合計（税抜）</div>
+            <div style="font-size:26px;font-weight:800;color:var(--gold);">¥${totalSalesExTax.toLocaleString()}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">税込</div>
+            <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.45);">¥${totalSales.toLocaleString()}</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:6px;">営業日数 <span style="color:var(--gold);font-weight:600;">${salesCount}日</span></div>
+        <div style="border-top:1px solid rgba(201,168,76,.2);margin-top:10px;padding-top:8px;">
+          <div style="font-size:11px;color:var(--gray);">1日平均（税抜）<span style="color:var(--gold);font-weight:600;margin-left:6px;">${avgSalesExTax != null ? '¥'+avgSalesExTax.toLocaleString() : '—'}</span></div>
+          ${avgSales != null ? `<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px;">税込 ¥${avgSales.toLocaleString()}</div>` : ''}
+        </div>
+      </div>` : (() => {
         const now = new Date();
         const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const [endY, endM, endD] = period.end.split('-').map(Number);
@@ -5444,7 +5489,7 @@
           <div style="font-size:10px;color:var(--gray);margin-top:3px;">平均 ${tripsCount ? (totalTrips/tripsCount).toFixed(1)+'回' : '—'}</div>
         </div>
       </div>
-      ${(() => {
+      ${!showProjection ? '' : (() => {
         const _prof2 = loadProfile() || {};
         const wt2 = _prof2.workType;
         const deemedOTMin2 = parseFloat(_prof2.deemedOT) || 0;
@@ -5535,6 +5580,19 @@
           </div>
         </div>`;
       })()}`;
+  }
+
+  // 過去月の詳細（今月の実績と同じ内訳）を年間売上カード内に表示
+  function showAnnualMonthDetail(year, m, periodLabel) {
+    const area = document.getElementById('annual-month-detail');
+    if (!area) return;
+    if (area.dataset.openMonth === String(m)) { area.innerHTML = ''; area.dataset.openMonth = ''; return; }
+    const reports = getReportsForPayMonth(year, m);
+    area.innerHTML = `<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--gold);margin-bottom:6px;">${year}年${m}月度（${periodLabel || ''}）の実績</div>
+      ${buildMonthSummaryHtml(reports, null, { showProjection: false, emptyMessage: 'この月度の日報データがありません' })}
+    </div>`;
+    area.dataset.openMonth = String(m);
   }
 
   // ── 年間売上 ──
@@ -5637,7 +5695,8 @@
           const startM2 = dispM === 1 ? 12 : dispM - 1;
           const startDay2 = cdDay === 0 ? 1 : cdDay + 1;
           const periodLabel = `${startM2}/${startDay2}〜${dispM}/${endDay}`;
-          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;" onclick="editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'},${ovKyuyo||'null'},${ovPool||'null'})">
+          return `<div style="background:rgba(255,255,255,.05);border:1px solid ${hasOverride?'rgba(201,168,76,.4)':'var(--border)'};border-radius:6px;padding:6px 8px;cursor:pointer;position:relative;" onclick="showAnnualMonthDetail(${thisYear},${m},'${periodLabel}')">
+            <span onclick="event.stopPropagation();editAnnualMonth(${m},${dispSales||'null'},${dispDays||'null'},${ovKyuyo||'null'},${ovPool||'null'})" style="position:absolute;top:4px;right:6px;font-size:10px;color:var(--gray);padding:2px;">✎</span>
             <div style="font-size:10px;color:${future?'var(--gray)':'var(--gold)'};">${label}${hasOverride?'✎':''}</div>
             <div style="font-size:8px;color:var(--gray);margin-top:1px;">${periodLabel}</div>
             <div style="font-size:13px;font-weight:700;color:${future?'var(--gray)':'var(--white)'};">${taxExcluded?'¥'+taxExcluded.toLocaleString():(dispSales?'¥'+Number(dispSales).toLocaleString():'—')}</div>
@@ -5647,6 +5706,7 @@
           </div>`;
         }).join('')}
       </div>
+      <div id="annual-month-detail"></div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;">
           <div>
@@ -6503,6 +6563,30 @@
     localStorage.setItem('reportHistoryOpen', isOpen ? '0' : '1');
   }
 
+  // 日報一覧の期間セレクトを、データがある月度に応じて再構築し、選択中の値を返す
+  function populateReportPeriodSelect() {
+    const sel = document.getElementById('report-period-select');
+    if (!sel) return 'current';
+    const prevVal = sel.value || 'current';
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const nowKey = getPayMonthKey(todayStr);
+    const keys = new Set();
+    loadReports().forEach(r => { if (r.date) keys.add(getPayMonthKey(r.date)); });
+    keys.delete(nowKey);
+    const sortedKeys = [...keys].sort((a, b) => {
+      const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number);
+      return (by * 12 + bm) - (ay * 12 + am);
+    });
+    const monthOptions = sortedKeys.map(k => {
+      const [y, m] = k.split('-').map(Number);
+      return `<option value="${k}">${y}年${m}月度</option>`;
+    }).join('');
+    sel.innerHTML = `<option value="current">今月度</option>${monthOptions}<option value="all">全期間</option>`;
+    sel.value = [...sel.options].some(o => o.value === prevVal) ? prevVal : 'current';
+    return sel.value;
+  }
+
   function renderReportHistory() {
     const tbody = document.getElementById('report-history-body');
     if (!tbody) return;
@@ -6518,7 +6602,7 @@
     updateTopSalesTile();
     renderDowChart();
     const closingDay = loadClosingDay();
-    const periodSel = document.getElementById('report-period-select')?.value || 'current';
+    const periodSel = populateReportPeriodSelect();
     const allReports = loadReports().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
     let reports;
@@ -6526,8 +6610,10 @@
       // 今月度（締め日ベース）
       const p = getMonthPeriod();
       reports = allReports.filter(r => r.date >= p.start && r.date <= p.end);
-    } else {
+    } else if (periodSel === 'all') {
       reports = allReports;
+    } else {
+      reports = allReports.filter(r => r.date && getPayMonthKey(r.date) === periodSel);
     }
     if (reports.length === 0) {
       tbody.innerHTML = '<tr><td colspan="10" style="color:var(--gray);text-align:center;padding:16px 0;">まだ日報がありません</td></tr>';
