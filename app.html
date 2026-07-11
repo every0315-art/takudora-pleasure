@@ -5472,6 +5472,53 @@
         ${projectedExTax ? `<div style="margin-top:8px;font-size:11px;color:var(--gray);">月末着地予測（税抜）<span style="color:var(--gold);font-weight:700;margin-left:8px;">¥${projectedExTax.toLocaleString()}</span><span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:8px;">税込 ¥${Math.round(projectedExTax*1.1).toLocaleString()}</span></div>` : ''}
       </div>`;
       })()}
+      ${(() => {
+        const salesData = reports.filter(r => r.sales != null).map(r => {
+          const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
+          return { date: r.date, sales: Number(r.sales) - tax }; // 税抜で描画
+        }).sort((a,b) => a.date.localeCompare(b.date));
+        if (salesData.length < 2) return '';
+        const maxS = Math.max(...salesData.map(d => d.sales));
+        const avg = salesData.reduce((s,d) => s+d.sales, 0) / salesData.length;
+        const avgPct = Math.round(avg / maxS * 100);
+        const dow = d => ['日','月','火','水','木','金','土'][new Date(d).getDay()];
+        const dowC = d => { const w=new Date(d).getDay(); return w===0?'#f87171':w===6?'#60a5fa':'rgba(255,255,255,.45)'; };
+        // Y軸メモリ（0%・50%・100%）
+        const fmtMan = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
+        const yLabels = [
+          { pct: 100, val: maxS },
+          { pct: 50,  val: Math.round(maxS * 0.5) },
+          { pct: 0,   val: 0 },
+        ];
+        const yAxis = yLabels.map(({pct, val}) =>
+          `<div style="position:absolute;right:0;top:${100-pct}%;transform:translateY(${pct===100?'0':pct===0?'-100%':'-50%'});font-size:8px;color:rgba(255,255,255,.3);white-space:nowrap;">${pct===0?'0':fmtMan(val)}</div>`
+        ).join('');
+        const gridLines = [100, 50].map(pct =>
+          `<div style="position:absolute;top:${100-pct}%;left:0;right:30px;border-top:1px solid rgba(255,255,255,.06);"></div>`
+        ).join('');
+        const bars = salesData.map(d => {
+          const pct = Math.round(d.sales / maxS * 100);
+          const aboveAvg = d.sales >= avg;
+          const md = d.date.slice(5).replace('-','/');
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;">
+            <div style="width:100%;display:flex;align-items:flex-end;height:80px;">
+              <div style="width:100%;height:${pct}%;background:${aboveAvg?'linear-gradient(to top,var(--gold),rgba(201,168,76,.6))':'rgba(255,255,255,.15)'};border-radius:3px 3px 0 0;transition:height .3s;"></div>
+            </div>
+            <div style="font-size:9px;color:${dowC(d.date)};font-weight:600;line-height:1;">${md.slice(3)}</div>
+            <div style="font-size:8px;color:${dowC(d.date)};line-height:1;">${dow(d.date)}</div>
+          </div>`;
+        }).join('');
+        return `<div style="margin-top:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 10px 8px;">
+          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">日別売上（税抜）</div>
+          <div style="position:relative;padding-right:32px;">
+            ${gridLines}
+            <div style="position:absolute;top:${100-avgPct}%;left:0;right:32px;border-top:1px dashed rgba(201,168,76,.4);z-index:1;"></div>
+            <div style="position:absolute;right:0;top:0;bottom:0;width:30px;">${yAxis}</div>
+            <span style="position:absolute;right:0;top:${100-avgPct}%;transform:translateY(-50%);font-size:8px;color:rgba(201,168,76,.7);line-height:1;">avg</span>
+            <div style="display:flex;gap:3px;align-items:flex-end;height:80px;">${bars}</div>
+          </div>
+        </div>`;
+      })()}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
         <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;">
           <div style="font-size:10px;color:var(--gray);margin-bottom:3px;">走行距離</div>
@@ -5532,54 +5579,7 @@
           <div style="font-size:9px;color:var(--gray);margin-top:2px;">/km</div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:right;">${reports.length}日分のデータより集計</div>
-      ${(() => {
-        const salesData = reports.filter(r => r.sales != null).map(r => {
-          const tax = r.tax != null ? Number(r.tax) : Math.round(Number(r.sales) / 11);
-          return { date: r.date, sales: Number(r.sales) - tax }; // 税抜で描画
-        }).sort((a,b) => a.date.localeCompare(b.date));
-        if (salesData.length < 2) return '';
-        const maxS = Math.max(...salesData.map(d => d.sales));
-        const avg = salesData.reduce((s,d) => s+d.sales, 0) / salesData.length;
-        const avgPct = Math.round(avg / maxS * 100);
-        const dow = d => ['日','月','火','水','木','金','土'][new Date(d).getDay()];
-        const dowC = d => { const w=new Date(d).getDay(); return w===0?'#f87171':w===6?'#60a5fa':'rgba(255,255,255,.45)'; };
-        // Y軸メモリ（0%・50%・100%）
-        const fmtMan = v => v >= 10000 ? (v/10000).toFixed(1)+'万' : v.toLocaleString();
-        const yLabels = [
-          { pct: 100, val: maxS },
-          { pct: 50,  val: Math.round(maxS * 0.5) },
-          { pct: 0,   val: 0 },
-        ];
-        const yAxis = yLabels.map(({pct, val}) =>
-          `<div style="position:absolute;right:0;top:${100-pct}%;transform:translateY(${pct===100?'0':pct===0?'-100%':'-50%'});font-size:8px;color:rgba(255,255,255,.3);white-space:nowrap;">${pct===0?'0':fmtMan(val)}</div>`
-        ).join('');
-        const gridLines = [100, 50].map(pct =>
-          `<div style="position:absolute;top:${100-pct}%;left:0;right:30px;border-top:1px solid rgba(255,255,255,.06);"></div>`
-        ).join('');
-        const bars = salesData.map(d => {
-          const pct = Math.round(d.sales / maxS * 100);
-          const aboveAvg = d.sales >= avg;
-          const md = d.date.slice(5).replace('-','/');
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;">
-            <div style="width:100%;display:flex;align-items:flex-end;height:80px;">
-              <div style="width:100%;height:${pct}%;background:${aboveAvg?'linear-gradient(to top,var(--gold),rgba(201,168,76,.6))':'rgba(255,255,255,.15)'};border-radius:3px 3px 0 0;transition:height .3s;"></div>
-            </div>
-            <div style="font-size:9px;color:${dowC(d.date)};font-weight:600;line-height:1;">${md.slice(3)}</div>
-            <div style="font-size:8px;color:${dowC(d.date)};line-height:1;">${dow(d.date)}</div>
-          </div>`;
-        }).join('');
-        return `<div style="margin-top:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 10px 8px;">
-          <div style="font-size:10px;color:var(--gray);margin-bottom:8px;">日別売上（税抜）</div>
-          <div style="position:relative;padding-right:32px;">
-            ${gridLines}
-            <div style="position:absolute;top:${100-avgPct}%;left:0;right:32px;border-top:1px dashed rgba(201,168,76,.4);z-index:1;"></div>
-            <div style="position:absolute;right:0;top:0;bottom:0;width:30px;">${yAxis}</div>
-            <span style="position:absolute;right:0;top:${100-avgPct}%;transform:translateY(-50%);font-size:8px;color:rgba(201,168,76,.7);line-height:1;">avg</span>
-            <div style="display:flex;gap:3px;align-items:flex-end;height:80px;">${bars}</div>
-          </div>
-        </div>`;
-      })()}`;
+      <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:right;">${reports.length}日分のデータより集計</div>`;
   }
 
   // 過去月の詳細（今月の実績と同じ内訳）を年間売上カード内に表示
